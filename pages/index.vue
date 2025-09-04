@@ -1,6 +1,37 @@
 <template>
   <div>
-    <section class="hero-section">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar">
+      <b-container>
+        <b-navbar-brand href="#" class="navbar-brand-custom">
+          <strong>RAI-SA-RA</strong>
+        </b-navbar-brand>
+
+        <b-navbar-toggle target="nav-collapse" />
+
+        <b-collapse id="nav-collapse" is-nav>
+          <b-navbar-nav class="ml-auto">
+            <b-nav-item class="nav-item-custom" @click="scrollToSection('hero')">
+              <i class="fas fa-home mr-1" />หน้าแรก
+            </b-nav-item>
+            <b-nav-item class="nav-item-custom" @click="scrollToSection('features')">
+              <i class="fas fa-star mr-1" />คุณสมบัติ
+            </b-nav-item>
+            <b-nav-item class="nav-item-custom" @click="scrollToSection('chat-demo')">
+              <i class="fas fa-comments mr-1" />ตัวอย่างแชท
+            </b-nav-item>
+            <b-nav-item class="nav-item-custom" @click="scrollToSection('stats')">
+              <i class="fas fa-chart-bar mr-1" />สถิติ
+            </b-nav-item>
+            <b-nav-item class="nav-item-custom join-btn" @click="joinCommunity">
+              <i class="fas fa-user-plus mr-1" />เข้าร่วม
+            </b-nav-item>
+          </b-navbar-nav>
+        </b-collapse>
+      </b-container>
+    </nav>
+
+    <section id="hero" class="hero-section">
       <div class="floating-shapes" />
       <div class="bg-shapes">
         <div class="shape" />
@@ -39,7 +70,7 @@
       </b-container>
     </section>
 
-    <section class="features-section">
+    <section id="features" class="features-section">
       <b-container>
         <h2 class="section-title">
           ทำไมต้องเลือก RAI-SA-RA?
@@ -72,7 +103,7 @@
       </b-container>
     </section>
 
-    <section class="chat-demo">
+    <section id="chat-demo" class="chat-demo">
       <b-container>
         <h2 class="section-title text-white">
           ลองดูการสนทนา
@@ -112,7 +143,7 @@
       </b-container>
     </section>
 
-    <section class="stats-section">
+    <section id="stats" class="stats-section">
       <b-container>
         <b-row>
           <b-col
@@ -360,6 +391,7 @@ export default {
     this.setupScrollAnimation()
     this.startChatAnimation()
     this.updateOnlineUsers()
+    this.setupNavbarScroll()
   },
   methods: {
     joinCommunity () {
@@ -369,7 +401,6 @@ export default {
       this.$bvModal.show('info-modal')
     },
     handleJoin () {
-      // จำลองการเข้าร่วม
       this.$bvModal.hide('join-modal')
       this.$bvToast.toast('ยินดีต้อนรับสู่ชุมชน RAI-SA-RA! 🎉', {
         title: 'เข้าร่วมสำเร็จ',
@@ -377,7 +408,6 @@ export default {
         solid: true,
         autoHideDelay: 3000
       })
-      // Reset form
       this.joinForm = { username: '', email: '', agree: false }
     },
     setupScrollAnimation () {
@@ -429,16 +459,118 @@ export default {
     },
     updateOnlineUsers () {
       setInterval(() => {
-        // จำลองการเปลี่ยนแปลงจำนวนผู้ใช้ออนไลน์
         const variation = Math.floor(Math.random() * 20) - 10
         this.onlineUsers = Math.max(1200, Math.min(1300, this.onlineUsers + variation))
       }, 5000)
+    },
+    scrollToSection (sectionId) {
+      const element = document.getElementById(sectionId)
+      if (element) {
+        const navbarHeight = 80 // Navbar height
+        const offsetTop = element.offsetTop - navbarHeight
+        window.scrollTo({
+          top: offsetTop,
+          behavior: 'smooth'
+        })
+      }
+    },
+    setupNavbarScroll () {
+      window.addEventListener('scroll', () => {
+        const navbar = document.querySelector('.custom-navbar')
+        if (navbar) {
+          if (window.scrollY > 50) {
+            navbar.classList.add('scrolled')
+          } else {
+            navbar.classList.remove('scrolled')
+          }
+        }
+      })
     }
   }
 }
 </script>
 
 <style>
+/* Custom Navbar Styles */
+.custom-navbar {
+  background: rgba(44, 62, 80, 0.95) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  padding: 10px 0;
+}
+
+.custom-navbar.scrolled {
+  background: rgba(44, 62, 80, 0.98) !important;
+  box-shadow: 0 2px 30px rgba(0,0,0,0.2);
+}
+
+.navbar-brand-custom {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand-custom:hover {
+  transform: scale(1.05);
+  text-decoration: none;
+}
+
+.nav-item-custom {
+  margin: 0 10px;
+  padding: 8px 16px;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.nav-item-custom:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+}
+
+.nav-item-custom.join-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white !important;
+  margin-left: 20px;
+}
+
+.nav-item-custom.join-btn:hover {
+  background: linear-gradient(45deg, #764ba2, #667eea);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  transform: translateY(-3px);
+}
+
+.navbar-toggler {
+  border: none;
+  padding: 4px 8px;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+/* Mobile navbar adjustments */
+@media (max-width: 991px) {
+  .navbar-nav {
+    text-align: center;
+    padding-top: 20px;
+  }
+
+  .nav-item-custom {
+    margin: 5px 0;
+    display: block;
+  }
+
+  .nav-item-custom.join-btn {
+    margin: 10px 0;
+  }
+}
+
 .hero-section {
   min-height: 100vh;
   position: relative;
@@ -489,7 +621,7 @@ export default {
 .hero-content {
   position: relative;
   z-index: 2;
-  padding: 120px 0;
+  padding: 180px 0 120px;
   text-align: center;
   color: white;
 }
@@ -856,6 +988,10 @@ export default {
   .stat-number {
     font-size: 2rem;
   }
+
+  .hero-content {
+    padding: 140px 0 80px;
+  }
 }
 
 /* Custom Bootstrap Vue Overrides */
@@ -928,4 +1064,31 @@ export default {
   }
 }
 
+/* Global font family */
+* {
+  font-family: 'Kanit', sans-serif;
+}
+
+/* Smooth scrolling for the whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for chat messages */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #2f3640;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
 </style>
