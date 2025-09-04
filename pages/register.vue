@@ -2,28 +2,41 @@
   <div class="auth-page">
     <div class="auth-card shadow-lg">
       <div class="auth-header text-center">
-        <h2 class="title">Welcome Back 👋</h2>
-        <p class="subtitle">เข้าสู่ระบบเพื่อเริ่มต้น Community <br> Ra-Sa-Ra</p>
+        <h2 class="title">Create Account ✨</h2>
+        <p class="subtitle">สมัครสมาชิกเพื่อเข้าร่วม Community Ra-Sa-Ra</p>
       </div>
 
       <validation-observer ref="observer" v-slot="{ handleSubmit }">
-        <b-form @submit.stop.prevent="handleSubmit(onLogin)">
+        <b-form @submit.stop.prevent="handleSubmit(onRegister)">
           <validation-provider v-slot="validationContext" name="Username" :rules="{ required: true }">
-            <b-form-group label="ชื่อผู้ใช้งาน" label-for="txtUser">
+            <b-form-group label="ชื่อผู้ใช้งาน" label-for="regUser">
               <b-form-input
-                id="txtUser"
+                id="regUser"
                 v-model="form.Username"
                 :state="getValidationState(validationContext)"
-                placeholder="กรอกชื่อผู้ใช้งาน"
+                placeholder="ตั้งชื่อผู้ใช้งาน"
               />
               <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
             </b-form-group>
           </validation-provider>
 
-          <validation-provider v-slot="validationContext" name="Password" :rules="{ required: true }">
-            <b-form-group label="รหัสผ่าน" label-for="txtPass">
+          <validation-provider v-slot="validationContext" name="Email" :rules="{ required: true, email: true }">
+            <b-form-group label="อีเมล" label-for="regEmail">
               <b-form-input
-                id="txtPass"
+                id="regEmail"
+                v-model="form.Email"
+                type="email"
+                :state="getValidationState(validationContext)"
+                placeholder="example@email.com"
+              />
+              <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+            </b-form-group>
+          </validation-provider>
+
+          <validation-provider v-slot="validationContext" name="Password" :rules="{ required: true, min: 6 }">
+            <b-form-group label="รหัสผ่าน" label-for="regPass">
+              <b-form-input
+                id="regPass"
                 v-model="form.Password"
                 type="password"
                 :state="getValidationState(validationContext)"
@@ -33,15 +46,27 @@
             </b-form-group>
           </validation-provider>
 
+          <validation-provider v-slot="validationContext" name="Confirm Password" :rules="{ required: true }">
+            <b-form-group label="ยืนยันรหัสผ่าน" label-for="regPassConfirm">
+              <b-form-input
+                id="regPassConfirm"
+                v-model="form.PasswordConfirm"
+                type="password"
+                :state="getValidationState(validationContext)"
+                placeholder="••••••••"
+              />
+              <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+            </b-form-group>
+          </validation-provider>
+
           <b-button type="submit" block variant="light" size="lg" class="submit-btn mt-3">
-            เข้าสู่ระบบ
+            สมัครสมาชิก
           </b-button>
         </b-form>
       </validation-observer>
 
       <div class="auth-footer text-center mt-4">
-        <p>ยังไม่มีบัญชี? <b-link to="/register">สมัครสมาชิก</b-link></p>
-        <p><b-link to="/forgot-password">ลืมรหัสผ่าน?</b-link></p>
+        <p>มีบัญชีแล้ว? <b-link to="/login">เข้าสู่ระบบ</b-link></p>
       </div>
     </div>
   </div>
@@ -54,7 +79,9 @@ export default {
     return {
       form: {
         Username: '',
-        Password: ''
+        Email: '',
+        Password: '',
+        PasswordConfirm: ''
       }
     }
   },
@@ -62,8 +89,7 @@ export default {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
     },
-    async onLogin () {
-      // login logic
+    async onRegister () {
     }
   }
 }

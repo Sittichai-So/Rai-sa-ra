@@ -1,29 +1,45 @@
 <template>
-  <div>
+  <div style="font-size: 20px;">
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar">
       <b-container>
         <b-navbar-brand href="#" class="navbar-brand-custom">
-          <strong>RAI-SA-RA</strong>
+          <strong style="font-size: 32px;">RAI-SA-RA</strong>
         </b-navbar-brand>
 
         <b-navbar-toggle target="nav-collapse" />
 
-        <b-collapse id="nav-collapse" is-nav>
+        <b-collapse id="nav-collapse" is-nav class="w-100">
+          <div class="d-flex justify-content-center flex-grow-1">
+            <b-navbar-nav
+              style="border: 2px solid #fff; border-radius: 25px; padding: 5px 20px;"
+            >
+              <b-nav-item class="nav-item-custom" @click="scrollToSection('hero')">
+                <i class="fas fa-home mr-1" />หน้าแรก
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom" @click="scrollToSection('features')">
+                <i class="fas fa-star mr-1" />คุณสมบัติ
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom" @click="scrollToSection('chat-demo')">
+                <i class="fas fa-comments mr-1" />ตัวอย่างแชท
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom" @click="scrollToSection('about')">
+                <i class="fa-solid fa-handshake mr-1" />เกี่ยวกับเรา
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom" @click="scrollToSection('testimonials')">
+                <i class="fa-solid fa-magnifying-glass mr-1" />เสียงจากชุมชน
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom" @click="scrollToSection('stats')">
+                <i class="fas fa-chart-bar mr-1" />สถิติ
+              </b-nav-item>
+            </b-navbar-nav>
+          </div>
+
           <b-navbar-nav class="ml-auto">
-            <b-nav-item class="nav-item-custom" @click="scrollToSection('hero')">
-              <i class="fas fa-home mr-1" />หน้าแรก
-            </b-nav-item>
-            <b-nav-item class="nav-item-custom" @click="scrollToSection('features')">
-              <i class="fas fa-star mr-1" />คุณสมบัติ
-            </b-nav-item>
-            <b-nav-item class="nav-item-custom" @click="scrollToSection('chat-demo')">
-              <i class="fas fa-comments mr-1" />ตัวอย่างแชท
-            </b-nav-item>
-            <b-nav-item class="nav-item-custom" @click="scrollToSection('stats')">
-              <i class="fas fa-chart-bar mr-1" />สถิติ
-            </b-nav-item>
             <b-nav-item class="nav-item-custom join-btn" @click="joinCommunity">
               <i class="fas fa-user-plus mr-1" />เข้าร่วม
+            </b-nav-item>
+            <b-nav-item class="nav-item-custom login-btn" @click="goLogin">
+              <i class="fa-solid fa-right-to-bracket" /> Login
             </b-nav-item>
           </b-navbar-nav>
         </b-collapse>
@@ -142,6 +158,41 @@
       </b-container>
     </section>
 
+    <section id="about" class="about-section">
+      <b-container>
+        <h2 class="section-title">
+          เกี่ยวกับเรา
+        </h2>
+        <p class="about-text">
+          <strong>RAI-SA-RA</strong> ถูกสร้างขึ้นเพื่อเชื่อมโยงคนไทยจากทั่วทุกมุมโลก
+          เราเชื่อในพลังของการสนทนา การแบ่งปันความรู้ และการสร้างมิตรภาพใหม่ๆ
+          ไม่ว่าจะเป็นเรื่องเกม การเรียน กีฬา หรือแม้แต่ชีวิตประจำวัน
+        </p>
+      </b-container>
+    </section>
+
+    <section id="testimonials" class="testimonials-section">
+      <b-container>
+        <h2 class="section-title">
+          เสียงจากชุมชน
+        </h2>
+        <b-row>
+          <b-col v-for="(review, index) in reviews" :key="index" md="4" class="mb-4">
+            <b-card class="testimonial-card h-100">
+              <b-card-body>
+                <p class="testimonial-text">
+                  "{{ review.text }}"
+                </p>
+                <div class="text-right">
+                  <strong>- {{ review.user }}</strong>
+                </div>
+              </b-card-body>
+            </b-card>
+          </b-col>
+        </b-row>
+      </b-container>
+    </section>
+
     <section id="stats" class="stats-section">
       <b-container>
         <b-row>
@@ -199,11 +250,19 @@
       size="lg"
       centered
       hide-footer
+      modal-class="custom-modal"
+      header-class="custom-modal-header"
+      body-class="custom-modal-body"
     >
-      <div class="text-center">
-        <h4>ยินดีต้อนรับสู่ RAI-SA-RA!</h4>
-        <p>กรอกข้อมูลเพื่อเข้าร่วมชุมชนที่เจ๋งที่สุด</p>
-        <b-form @submit.prevent="handleJoin">
+      <div>
+        <h4 class="highlight-title text-center">
+          🎉 ยินดีต้อนรับสู่ RAI-SA-RA!
+        </h4>
+        <p class="subtitle text-center" style="font-size: 20px;">
+          กรอกข้อมูลเพื่อเข้าร่วมชุมชนที่เจ๋งที่สุด
+        </p>
+
+        <b-form class="join-form" @submit.prevent="handleJoin">
           <b-form-group label="ชื่อผู้ใช้" label-for="username">
             <b-form-input
               id="username"
@@ -221,20 +280,22 @@
               placeholder="กรอกอีเมล"
             />
           </b-form-group>
-          <b-form-group>
-            <b-form-checkbox v-model="joinForm.agree">
-              ยอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัว
+          <b-form-group class="text-center">
+            <b-form-checkbox v-model="joinForm.agree" class="custom-checkbox">
+              <span style="font-size: 19px;">ยอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัว<span /></span>
             </b-form-checkbox>
           </b-form-group>
-          <b-button
-            type="submit"
-            variant="primary"
-            size="lg"
-            :disabled="!canJoin"
-            class="mt-3"
-          >
-            เข้าร่วมเลย!
-          </b-button>
+          <div style="display: flex;justify-content: center;">
+            <b-button
+              type="submit"
+              variant="light"
+              size="lg"
+              :disabled="!canJoin"
+              class="join-btn mt-3"
+            >
+              🚀 เข้าร่วมเลย!
+            </b-button>
+          </div>
         </b-form>
       </div>
     </b-modal>
@@ -245,40 +306,73 @@
       size="xl"
       centered
       hide-footer
+      modal-class="custom-modal"
+      header-class="custom-modal-header"
+      body-class="custom-modal-body"
     >
       <b-tabs content-class="mt-3">
-        <b-tab title="คุณสมบัติ" active>
-          <h5>คุณสมบัติเด่นของ RAI-SA-RA</h5>
-          <ul>
-            <li>✅ แชทแบบเรียลไทม์ไม่มีดีเลย์</li>
-            <li>✅ ห้องแชทแยกตามหมวดหมู่</li>
-            <li>✅ ระบบรักษาความปลอดภัยสูง</li>
-            <li>✅ Interface ใช้งานง่าย</li>
-            <li>✅ Support ทั้ง Desktop และ Mobile</li>
+        <b-tab title="✨ คุณสมบัติ" active>
+          <h5 class="highlight-sub">
+            คุณสมบัติเด่นของ RAI-SA-RA
+          </h5>
+          <ul class="styled-list">
+            <li style="font-size: 22px;">
+              ⚡ แชทแบบเรียลไทม์ไม่มีดีเลย์
+            </li>
+            <li style="font-size: 22px;">
+              📂 ห้องแชทแยกตามหมวดหมู่
+            </li>
+            <li style="font-size: 22px;">
+              🔒 ระบบรักษาความปลอดภัยสูง
+            </li>
+            <li style="font-size: 22px;">
+              🎨 Interface ใช้งานง่าย
+            </li>
+            <li style="font-size: 22px;">
+              📱 Support ทั้ง Desktop และ Mobile
+            </li>
           </ul>
         </b-tab>
-        <b-tab title="ห้องแชท">
-          <h5>ห้องแชทยอดนิยม</h5>
+        <b-tab title="💬 ห้องแชท">
+          <h5 class="highlight-sub">
+            ห้องแชทยอดนิยม
+          </h5>
           <b-list-group>
-            <b-list-group-item v-for="room in chatRooms" :key="room.name">
+            <b-list-group-item
+              v-for="room in chatRooms"
+              :key="room.name"
+              class="chat-room-item"
+            >
               <div class="d-flex justify-content-between">
                 <strong>{{ room.name }}</strong>
-                <b-badge variant="primary">
-                  {{ room.users }} คน
+                <b-badge variant="light" class="user-badge">
+                  👥 {{ room.users }} คน
                 </b-badge>
               </div>
               <small class="text-muted">{{ room.description }}</small>
             </b-list-group-item>
           </b-list-group>
         </b-tab>
-        <b-tab title="กฎระเบียบ">
-          <h5>กฎของชุมชน</h5>
-          <ol>
-            <li>เคารพสมาชิกคนอื่น</li>
-            <li>ไม่โพสต์เนื้อหาที่ไม่เหมาะสม</li>
-            <li>ไม่ Spam หรือ Flood ข้อความ</li>
-            <li>ใช้ภาษาที่สุภาพ</li>
-            <li>ไม่แชร์ข้อมูลส่วนตัวของคนอื่น</li>
+        <b-tab title="📜 กฎระเบียบ">
+          <h5 class="highlight-sub">
+            กฎของชุมชน
+          </h5>
+          <ol class="styled-ol">
+            <li style="font-size: 22px;">
+              🙏 เคารพสมาชิกคนอื่น
+            </li>
+            <li style="font-size: 22px;">
+              🚫 ไม่โพสต์เนื้อหาที่ไม่เหมาะสม
+            </li>
+            <li style="font-size: 22px;">
+              💡 ไม่ Spam หรือ Flood ข้อความ
+            </li>
+            <li style="font-size: 22px;">
+              🗣 ใช้ภาษาที่สุภาพ
+            </li>
+            <li style="font-size: 22px;">
+              🔐 ไม่แชร์ข้อมูลส่วนตัวของคนอื่น
+            </li>
           </ol>
         </b-tab>
       </b-tabs>
@@ -362,6 +456,11 @@ export default {
         { name: 'ห้องแชทการเมือง', users: 1523, description: 'อภิปรายการเมืองอย่างสร้างสรรค์' },
         { name: 'ห้องแชททั่วไป', users: 3456, description: 'คุยกันแบบสบายๆ' },
         { name: 'ห้องแชทเทคโนโลยี', users: 987, description: 'พูดคุยเรื่องเทคโนโลยีและนวัตกรรม' }
+      ],
+      reviews: [
+        { user: 'นัท', text: 'เป็นชุมชนที่อบอุ่นมาก เจอเพื่อนใหม่เยอะเลย ❤️' },
+        { user: 'ฝน', text: 'ชอบที่ระบบใช้ง่าย แถมปลอดภัยด้วยค่ะ 🔒' },
+        { user: 'บอล', text: 'ได้แลกเปลี่ยนไอเดียกับคนที่สนใจเหมือนกัน ดีมากๆ 👍' }
       ]
     }
   },
@@ -395,6 +494,9 @@ export default {
   methods: {
     joinCommunity () {
       this.$bvModal.show('join-modal')
+    },
+    goLogin () {
+      this.$router.push('/login')
     },
     learnMore () {
       this.$bvModal.show('info-modal')
@@ -465,7 +567,7 @@ export default {
     scrollToSection (sectionId) {
       const element = document.getElementById(sectionId)
       if (element) {
-        const navbarHeight = 80 // Navbar height
+        const navbarHeight = 70
         const offsetTop = element.offsetTop - navbarHeight
         window.scrollTo({
           top: offsetTop,
@@ -490,6 +592,9 @@ export default {
 </script>
 
 <style>
+/* * {
+  font-family: 'Kanit', sans-serif;
+} */
 .custom-navbar {
   background: rgba(44, 62, 80, 0.95) !important;
   backdrop-filter: blur(10px);
@@ -503,8 +608,7 @@ export default {
 }
 
 .navbar-brand-custom {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 18px !important;
   background: linear-gradient(45deg, #667eea, #764ba2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -514,6 +618,7 @@ export default {
 .navbar-brand-custom:hover {
   transform: scale(1.05);
   text-decoration: none;
+  font-size: 18px !important;
 }
 
 .nav-item-custom {
@@ -522,23 +627,41 @@ export default {
   border-radius: 25px;
   transition: all 0.3s ease;
   cursor: pointer;
+  font-size: 18px !important;
 }
 
 .nav-item-custom:hover {
   background: rgba(102, 126, 234, 0.2);
   transform: translateY(-2px);
+  font-size: 18px !important;
 }
 
 .nav-item-custom.join-btn {
   background: linear-gradient(45deg, #667eea, #764ba2);
   color: white !important;
   margin-left: 20px;
+  font-size: 18px !important;
 }
 
 .nav-item-custom.join-btn:hover {
   background: linear-gradient(45deg, #764ba2, #667eea);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
   transform: translateY(-3px);
+  font-size: 18px !important;
+}
+
+.nav-item-custom.login-btn {
+  background: linear-gradient(45deg, #6072c2, #ae6eee);
+  color: white !important;
+  margin-left: 20px;
+  font-size: 18px !important;
+}
+
+.nav-item-custom.login-btn:hover {
+  background: linear-gradient(45deg, #9c5add, #4b5ba3);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  transform: translateY(-3px);
+  font-size: 18px !important;
 }
 
 .navbar-toggler {
@@ -552,15 +675,23 @@ export default {
 @media (max-width: 991px) {
   .navbar-nav {
     text-align: center;
+    font-size: 18px !important;
   }
 
   .nav-item-custom {
     margin: 5px 0;
     display: block;
+    font-size: 18px !important;
   }
 
   .nav-item-custom.join-btn {
     margin: 10px 0;
+    font-size: 18px !important;
+  }
+
+  .nav-item-custom.login-btn {
+    margin: 10px 0;
+    font-size: 18px !important;
   }
 }
 
@@ -650,14 +781,14 @@ export default {
 }
 
 .hero-subtitle {
-  font-size: 1.5rem;
+  font-size: 24px;
   margin-bottom: 30px;
   animation: slideInUp 1s ease-out 0.2s both;
   opacity: 0.9;
 }
 
 .hero-description {
-  font-size: 1.2rem;
+  font-size: 22px;
   margin-bottom: 40px;
   animation: slideInUp 1s ease-out 0.4s both;
   max-width: 600px;
@@ -674,7 +805,7 @@ export default {
   background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
   border: none !important;
   padding: 15px 40px !important;
-  font-size: 1.2rem !important;
+  font-size: 22px !important;
   font-weight: 600 !important;
   border-radius: 50px !important;
   transition: all 0.3s ease;
@@ -692,7 +823,7 @@ export default {
   color: white !important;
   background: transparent !important;
   padding: 15px 40px !important;
-  font-size: 1.2rem !important;
+  font-size: 22px !important;
   font-weight: 600 !important;
   border-radius: 50px !important;
   transition: all 0.3s ease;
@@ -741,7 +872,7 @@ export default {
 }
 
 .feature-icon {
-  font-size: 3rem;
+  font-size: 32px;
   margin-bottom: 20px;
   background: linear-gradient(45deg, #667eea, #764ba2);
   -webkit-background-clip: text;
@@ -749,7 +880,7 @@ export default {
 }
 
 .feature-title {
-  font-size: 1.5rem;
+  font-size: 24px;
   font-weight: 600;
   margin-bottom: 15px;
   color: #333;
@@ -831,14 +962,14 @@ export default {
 }
 
 .stat-number {
-  font-size: 3rem;
+  font-size: 50px !important;
   font-weight: 700;
   display: block;
   margin-bottom: 10px;
 }
 
 .stat-label {
-  font-size: 1.2rem;
+  font-size: 22px;
   opacity: 0.9;
 }
 
@@ -850,7 +981,7 @@ export default {
 
 .social-links a {
   color: white;
-  font-size: 1.5rem;
+  font-size: 24px;
   margin: 0 15px;
   transition: all 0.3s ease;
   text-decoration: none;
@@ -863,7 +994,7 @@ export default {
 }
 
 .section-title {
-  font-size: 3rem;
+  font-size: 32px;
   font-weight: 700;
   text-align: center;
   margin-bottom: 60px;
@@ -903,7 +1034,7 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  z-index: -1;
+  z-index: -2;
 }
 
 .shape {
@@ -947,23 +1078,22 @@ export default {
   100% { transform: rotate(360deg) scale(1); }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2.5rem;
   }
 
   .hero-subtitle {
-    font-size: 1.2rem;
+    font-size: 22px;
   }
 
   .hero-description {
-    font-size: 1rem;
+    font-size: 22px;
   }
 
   .btn-primary-custom,
   .btn-outline-custom {
-    font-size: 1rem !important;
+    font-size: 22px !important;
     padding: 12px 30px !important;
     margin: 5px;
     display: block;
@@ -971,7 +1101,7 @@ export default {
   }
 
   .section-title {
-    font-size: 2rem;
+    font-size: 24px;
   }
 
   .feature-icon {
@@ -979,7 +1109,7 @@ export default {
   }
 
   .stat-number {
-    font-size: 2rem;
+    font-size: 50px;
   }
 
   .hero-content {
@@ -996,11 +1126,13 @@ export default {
   background: linear-gradient(45deg, #667eea, #764ba2);
   color: white;
   border-radius: 20px 20px 0 0;
+  font-size: 24px !important;
 }
 
 .modal-header .close {
   color: white;
   opacity: 0.8;
+  font-size: 24px !important;
 }
 
 .nav-tabs .nav-link.active {
@@ -1055,10 +1187,6 @@ export default {
   }
 }
 
-* {
-  font-family: 'Kanit', sans-serif;
-}
-
 html {
   scroll-behavior: smooth;
 }
@@ -1078,5 +1206,121 @@ html {
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #764ba2;
+}
+.custom-modal {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.45);
+}
+.custom-modal-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-weight: 600;
+  font-size: 24px !important;
+  border: none;
+}
+.custom-modal-body {
+  padding: 30px;
+  color: #333;
+}
+.highlight-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #764ba2;
+}
+.subtitle {
+  font-size: 16px;
+  opacity: 0.8;
+}
+.join-form input {
+  border-radius: 12px;
+  padding: 12px 15px;
+}
+.custom-checkbox {
+  font-size: 14px;
+  color: #444;
+}
+.join-btn {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+  border: none;
+  color: #333;
+  font-weight: 600;
+  transition: 0.3s;
+}
+.join-btn:hover {
+  background: linear-gradient(135deg, #ffdde1, #ee9ca7);
+}
+.styled-list li {
+  font-size: 16px;
+  padding: 6px 0;
+}
+.styled-ol li {
+  font-size: 16px;
+  margin: 8px 0;
+}
+.chat-room-item {
+  border-radius: 12px;
+  padding: 12px 15px;
+  transition: background 0.3s;
+}
+.chat-room-item:hover {
+  background: rgba(118, 75, 162, 0.1);
+}
+.user-badge {
+  border-radius: 10px;
+  font-weight: 600;
+}
+.highlight-sub {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #667eea;
+}
+.about-section {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  text-align: center;
+}
+.about-section .section-title {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #222;
+}
+.about-text {
+  font-size: 20px;
+  color: #555;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+.testimonials-section {
+  padding: 80px 0;
+  background: #fff;
+}
+.testimonials-section .section-title {
+  font-size: 36px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 50px;
+}
+.testimonial-card {
+  border: none;
+  background: #f8f9fa;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+.testimonial-card:hover {
+  transform: translateY(-8px);
+}
+.testimonial-text {
+  font-size: 18px;
+  color: #333;
+  font-style: italic;
+  margin-bottom: 15px;
 }
 </style>

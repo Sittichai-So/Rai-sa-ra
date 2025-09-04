@@ -1,6 +1,5 @@
 <template>
   <div>
-    <headers />
     <Nuxt />
   </div>
 </template>
@@ -39,7 +38,7 @@ export default {
 <style>
 
 html {
-  /* font-size: 20px; */
+  font-size: 22px !important;
   word-spacing: 1px;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
@@ -49,12 +48,11 @@ html {
 }
 
 body{
-  /*margin-bottom: 0;*/
   padding: 0;
   position: relative;
   font-family: 'thai_sans_literegular';
   background-color: #f5f8fa;
-  font-size: 20px;
+  font-size: 22px !important;
   min-height:100vh;
 }
 
@@ -77,7 +75,7 @@ body{
 }
 
 .form-control {
-  font-size: 1.2rem;
+  font-size: 22px;
 }
 
 .container {

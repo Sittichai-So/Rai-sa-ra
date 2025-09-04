@@ -2,46 +2,33 @@
   <div class="auth-page">
     <div class="auth-card shadow-lg">
       <div class="auth-header text-center">
-        <h2 class="title">Welcome Back 👋</h2>
-        <p class="subtitle">เข้าสู่ระบบเพื่อเริ่มต้น Community <br> Ra-Sa-Ra</p>
+        <h2 class="title">Forgot Password 🔑</h2>
+        <p class="subtitle">กรอกอีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน</p>
       </div>
 
       <validation-observer ref="observer" v-slot="{ handleSubmit }">
-        <b-form @submit.stop.prevent="handleSubmit(onLogin)">
-          <validation-provider v-slot="validationContext" name="Username" :rules="{ required: true }">
-            <b-form-group label="ชื่อผู้ใช้งาน" label-for="txtUser">
+        <b-form @submit.stop.prevent="handleSubmit(onForgotPassword)">
+          <validation-provider v-slot="ctx" name="Email" :rules="{ required: true, email: true }">
+            <b-form-group label="อีเมล" label-for="fpEmail">
               <b-form-input
-                id="txtUser"
-                v-model="form.Username"
-                :state="getValidationState(validationContext)"
-                placeholder="กรอกชื่อผู้ใช้งาน"
+                id="fpEmail"
+                v-model="form.Email"
+                type="email"
+                :state="getValidationState(ctx)"
+                placeholder="example@email.com"
               />
-              <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
-            </b-form-group>
-          </validation-provider>
-
-          <validation-provider v-slot="validationContext" name="Password" :rules="{ required: true }">
-            <b-form-group label="รหัสผ่าน" label-for="txtPass">
-              <b-form-input
-                id="txtPass"
-                v-model="form.Password"
-                type="password"
-                :state="getValidationState(validationContext)"
-                placeholder="••••••••"
-              />
-              <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+              <b-form-invalid-feedback>{{ ctx.errors[0] }}</b-form-invalid-feedback>
             </b-form-group>
           </validation-provider>
 
           <b-button type="submit" block variant="light" size="lg" class="submit-btn mt-3">
-            เข้าสู่ระบบ
+            ส่งลิงก์รีเซ็ตรหัสผ่าน
           </b-button>
         </b-form>
       </validation-observer>
 
       <div class="auth-footer text-center mt-4">
-        <p>ยังไม่มีบัญชี? <b-link to="/register">สมัครสมาชิก</b-link></p>
-        <p><b-link to="/forgot-password">ลืมรหัสผ่าน?</b-link></p>
+        <p>นึกออกแล้ว? <b-link to="/login">กลับไปเข้าสู่ระบบ</b-link></p>
       </div>
     </div>
   </div>
@@ -53,8 +40,7 @@ export default {
   data () {
     return {
       form: {
-        Username: '',
-        Password: ''
+        Email: ''
       }
     }
   },
@@ -62,8 +48,8 @@ export default {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
     },
-    async onLogin () {
-      // login logic
+    onForgotPassword () {
+      console.log('ส่งคำขอรีเซ็ตรหัสผ่าน', this.form.Email)
     }
   }
 }
