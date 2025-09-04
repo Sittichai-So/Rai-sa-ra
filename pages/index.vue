@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar">
       <b-container>
         <b-navbar-brand href="#" class="navbar-brand-custom">
@@ -491,13 +490,11 @@ export default {
 </script>
 
 <style>
-/* Custom Navbar Styles */
 .custom-navbar {
   background: rgba(44, 62, 80, 0.95) !important;
   backdrop-filter: blur(10px);
   box-shadow: 0 2px 20px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
-  padding: 10px 0;
 }
 
 .custom-navbar.scrolled {
@@ -506,8 +503,8 @@ export default {
 }
 
 .navbar-brand-custom {
-  font-size: 1.8rem;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
   background: linear-gradient(45deg, #667eea, #764ba2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -521,11 +518,10 @@ export default {
 
 .nav-item-custom {
   margin: 0 10px;
-  padding: 8px 16px;
+  padding: 0px 2px;
   border-radius: 25px;
   transition: all 0.3s ease;
   cursor: pointer;
-  font-weight: 500;
 }
 
 .nav-item-custom:hover {
@@ -547,18 +543,15 @@ export default {
 
 .navbar-toggler {
   border: none;
-  padding: 4px 8px;
 }
 
 .navbar-toggler:focus {
   box-shadow: none;
 }
 
-/* Mobile navbar adjustments */
 @media (max-width: 991px) {
   .navbar-nav {
     text-align: center;
-    padding-top: 20px;
   }
 
   .nav-item-custom {
@@ -994,7 +987,6 @@ export default {
   }
 }
 
-/* Custom Bootstrap Vue Overrides */
 .modal-content {
   border-radius: 20px;
   border: none;
@@ -1040,7 +1032,6 @@ export default {
   border-radius: 15px;
 }
 
-/* Additional animations */
 .feature-card {
   animation: fadeInUp 0.6s ease-out;
   animation-fill-mode: both;
@@ -1064,17 +1055,14 @@ export default {
   }
 }
 
-/* Global font family */
 * {
   font-family: 'Kanit', sans-serif;
 }
 
-/* Smooth scrolling for the whole page */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar for chat messages */
 .chat-messages::-webkit-scrollbar {
   width: 8px;
 }
