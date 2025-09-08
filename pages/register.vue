@@ -122,7 +122,7 @@ export default {
   font-weight: 700;
 }
 .auth-header .subtitle {
-  font-size: 18pz;
+  font-size: 20px;
   opacity: 0.85;
 }
 .b-form-input {

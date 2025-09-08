@@ -1,6 +1,6 @@
 const environment = {
   development: {
-    api: 'http://localhost:8012/api/config'
+    api: 'http://localhost:8012/api/raisara'
   },
   production: {
     // uat
