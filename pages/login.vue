@@ -3,7 +3,7 @@
     <div class="auth-card shadow-lg">
       <div class="auth-header text-center">
         <h2 class="title">Welcome Back 👋</h2>
-        <p class="subtitle">เข้าสู่ระบบเพื่อเริ่มต้น Community <br> Ra-Sa-Ra</p>
+        <p class="subtitle">เข้าสู่ระบบเพื่อเริ่มต้น Community <br> Rai-Sa-Ra</p>
       </div>
 
       <validation-observer ref="observer" v-slot="{ handleSubmit }">
@@ -63,16 +63,42 @@ export default {
       return dirty || validated ? valid : null
     },
     async onLogin () {
-      // login logic
+      try {
+        const login = await this.$axios.$post(process.env.API_LOGIN, this.form)
+
+        if (login.status === 'success') {
+          this.$Notiflix.loadingData()
+
+          setTimeout(() => {
+            this.$Notiflix.remove()
+            const token = login.token
+            const userData = login.result
+            localStorage.setItem('authPayrollToken', token)
+            localStorage.setItem('userData', JSON.stringify(login.result))
+            this.$axios.setToken(token, 'Bearer')
+
+            this.$store.commit('setUserData', userData)
+            this.$router.push('/data_config')
+          }, 2000)
+        } else {
+          await this.$swal({
+            icon: 'error',
+            title: 'ไม่พบข้อมูล'
+          })
+        }
+      } catch (error) {
+        console.log(error)
+        await this.$swal({
+          icon: 'error',
+          title: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+        })
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-/* * {
-  font-family: 'prompt', sans-serif;
-} */
 .auth-page {
   min-height: 100vh;
   display: flex;

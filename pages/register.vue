@@ -3,7 +3,7 @@
     <div class="auth-card shadow-lg">
       <div class="auth-header text-center">
         <h2 class="title">Create Account ✨</h2>
-        <p class="subtitle">สมัครสมาชิกเพื่อเข้าร่วม Community Ra-Sa-Ra</p>
+        <p class="subtitle">สมัครสมาชิกเพื่อเข้าร่วม Community Rai-Sa-Ra</p>
       </div>
 
       <validation-observer ref="observer" v-slot="{ handleSubmit }">

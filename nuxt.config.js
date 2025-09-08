@@ -1,3 +1,13 @@
+const environment = {
+  development: {
+    api: 'http://localhost:8012/api/config'
+  },
+  production: {
+    // uat
+    // api: 'https://uat-config-ktb.thaijobjob.com/api/config'
+  }
+}
+
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
@@ -48,6 +58,12 @@ export default {
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios'
   ],
+
+  env: {
+    NODE_ENV: process.env.NODE_ENV,
+    // auth
+    API_LOGIN: environment[process.env.NODE_ENV].api + '/auth/login'
+  },
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
