@@ -11,27 +11,26 @@ export default {
     return {
       isLogin: false
     }
+  },
+  methods: {
+    async setToken () {
+      try {
+        this.token = localStorage.getItem('token')
+        if (this.token) {
+          this.$axios.setToken(this.token, 'Bearer')
+          this.isLogin = true
+        } else {
+          this.$router.push('/')
+        }
+      } catch (error) {
+        console.error('Error:', error)
+        await this.$swal({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด'
+        })
+      }
+    }
   }
-  // },
-  // async mounted () {
-  //   try {
-  //     const token = localStorage.getItem('token')
-  //     if (!token) {
-  //       await this.$swal({
-  //         icon: 'info',
-  //         title: 'ขออภัย',
-  //         text: 'กรุณาเข้าสู่ระบบ'
-  //       })
-  //       return this.$router.push('/')
-  //     }
-  //     this.$axios.setToken(token, 'Bearer')
-  //     const res = await this.$axios.$get(process.env.API_AUTH_PROFILE)
-  //     this.$store.commit('setUser', res.result)
-  //     this.isLogin = true
-  //   } catch (error) {
-  //     await this.$swal('เกิดข้อผิดพลาด', 'กรุณาติดต่อเจ้าหน้าที่', 'error')
-  //   }
-  // }
 }
 </script>
 

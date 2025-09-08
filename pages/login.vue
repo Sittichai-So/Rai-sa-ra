@@ -2,17 +2,21 @@
   <div class="auth-page">
     <div class="auth-card shadow-lg">
       <div class="auth-header text-center">
-        <h2 class="title">Welcome Back 👋</h2>
-        <p class="subtitle">เข้าสู่ระบบเพื่อเริ่มต้น Community <br> Rai-Sa-Ra</p>
+        <h2 class="title">
+          Welcome Back 👋
+        </h2>
+        <p class="subtitle">
+          เข้าสู่ระบบเพื่อเริ่มต้น Community <br> Rai-Sa-Ra
+        </p>
       </div>
 
       <validation-observer ref="observer" v-slot="{ handleSubmit }">
         <b-form @submit.stop.prevent="handleSubmit(onLogin)">
-          <validation-provider v-slot="validationContext" name="Username" :rules="{ required: true }">
+          <validation-provider v-slot="validationContext" name="username" :rules="{ required: true }">
             <b-form-group label="ชื่อผู้ใช้งาน" label-for="txtUser">
               <b-form-input
                 id="txtUser"
-                v-model="form.Username"
+                v-model="form.username"
                 :state="getValidationState(validationContext)"
                 placeholder="กรอกชื่อผู้ใช้งาน"
               />
@@ -20,11 +24,11 @@
             </b-form-group>
           </validation-provider>
 
-          <validation-provider v-slot="validationContext" name="Password" :rules="{ required: true }">
+          <validation-provider v-slot="validationContext" name="password" :rules="{ required: true }">
             <b-form-group label="รหัสผ่าน" label-for="txtPass">
               <b-form-input
                 id="txtPass"
-                v-model="form.Password"
+                v-model="form.password"
                 type="password"
                 :state="getValidationState(validationContext)"
                 placeholder="••••••••"
@@ -40,8 +44,16 @@
       </validation-observer>
 
       <div class="auth-footer text-center mt-4">
-        <p>ยังไม่มีบัญชี? <b-link to="/register">สมัครสมาชิก</b-link></p>
-        <p><b-link to="/forgot-password">ลืมรหัสผ่าน?</b-link></p>
+        <p>
+          ยังไม่มีบัญชี? <b-link to="/register">
+            สมัครสมาชิก
+          </b-link>
+        </p>
+        <p>
+          <b-link to="/forgot-password">
+            ลืมรหัสผ่าน?
+          </b-link>
+        </p>
       </div>
     </div>
   </div>
@@ -53,8 +65,8 @@ export default {
   data () {
     return {
       form: {
-        Username: '',
-        Password: ''
+        username: '',
+        password: ''
       }
     }
   },
@@ -67,19 +79,13 @@ export default {
         const login = await this.$axios.$post(process.env.API_LOGIN, this.form)
 
         if (login.status === 'success') {
-          this.$Notiflix.loadingData()
+          const token = login.token
+          const userData = login.result
+          localStorage.setItem('token', token)
+          localStorage.setItem('userData', JSON.stringify(login.result))
 
-          setTimeout(() => {
-            this.$Notiflix.remove()
-            const token = login.token
-            const userData = login.result
-            localStorage.setItem('authPayrollToken', token)
-            localStorage.setItem('userData', JSON.stringify(login.result))
-            this.$axios.setToken(token, 'Bearer')
-
-            this.$store.commit('setUserData', userData)
-            this.$router.push('/data_config')
-          }, 2000)
+          this.$store.commit('setUserData', userData)
+          this.$router.push('/chat')
         } else {
           await this.$swal({
             icon: 'error',

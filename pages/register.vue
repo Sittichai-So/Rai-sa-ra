@@ -2,17 +2,82 @@
   <div class="auth-page">
     <div class="auth-card shadow-lg">
       <div class="auth-header text-center">
-        <h2 class="title">Create Account ✨</h2>
-        <p class="subtitle">สมัครสมาชิกเพื่อเข้าร่วม Community Rai-Sa-Ra</p>
+        <h2 class="title">
+          Create Account ✨
+        </h2>
+        <p class="subtitle">
+          สมัครสมาชิกเพื่อเข้าร่วม Community Rai-Sa-Ra
+        </p>
       </div>
 
       <validation-observer ref="observer" v-slot="{ handleSubmit }">
         <b-form @submit.stop.prevent="handleSubmit(onRegister)">
-          <validation-provider v-slot="validationContext" name="Username" :rules="{ required: true }">
+          <b-row>
+            <b-col>
+              <validation-provider v-slot="validationContext" name="firstName" :rules="{ required: true, numeric: true, min: 10, max: 10 }">
+                <b-form-group label="ชื่อ" label-for="regFirstName">
+                  <b-form-input
+                    id="regFirstName"
+                    v-model="form.firstName"
+                    :state="getValidationState(validationContext)"
+                    placeholder="ระบุชื่อ"
+                  />
+                  <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+                </b-form-group>
+              </validation-provider>
+            </b-col>
+
+            <b-col>
+              <validation-provider v-slot="validationContext" name="lastName" :rules="{ required: true, numeric: true, min: 10, max: 10 }">
+                <b-form-group label="นามสกุล" label-for="regLastName">
+                  <b-form-input
+                    id="regLastName"
+                    v-model="form.lastName"
+                    :state="getValidationState(validationContext)"
+                    placeholder="ระบุนามสกุล"
+                  />
+                  <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+                </b-form-group>
+              </validation-provider>
+            </b-col>
+          </b-row>
+
+          <b-row>
+            <b-col>
+              <validation-provider v-slot="validationContext" name="phoneNumber" :rules="{ required: true, numeric: true, min: 10, max: 10 }">
+                <b-form-group label="เบอร์โทรศัพท์" label-for="regPhoneNumber">
+                  <b-form-input
+                    id="regPhoneNumber"
+                    v-model="form.phoneNumber"
+                    :state="getValidationState(validationContext)"
+                    placeholder="เบอร์โทรศัพท์"
+                  />
+                  <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+                </b-form-group>
+              </validation-provider>
+            </b-col>
+
+            <b-col>
+              <validation-provider v-slot="validationContext" name="Email" :rules="{ required: true, email: true }">
+                <b-form-group label="อีเมล" label-for="regEmail">
+                  <b-form-input
+                    id="regEmail"
+                    v-model="form.Email"
+                    type="email"
+                    :state="getValidationState(validationContext)"
+                    placeholder="example@email.com"
+                  />
+                  <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+                </b-form-group>
+              </validation-provider>
+            </b-col>
+          </b-row>
+
+          <validation-provider v-slot="validationContext" name="username" :rules="{ required: true }">
             <b-form-group label="ชื่อผู้ใช้งาน" label-for="regUser">
               <b-form-input
                 id="regUser"
-                v-model="form.Username"
+                v-model="form.username"
                 :state="getValidationState(validationContext)"
                 placeholder="ตั้งชื่อผู้ใช้งาน"
               />
@@ -20,24 +85,11 @@
             </b-form-group>
           </validation-provider>
 
-          <validation-provider v-slot="validationContext" name="Email" :rules="{ required: true, email: true }">
-            <b-form-group label="อีเมล" label-for="regEmail">
-              <b-form-input
-                id="regEmail"
-                v-model="form.Email"
-                type="email"
-                :state="getValidationState(validationContext)"
-                placeholder="example@email.com"
-              />
-              <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
-            </b-form-group>
-          </validation-provider>
-
-          <validation-provider v-slot="validationContext" name="Password" :rules="{ required: true, min: 6 }">
+          <validation-provider v-slot="validationContext" name="password" :rules="{ required: true, min: 6 }">
             <b-form-group label="รหัสผ่าน" label-for="regPass">
               <b-form-input
                 id="regPass"
-                v-model="form.Password"
+                v-model="form.password"
                 type="password"
                 :state="getValidationState(validationContext)"
                 placeholder="••••••••"
@@ -46,7 +98,7 @@
             </b-form-group>
           </validation-provider>
 
-          <validation-provider v-slot="validationContext" name="Confirm Password" :rules="{ required: true }">
+          <validation-provider v-slot="validationContext" name="Confirm password" :rules="{ required: true }">
             <b-form-group label="ยืนยันรหัสผ่าน" label-for="regPassConfirm">
               <b-form-input
                 id="regPassConfirm"
@@ -66,7 +118,11 @@
       </validation-observer>
 
       <div class="auth-footer text-center mt-4">
-        <p>มีบัญชีแล้ว? <b-link to="/login">เข้าสู่ระบบ</b-link></p>
+        <p>
+          มีบัญชีแล้ว? <b-link to="/login">
+            เข้าสู่ระบบ
+          </b-link>
+        </p>
       </div>
     </div>
   </div>
@@ -78,9 +134,12 @@ export default {
   data () {
     return {
       form: {
-        Username: '',
+        username: '',
+        firstName: '',
+        lastName: '',
         Email: '',
-        Password: '',
+        phoneNumber: '',
+        password: '',
         PasswordConfirm: ''
       }
     }
@@ -108,12 +167,12 @@ export default {
   padding: 20px;
 }
 .auth-card {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(18px);
   border-radius: 20px;
   padding: 40px;
   width: 100%;
-  max-width: 420px;
+  max-width: 700px;
   color: #fff;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
 }

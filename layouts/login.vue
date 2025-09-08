@@ -52,7 +52,7 @@ body{
 }
 
 .form-control {
-  font-size: 1.3rem;
+  font-size: 18px;
 }
 
 @media screen and (max-width: 600px) {
