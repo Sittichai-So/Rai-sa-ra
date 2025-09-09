@@ -35,11 +35,11 @@
           </div>
 
           <b-navbar-nav class="ml-auto">
-            <b-nav-item class="nav-item-custom join-btn" @click="joinCommunity">
-              <i class="fas fa-user-plus mr-1" />เข้าร่วม
-            </b-nav-item>
-            <b-nav-item class="nav-item-custom login-btn" @click="goLogin">
+            <b-nav-item class="nav-item-custom login-btn" @click="joinCommunity">
               <i class="fa-solid fa-right-to-bracket" /> Login
+            </b-nav-item>
+            <b-nav-item class="nav-item-custom join-btn" @click="goRegister">
+              <i class="fas fa-user-plus mr-1" />สมัครเข้าร่วมกับเรา
             </b-nav-item>
           </b-navbar-nav>
         </b-collapse>
@@ -244,7 +244,7 @@
       </b-container>
     </footer>
 
-    <b-modal
+    <!-- <b-modal
       id="join-modal"
       title="เข้าร่วมชุมชน RAI-SA-RA"
       size="lg"
@@ -262,43 +262,53 @@
           กรอกข้อมูลเพื่อเข้าร่วมชุมชนที่เจ๋งที่สุด
         </p>
 
-        <b-form class="join-form" @submit.prevent="handleJoin">
-          <b-form-group label="ชื่อผู้ใช้" label-for="username">
-            <b-form-input
-              id="username"
-              v-model="joinForm.username"
-              required
-              placeholder="กรอกชื่อผู้ใช้"
-            />
-          </b-form-group>
-          <b-form-group label="อีเมล" label-for="email">
-            <b-form-input
-              id="email"
-              v-model="joinForm.email"
-              type="email"
-              required
-              placeholder="กรอกอีเมล"
-            />
-          </b-form-group>
-          <b-form-group class="text-center">
-            <b-form-checkbox v-model="joinForm.agree" class="custom-checkbox">
-              <span style="font-size: 19px;">ยอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัว<span /></span>
-            </b-form-checkbox>
-          </b-form-group>
-          <div style="display: flex;justify-content: center;">
-            <b-button
-              type="submit"
-              variant="light"
-              size="lg"
-              :disabled="!canJoin"
-              class="join-btn mt-3"
-            >
-              🚀 เข้าร่วมเลย!
+        <validation-observer ref="observer" v-slot="{ handleSubmit }">
+          <b-form @submit.stop.prevent="handleSubmit(onLogin)">
+            <validation-provider v-slot="validationContext" name="username" :rules="{ required: true }">
+              <b-form-group label="ชื่อผู้ใช้งาน" label-for="txtUser">
+                <b-form-input
+                  id="txtUser"
+                  v-model="form.username"
+                  :state="getValidationState(validationContext)"
+                  placeholder="กรอกชื่อผู้ใช้งาน"
+                />
+                <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+              </b-form-group>
+            </validation-provider>
+
+            <validation-provider v-slot="validationContext" name="password" :rules="{ required: true }">
+              <b-form-group label="รหัสผ่าน" label-for="txtPass">
+                <b-form-input
+                  id="txtPass"
+                  v-model="form.password"
+                  type="password"
+                  :state="getValidationState(validationContext)"
+                  placeholder="••••••••"
+                />
+                <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
+              </b-form-group>
+            </validation-provider>
+
+            <b-button type="submit" block variant="light" size="lg" class="submit-btn mt-3">
+              เข้าสู่ระบบ
             </b-button>
-          </div>
-        </b-form>
+          </b-form>
+        </validation-observer>
+
+        <div class="auth-footer text-center mt-4">
+          <p>
+            ยังไม่มีบัญชี? <b-link to="/register">
+              สมัครสมาชิก
+            </b-link>
+          </p>
+          <p>
+            <b-link to="/forgot-password">
+              ลืมรหัสผ่าน?
+            </b-link>
+          </p>
+        </div>
       </div>
-    </b-modal>
+    </b-modal> -->
 
     <b-modal
       id="info-modal"
@@ -389,10 +399,9 @@ export default {
       animatedStats: [0, 0, 0, 0],
       statsAnimated: false,
       chatMessageIndex: 0,
-      joinForm: {
+      form: {
         username: '',
-        email: '',
-        agree: false
+        password: ''
       },
       features: [
         {
@@ -492,24 +501,18 @@ export default {
     this.setupNavbarScroll()
   },
   methods: {
-    joinCommunity () {
-      this.$bvModal.show('join-modal')
+    getValidationState ({ dirty, validated, valid = null }) {
+      return dirty || validated ? valid : null
     },
-    goLogin () {
+    joinCommunity () {
+      // this.$bvModal.show('join-modal')
       this.$router.push('/login')
+    },
+    goRegister () {
+      this.$router.push('/register')
     },
     learnMore () {
       this.$bvModal.show('info-modal')
-    },
-    handleJoin () {
-      this.$bvModal.hide('join-modal')
-      this.$bvToast.toast('ยินดีต้อนรับสู่ชุมชน RAI-SA-RA! 🎉', {
-        title: 'เข้าร่วมสำเร็จ',
-        variant: 'success',
-        solid: true,
-        autoHideDelay: 3000
-      })
-      this.joinForm = { username: '', email: '', agree: false }
     },
     setupScrollAnimation () {
       const observer = new IntersectionObserver((entries) => {
@@ -592,9 +595,16 @@ export default {
 </script>
 
 <style>
-/* * {
-  font-family: 'Kanit', sans-serif;
-} */
+.submit-btn {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+  border: none;
+  color: #333;
+  font-weight: 600;
+}
+.submit-btn:hover {
+  background: linear-gradient(135deg, #ffdde1, #ee9ca7);
+}
 .custom-navbar {
   background: rgba(44, 62, 80, 0.95) !important;
   backdrop-filter: blur(10px);

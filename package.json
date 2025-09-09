@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
+    "@mdi/font": "^7.4.47",
     "@nuxtjs/axios": "^5.13.6",
     "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.21.2",

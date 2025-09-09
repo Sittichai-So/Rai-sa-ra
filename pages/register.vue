@@ -206,20 +206,19 @@
 
           <div class="form-section">
             <validation-provider v-slot="validationContext" name="acceptTerms" :rules="{ required: { allowFalse: false } }">
-              <b-form-group>
-                <b-form-checkbox
-                  id="acceptTerms"
-                  v-model="form.acceptTerms"
-                  :state="getValidationState(validationContext)"
-                >
-                  ฉันยอมรับ <b-link href="#" @click="showTerms">
-                    เงื่อนไขการใช้งาน
-                  </b-link> และ <b-link href="#" @click="showPrivacy">
-                    นโยบายความเป็นส่วนตัว
-                  </b-link>
-                </b-form-checkbox>
-                <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
-              </b-form-group>
+              <b-form-checkbox
+                id="acceptTerms"
+                v-model="form.acceptTerms"
+                :state="getValidationState(validationContext)"
+                style="font-size: 20px;display: flex;flex-direction: column;justify-content: center;"
+              >
+                ฉันยอมรับ <b-link href="#" @click="showTerms">
+                  เงื่อนไขการใช้งาน
+                </b-link> และ <b-link href="#" @click="showPrivacy">
+                  นโยบายความเป็นส่วนตัว
+                </b-link>
+              </b-form-checkbox>
+              <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
             </validation-provider>
           </div>
 
@@ -241,7 +240,7 @@
         </b-form>
       </validation-observer>
 
-      <div class="auth-footer text-center mt-4">
+      <div class="auth-footer text-center mt-4" style="font-size: 20px;">
         <p>
           มีบัญชีแล้ว? <b-link to="/login">
             <i class="fas fa-sign-in-alt" /> เข้าสู่ระบบ
@@ -441,6 +440,7 @@ export default {
 
 <style scoped>
 .auth-page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -449,15 +449,21 @@ export default {
   padding: 20px;
 }
 
+.auth-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(114, 113, 113, 0.35);
+  z-index: 0;
+}
+
 .auth-card {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(18px);
+  background: rgba(20, 20, 30, 0.6);
+  backdrop-filter: blur(14px);
   border-radius: 20px;
   padding: 40px;
-  width: 100%;
-  max-width: 800px;
   color: #fff;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
 }
 
 .auth-header .title {
@@ -545,7 +551,7 @@ export default {
 .form-control {
   border-radius: 12px;
   padding: 12px 16px;
-  font-size: 16px !important;
+  font-size: 20px !important;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #333;

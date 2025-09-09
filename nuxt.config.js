@@ -34,7 +34,9 @@ export default {
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
-    '@/assets/css/fonts.css'
+    '@/assets/css/fonts.css',
+    '@mdi/font/css/materialdesignicons.css',
+    '@fortawesome/fontawesome-free/css/all.css'
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
@@ -65,7 +67,17 @@ export default {
     // auth
     API_LOGIN: environment[process.env.NODE_ENV].api + '/auth/login',
     API_REGISTER_USER: environment[process.env.NODE_ENV].api + '/auth/register',
-    API_CHECK_USERNAME: environment[process.env.NODE_ENV].api + '/auth/check-username'
+    API_CHECK_USERNAME: environment[process.env.NODE_ENV].api + '/auth/check-username',
+
+    // getCategories
+    API_GET_CATEGORIES_ROOM: environment[process.env.NODE_ENV].api + '/categories/getCategories',
+
+    // getCategories
+    API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom'
+  },
+
+  bootstrapVue: {
+    icons: true
   },
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
