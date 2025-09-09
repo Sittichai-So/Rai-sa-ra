@@ -63,7 +63,9 @@ export default {
   env: {
     NODE_ENV: process.env.NODE_ENV,
     // auth
-    API_LOGIN: environment[process.env.NODE_ENV].api + '/auth/login'
+    API_LOGIN: environment[process.env.NODE_ENV].api + '/auth/login',
+    API_REGISTER_USER: environment[process.env.NODE_ENV].api + '/auth/register',
+    API_CHECK_USERNAME: environment[process.env.NODE_ENV].api + '/auth/check-username'
   },
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios

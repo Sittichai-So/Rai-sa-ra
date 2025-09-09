@@ -5,8 +5,7 @@ import {
   extend
 } from 'vee-validate'
 // eslint-disable-next-line camelcase
-import { required, min, max, numeric } from 'vee-validate/dist/rules'
-// import { required, email } from 'vee-validate/dist/rules'
+import { required, min, max, numeric, email, regex, confirmed } from 'vee-validate/dist/rules'
 
 extend('required', {
   ...required,
@@ -16,6 +15,21 @@ extend('required', {
 extend('requiredselect', {
   ...required,
   message: 'กรุณาเลือก'
+})
+
+extend('email', {
+  ...email,
+  message: 'กรุณากรอกอีเมลที่ถูกต้อง'
+})
+
+extend('regex', {
+  ...regex,
+  message: 'รหัสผ่านต้องประกอบด้วย A-Z, a-z, 0-9'
+})
+
+extend('confirmed', {
+  ...confirmed,
+  message: 'รหัสผ่านไม่ตรงกัน'
 })
 
 extend('min', {
@@ -31,6 +45,17 @@ extend('max', {
 extend('numeric', {
   ...numeric,
   message: 'ระบุตัวเลขเท่านั้น'
+})
+
+extend('MobileValidate', {
+  validate (value) {
+    const MOBILEREG = /^\(?(0[689]{1}[0-9]{1})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/.test(value)
+    if (MOBILEREG) {
+      return true
+    } else {
+      return 'กรุณาระบุเบอร์โทรศัพท์มือถือให้ถูกต้อง'
+    }
+  }
 })
 
 extend('thaiID', {
