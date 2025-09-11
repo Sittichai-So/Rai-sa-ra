@@ -73,7 +73,7 @@
       <b-row>
         <b-col
           v-for="room in filteredRooms"
-          :key="room.id"
+          :key="room._id"
           cols="12"
           sm="6"
           lg="4"
@@ -84,15 +84,6 @@
             class="room-card h-100 border-0 shadow"
             body-class="d-flex flex-column"
           >
-            <b-badge
-              v-if="room.featured"
-              variant="warning"
-              class="position-absolute"
-              style="top: -8px; right: -8px; transform: rotate(15deg);"
-            >
-              {{ room.badge }}
-            </b-badge>
-
             <div
               class="online-status position-absolute rounded-circle"
               :class="room.online ? 'bg-success' : 'bg-secondary'"
@@ -117,14 +108,14 @@
             <b-row class="text-center py-2 mb-3 border-top border-bottom border-light">
               <b-col cols="4">
                 <small class="text-muted">
-                  <i class="fas fa-users" />
-                  {{ room.members }}
+                  <i class="fas fa-users mr-1" />
+                  {{ room.memberCount !== undefined ? room.memberCount : (room.members ? room.members.length : 0) }}
                 </small>
               </b-col>
               <b-col cols="4">
                 <small class="text-muted">
-                  <i class="mdi mdi-account-group mr-1" />
-                  {{ room.messages }}
+                  <i class="mdi mdi-message-text mr-1" />
+                  {{ room.messages || 0 }}
                 </small>
               </b-col>
               <b-col cols="4">
@@ -150,20 +141,30 @@
               </b-badge>
             </div>
 
-            <div class="d-flex">
+            <div class="mt-auto">
               <b-button
                 variant="warning"
                 size="sm"
-                class="flex-fill mr-2"
-                :disabled="joiningRoom === room.id"
-                @click="joinRoom(room.id)"
+                block
+                :disabled="joiningRoom === room._id || isUserInRoom(room._id)"
+                @click="joinRoom(room._id)"
               >
                 <b-spinner
-                  v-if="joiningRoom === room.id"
+                  v-if="joiningRoom === room._id"
                   small
                   class="mr-2"
                 />
-                {{ joiningRoom === room.id ? 'กำลังเข้าร่วม...' : 'เข้าร่วม' }}
+                <template v-if="joiningRoom === room._id">
+                  กำลังเข้าร่วม...
+                </template>
+                <template v-else-if="isUserInRoom(room._id)">
+                  <i class="fas fa-check mr-1" />
+                  เข้าร่วมแล้ว
+                </template>
+                <template v-else>
+                  <i class="fas fa-sign-in-alt mr-1" />
+                  เข้าร่วมห้อง
+                </template>
               </b-button>
             </div>
           </b-card>
@@ -182,11 +183,11 @@
     </b-container>
 
     <b-button
-      variant="warning"
-      class="create-fab shadow"
-      @click="$bvModal.show('create-room-modal')"
+      size="sm"
+      class="setting-btn"
+      @click="setting"
     >
-      <i class="mdi mdi-plus" style="font-size: 1.2rem;" />
+      <i class="mdi mdi-cog-outline" style="font-size: 1.2rem;color: white;" />
     </b-button>
 
     <b-button
@@ -274,6 +275,7 @@ export default {
       oginData: null,
       isLogin: false,
       token: null,
+      user: parsedUser,
       userName: parsedUser ? parsedUser.fullname : 'Guest',
       searchQuery: '',
       activeCategory: 'all',
@@ -328,6 +330,11 @@ export default {
     await this.getCategories()
     await this.getRoom()
 
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      this.user = JSON.parse(userData)
+    }
+
     this.messageInterval = setInterval(() => {
       this.rooms.forEach((room) => {
         if (Math.random() > 0.95) {
@@ -342,35 +349,15 @@ export default {
     }
   },
   methods: {
+    setting () {
+      console.log('setting naaa')
+    },
     formatNumber (num) {
       if (num >= 1000) {
         return (num / 1000).toFixed(1) + 'k'
       }
       return num.toString()
     },
-    async joinRoom (roomId) {
-      this.joiningRoom = roomId
-
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-
-        this.$bvToast.toast('เข้าร่วมห้องสำเร็จ!', {
-          title: 'สำเร็จ',
-          variant: 'success',
-          solid: true,
-          autoHideDelay: 3000
-        })
-      } catch (error) {
-        this.$bvToast.toast('เกิดข้อผิดพลาด กรุณาลองใหม่', {
-          title: 'ข้อผิดพลาด',
-          variant: 'danger',
-          solid: true
-        })
-      } finally {
-        this.joiningRoom = null
-      }
-    },
-
     async getCategories () {
       try {
         const response = await this.$axios.$get(process.env.API_GET_CATEGORIES_ROOM)
@@ -388,11 +375,86 @@ export default {
         const response = await this.$axios.$get(process.env.API_GET_ROOM)
         if (response.status === 'success') {
           this.rooms = response.result
+          console.log('Rooms loaded:', this.rooms)
         }
       } catch (err) {
         this.isLoading = false
-        console.error(err)
+        console.error('Error getting rooms:', err)
       }
+    },
+
+    async joinRoom (roomId) {
+      if (!this.user) {
+        return this.$swal({
+          icon: 'warning',
+          title: 'ยังไม่ได้ล็อกอิน',
+          text: 'กรุณาเข้าสู่ระบบก่อนเข้าร่วมห้อง'
+        })
+      }
+
+      const currentRoom = this.rooms.find(room => room._id === roomId)
+      if (currentRoom && currentRoom.members) {
+        const isAlreadyMember = currentRoom.members.some(member => member.userId === this.user._id)
+        if (isAlreadyMember) {
+          return this.$swal({
+            icon: 'info',
+            title: 'แจ้งเตือน',
+            text: 'คุณได้เข้าร่วมห้องนี้แล้ว'
+          })
+        }
+      }
+
+      this.joiningRoom = roomId
+
+      try {
+        const payload = {
+          roomId,
+          userId: this.user._id,
+          fullname: this.user.fullname,
+          avatar: this.user.avatar || ''
+        }
+
+        const result = await this.$axios.$post(process.env.API_JOIN_ROOM_USERS, payload)
+        this.currentRoom = result
+
+        const roomIndex = this.rooms.findIndex(room => room._id === roomId)
+        if (roomIndex !== -1) {
+          this.rooms[roomIndex].memberCount = result.memberCount
+          this.rooms[roomIndex].members = result.members || []
+
+          this.$set(this.rooms, roomIndex, { ...this.rooms[roomIndex] })
+        }
+
+        console.log('Room updated:', this.rooms[roomIndex])
+
+        await this.$swal({
+          icon: 'success',
+          title: 'สำเร็จ',
+          text: `เข้าร่วมห้อง ${result.name} สำเร็จ! (คนในห้อง: ${result.memberCount} คน)`,
+          timer: 2000,
+          showConfirmButton: false
+        })
+
+        await this.getRoom()
+      } catch (err) {
+        console.error('error joinRoom', err)
+        await this.$swal({
+          icon: 'error',
+          title: 'ข้อผิดพลาด',
+          text: err.response?.data?.message || 'เข้าร่วมไม่สำเร็จ กรุณาลองใหม่'
+        })
+      } finally {
+        this.joiningRoom = null
+      }
+    },
+
+    isUserInRoom (roomId) {
+      if (!this.user || !this.rooms) { return false }
+
+      const room = this.rooms.find(room => room._id === roomId)
+      if (!room || !room.members) { return false }
+
+      return room.members.some(member => member.userId === this.user._id)
     },
 
     createRoom () {
@@ -544,6 +606,24 @@ export default {
 .container-fluid {
   position: relative;
   z-index: 2;
+}
+
+.setting-btn {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50% !important;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #999999;
+}
+
+.setting-btn:hover {
+  transform: scale(1.1);
 }
 
 .logout-btn {

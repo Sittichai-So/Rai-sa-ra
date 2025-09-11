@@ -210,7 +210,7 @@
                 id="acceptTerms"
                 v-model="form.acceptTerms"
                 :state="getValidationState(validationContext)"
-                style="font-size: 20px;display: flex;flex-direction: column;justify-content: center;"
+                style="font-size: 20px;display: flex;flex-direction: column;justify-content: center; color: white;"
               >
                 ฉันยอมรับ <b-link href="#" @click="showTerms">
                   เงื่อนไขการใช้งาน

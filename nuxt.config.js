@@ -72,8 +72,9 @@ export default {
     // getCategories
     API_GET_CATEGORIES_ROOM: environment[process.env.NODE_ENV].api + '/categories/getCategories',
 
-    // getCategories
-    API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom'
+    // room
+    API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom',
+    API_JOIN_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/joinRoom'
   },
 
   bootstrapVue: {
