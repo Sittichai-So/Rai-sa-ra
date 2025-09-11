@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="community-chat-page">
     <div class="background-effects">
       <div class="floating-orb orb-1" />
@@ -70,78 +70,121 @@
         </b-col>
       </b-row>
 
-      <b-row>
-        <b-col
-          v-for="room in filteredRooms"
-          :key="room._id"
-          cols="12"
-          sm="6"
-          lg="4"
-          xl="3"
-          class="mb-4"
-        >
-          <b-card
-            class="room-card h-100 border-0 shadow"
-            body-class="d-flex flex-column"
+      <div v-if="joinedRooms.length">
+        <h5 class="text-warning mb-3">
+          ห้องที่เข้าร่วมแล้ว
+        </h5>
+        <b-row>
+          <b-col
+            v-for="room in joinedRooms"
+            :key="room._id"
+            cols="12"
+            sm="6"
+            lg="4"
+            xl="3"
+            class="mb-4"
           >
-            <div
-              class="online-status position-absolute rounded-circle"
-              :class="room.online ? 'bg-success' : 'bg-secondary'"
-              style="top: 15px; right: 15px; width: 12px; height: 12px;"
-            />
-
-            <div class="d-flex align-items-center mb-3">
-              <div
-                class="room-icon rounded d-flex align-items-center justify-content-center text-white mr-3"
-                :style="{ background: room.iconGradient, width: '50px', height: '50px' }"
-              >
-                <i :class="`mdi mdi-${room.icon}`" style="font-size: 1.5rem;" />
+            <b-card class="room-card h-100 border-0 shadow">
+              <div class="d-flex align-items-center mb-3">
+                <div
+                  class="room-icon rounded d-flex align-items-center justify-content-center text-white mr-3"
+                  :style="{ background: room.iconGradient, width: '50px', height: '50px' }"
+                >
+                  <i :class="`mdi mdi-${room.icon}`" style="font-size: 1.5rem;" />
+                </div>
+                <div>
+                  <h5 class="card-title text-warning mb-1">
+                    {{ room.name }}
+                  </h5>
+                  <small class="text-muted">{{ room.categoryName }}</small>
+                </div>
               </div>
-              <div>
-                <h5 class="card-title text-warning mb-1">
-                  {{ room.name }}
-                </h5>
-                <small class="text-muted">{{ room.categoryName }}</small>
-              </div>
-            </div>
+              <b-row class="text-center py-2 mb-3 border-top border-bottom border-light">
+                <b-col cols="4">
+                  <small class="text-muted">
+                    <i class="fas fa-users mr-1" />
+                    {{ room.memberCount !== undefined ? room.memberCount : (room.members ? room.members.length : 0) }}
+                  </small>
+                </b-col>
+                <b-col cols="4">
+                  <small class="text-muted">
+                    <i class="mdi mdi-message-text mr-1" />
+                    {{ room.messages || 0 }}
+                  </small>
+                </b-col>
+                <b-col cols="4">
+                  <small class="text-muted">
+                    <i class="mdi mdi-clock-outline mr-1" />
+                    {{ room.status }}
+                  </small>
+                </b-col>
+              </b-row>
 
-            <b-row class="text-center py-2 mb-3 border-top border-bottom border-light">
-              <b-col cols="4">
-                <small class="text-muted">
-                  <i class="fas fa-users mr-1" />
-                  {{ room.memberCount !== undefined ? room.memberCount : (room.members ? room.members.length : 0) }}
-                </small>
-              </b-col>
-              <b-col cols="4">
-                <small class="text-muted">
-                  <i class="mdi mdi-message-text mr-1" />
-                  {{ room.messages || 0 }}
-                </small>
-              </b-col>
-              <b-col cols="4">
-                <small class="text-muted">
-                  <i class="mdi mdi-clock-outline mr-1" />
-                  {{ room.status }}
-                </small>
-              </b-col>
-            </b-row>
-
-            <p class="text-muted small mb-3 flex-grow-1">
-              {{ room.description }}
-            </p>
-
-            <div class="mb-3">
-              <b-badge
-                v-for="tag in room.tags"
-                :key="tag"
-                variant="outline-secondary"
-                class="mr-1 mb-1"
+              <b-button
+                variant="success"
+                size="sm"
+                block
+                @click="$router.push(`/chat/${room._id}`)"
               >
-                {{ tag }}
-              </b-badge>
-            </div>
+                เข้าแชท
+              </b-button>
+            </b-card>
+          </b-col>
+        </b-row>
+      </div>
 
-            <div class="mt-auto">
+      <hr class="my-4">
+
+      <div>
+        <h5 class="text-warning mb-3">
+          ห้องอื่น ๆ
+        </h5>
+        <b-row>
+          <b-col
+            v-for="room in unjoinedRooms"
+            :key="room._id"
+            cols="12"
+            sm="6"
+            lg="4"
+            xl="3"
+            class="mb-4"
+          >
+            <b-card class="room-card h-100 border-0 shadow">
+              <div class="d-flex align-items-center mb-3">
+                <div
+                  class="room-icon rounded d-flex align-items-center justify-content-center text-white mr-3"
+                  :style="{ background: room.iconGradient, width: '50px', height: '50px' }"
+                >
+                  <i :class="`mdi mdi-${room.icon}`" style="font-size: 1.5rem;" />
+                </div>
+                <div>
+                  <h5 class="card-title text-warning mb-1">
+                    {{ room.name }}
+                  </h5>
+                  <small class="text-muted">{{ room.categoryName }}</small>
+                </div>
+              </div>
+              <b-row class="text-center py-2 mb-3 border-top border-bottom border-light">
+                <b-col cols="4">
+                  <small class="text-muted">
+                    <i class="fas fa-users mr-1" />
+                    {{ room.memberCount !== undefined ? room.memberCount : (room.members ? room.members.length : 0) }}
+                  </small>
+                </b-col>
+                <b-col cols="4">
+                  <small class="text-muted">
+                    <i class="mdi mdi-message-text mr-1" />
+                    {{ room.messages || 0 }}
+                  </small>
+                </b-col>
+                <b-col cols="4">
+                  <small class="text-muted">
+                    <i class="mdi mdi-clock-outline mr-1" />
+                    {{ room.status }}
+                  </small>
+                </b-col>
+              </b-row>
+
               <b-button
                 variant="warning"
                 size="sm"
@@ -149,36 +192,25 @@
                 :disabled="joiningRoom === room._id || isUserInRoom(room._id)"
                 @click="joinRoom(room._id)"
               >
-                <b-spinner
-                  v-if="joiningRoom === room._id"
-                  small
-                  class="mr-2"
-                />
                 <template v-if="joiningRoom === room._id">
-                  กำลังเข้าร่วม...
-                </template>
-                <template v-else-if="isUserInRoom(room._id)">
-                  <i class="fas fa-check mr-1" />
-                  เข้าร่วมแล้ว
+                  <b-spinner small class="mr-2" /> กำลังเข้าร่วม...
                 </template>
                 <template v-else>
-                  <i class="fas fa-sign-in-alt mr-1" />
-                  เข้าร่วมห้อง
+                  <i class="fas fa-sign-in-alt mr-1" /> เข้าร่วมห้อง
                 </template>
               </b-button>
-            </div>
-          </b-card>
-        </b-col>
-      </b-row>
-
-      <div v-if="filteredRooms.length === 0" class="text-center py-5">
-        <i class="fas fa-search  mb-3" font-scale="3" style="color: white;" />
-        <h4 style="color: white;">
-          ไม่พบห้องแชทที่ตรงกับการค้นหา
-        </h4>
-        <p style="color: white;">
-          ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่อื่น
-        </p>
+            </b-card>
+          </b-col>
+        </b-row>
+        <div v-if="filteredRooms.length === 0" class="text-center py-5">
+          <i class="fas fa-search  mb-3" font-scale="3" style="color: white;" />
+          <h4 style="color: white;">
+            ไม่พบห้องแชทที่ตรงกับการค้นหา
+          </h4>
+          <p style="color: white;">
+            ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่อื่น
+          </p>
+        </div>
       </div>
     </b-container>
 
@@ -263,6 +295,257 @@
       </b-form>
     </b-modal>
   </div>
+</template> -->
+<template>
+  <div class="community-chat-page d-flex" style="height: 100vh;">
+    <aside class="sidebar bg-dark text-white d-flex flex-column p-3" style="width: 220px;">
+      <h5 class="mb-3 text-warning">
+        ห้องของฉัน
+      </h5>
+
+      <div
+        v-for="room in joinedRooms"
+        :key="room._id"
+        class="joined-room d-flex align-items-center mb-2 p-2 rounded hover-bg"
+        :class="{ 'bg-secondary': activeRoomId === room._id }"
+        style="cursor: pointer;"
+        @click="goToRoom(room._id)"
+      >
+        <div
+          class="room-icon rounded d-flex align-items-center justify-content-center text-white mr-2"
+          :style="{ background: room.iconGradient, width: '32px', height: '32px', fontSize: '1rem' }"
+        >
+          <i :class="`mdi mdi-${room.icon}`" />
+        </div>
+        <span class="flex-grow-1 text-truncate">{{ room.name }}</span>
+      </div>
+    </aside>
+
+    <main class="flex-fill p-4 overflow-auto">
+      <div class="text-center mb-5">
+        <b-button
+          variant="outline-light"
+          size="sm"
+          class="logout-btn"
+          @click="logout"
+        >
+          <i class="mdi mdi-logout" /> ออกจากระบบ
+        </b-button>
+
+        <h1 class="display-4 font-weight-bold text-warning mb-3">
+          <i class="fas fa-comments" />
+          Community Chat
+        </h1>
+        <p class="lead text-white-50 mb-4">
+          เลือกห้องแชทที่ตรงกับความสนใจของคุณ
+        </p>
+
+        <div class="user-info d-inline-flex align-items-center">
+          <b-avatar
+            :text="userInitials"
+            variant="warning"
+            size="40"
+            class="mr-3"
+          />
+          <span class="text-white">สวัสดี, {{ userName }}!</span>
+        </div>
+      </div>
+
+      <b-row class="justify-content-center mb-4">
+        <b-col cols="12" md="8" lg="6">
+          <b-input-group size="lg">
+            <b-form-input
+              v-model="searchQuery"
+              placeholder="ค้นหาห้องแชท..."
+              class="search-input"
+            />
+            <b-input-group-append>
+              <b-input-group-text class="bg-transparent border-left-0">
+                <i class="mdi mdi-magnify text-white-50" />
+              </b-input-group-text>
+            </b-input-group-append>
+          </b-input-group>
+        </b-col>
+      </b-row>
+
+      <b-row class="justify-content-center mb-4">
+        <b-col cols="12">
+          <b-nav pills class="justify-content-center flex-wrap">
+            <b-nav-item
+              v-for="category in categories"
+              :key="category.key"
+              :active="activeCategory === category.key"
+              class="mx-1 mb-2"
+              @click="activeCategory = category.key"
+            >
+              <i :class="`mdi mdi-${category.icon} mr-2`" />
+              {{ category.name }}
+            </b-nav-item>
+          </b-nav>
+        </b-col>
+      </b-row>
+      <h5 class="text-warning mb-3">
+        ห้องอื่น ๆ
+      </h5>
+      <b-row>
+        <b-col
+          v-for="room in filteredUnjoinedRooms"
+          :key="room._id"
+          cols="12"
+          sm="6"
+          lg="4"
+          xl="3"
+          class="mb-4"
+        >
+          <b-card class="room-card h-100 border-0 shadow">
+            <div class="d-flex align-items-center mb-3">
+              <div
+                class="room-icon rounded d-flex align-items-center justify-content-center text-white mr-3"
+                :style="{ background: room.iconGradient, width: '50px', height: '50px' }"
+              >
+                <i :class="`mdi mdi-${room.icon}`" style="font-size: 1.5rem;" />
+              </div>
+              <div>
+                <h5 class="card-title text-warning mb-1">
+                  {{ room.name }}
+                </h5>
+                <small class="text-muted">{{ room.categoryName }}</small>
+              </div>
+            </div>
+            <b-row class="text-center py-2 mb-3 border-top border-bottom border-light">
+              <b-col cols="4">
+                <small class="text-muted">
+                  <i class="fas fa-users mr-1" />
+                  {{ room.memberCount !== undefined ? room.memberCount : (room.members ? room.members.length : 0) }}
+                </small>
+              </b-col>
+              <b-col cols="4">
+                <small class="text-muted">
+                  <i class="mdi mdi-message-text mr-1" />
+                  {{ room.messages || 0 }}
+                </small>
+              </b-col>
+              <b-col cols="4">
+                <small class="text-muted">
+                  <i class="mdi mdi-clock-outline mr-1" />
+                  {{ room.status }}
+                </small>
+              </b-col>
+            </b-row>
+            <p class="text-muted small mb-3 flex-grow-1">
+              {{ room.description }}
+            </p>
+            <div class="mb-3">
+              <b-badge
+                v-for="tag in room.tags"
+                :key="tag"
+                variant="outline-secondary"
+                class="mr-1 mb-1"
+              >
+                {{ tag }}
+              </b-badge>
+            </div>
+
+            <b-button
+              variant="warning"
+              size="sm"
+              block
+              :disabled="joiningRoom === room._id || isUserInRoom(room._id)"
+              @click="joinRoom(room._id)"
+            >
+              <template v-if="joiningRoom === room._id">
+                <b-spinner small class="mr-2" /> กำลังเข้าร่วม...
+              </template>
+              <template v-else>
+                <i class="fas fa-sign-in-alt mr-1" /> เข้าร่วมห้อง
+              </template>
+            </b-button>
+          </b-card>
+        </b-col>
+      </b-row>
+
+      <b-button
+        size="sm"
+        class="setting-btn"
+        @click="setting"
+      >
+        <i class="mdi mdi-cog-outline" style="font-size: 1.2rem;color: white;" />
+      </b-button>
+
+      <b-button
+        variant="warning"
+        class="create-fab shadow"
+        @click="$bvModal.show('create-room-modal')"
+      >
+        <i class="mdi mdi-plus" style="font-size: 1.2rem;" />
+      </b-button>
+
+      <b-modal
+        id="create-room-modal"
+        title="สร้างห้องแชทใหม่"
+        size="md"
+        centered
+        hide-footer
+      >
+        <b-form @submit.prevent="createRoom">
+          <b-form-group
+            label="ชื่อห้อง:"
+            label-for="room-name"
+            class="mb-3"
+          >
+            <b-form-input
+              id="room-name"
+              v-model="newRoom.name"
+              placeholder="ระบุชื่อห้องแชท"
+              required
+            />
+          </b-form-group>
+
+          <b-form-group
+            label="หมวดหมู่:"
+            label-for="room-category"
+            class="mb-3"
+          >
+            <b-form-select
+              id="room-category"
+              v-model="newRoom.category"
+              :options="categoryOptions"
+              required
+            />
+          </b-form-group>
+
+          <b-form-group
+            label="คำอธิบาย:"
+            label-for="room-description"
+            class="mb-4"
+          >
+            <b-form-textarea
+              id="room-description"
+              v-model="newRoom.description"
+              placeholder="อธิบายเกี่ยวกับห้องแชท"
+              rows="3"
+            />
+          </b-form-group>
+
+          <div class="d-flex justify-content-end">
+            <b-button
+              variant="secondary"
+              class="mr-2"
+              @click="$bvModal.hide('create-room-modal')"
+            >
+              ยกเลิก
+            </b-button>
+            <b-button
+              variant="warning"
+              type="submit"
+            >
+              สร้างห้อง
+            </b-button>
+          </div>
+        </b-form>
+      </b-modal>
+    </main>
+  </div>
 </template>
 
 <script>
@@ -279,6 +562,7 @@ export default {
       userName: parsedUser ? parsedUser.fullname : 'Guest',
       searchQuery: '',
       activeCategory: 'all',
+      activeRoomId: null,
       joiningRoom: null,
       newRoom: {
         name: '',
@@ -290,6 +574,12 @@ export default {
     }
   },
   computed: {
+    joinedRooms () {
+      return this.rooms.filter(room => this.isUserInRoom(room._id))
+    },
+    unjoinedRooms () {
+      return this.rooms.filter(room => !this.isUserInRoom(room._id))
+    },
     userInitials () {
       return this.userName
         .split(' ')
@@ -305,23 +595,19 @@ export default {
           text: cat.name
         }))
     },
-    filteredRooms () {
-      let filtered = this.rooms
-      if (this.activeCategory !== 'all') {
-        filtered = filtered.filter(room => room.category === this.activeCategory)
-      }
-      if (this.searchQuery.trim()) {
-        const query = this.searchQuery.toLowerCase().trim()
-        filtered = filtered.filter((room) => {
+    filteredUnjoinedRooms () {
+      return this.unjoinedRooms.filter((room) => {
+        if (this.activeCategory !== 'all' && room.category !== this.activeCategory) { return false }
+        if (this.searchQuery.trim()) {
+          const q = this.searchQuery.toLowerCase()
           return (
-            room.name.toLowerCase().includes(query) ||
-            room.description.toLowerCase().includes(query) ||
-            room.tags.some(tag => tag.toLowerCase().includes(query))
+            room.name.toLowerCase().includes(q) ||
+        room.description.toLowerCase().includes(q) ||
+        room.tags?.some(tag => tag.toLowerCase().includes(q))
           )
-        })
-      }
-
-      return filtered
+        }
+        return true
+      })
     }
   },
   async mounted () {
@@ -382,7 +668,10 @@ export default {
         console.error('Error getting rooms:', err)
       }
     },
-
+    goToRoom (roomId) {
+      this.activeRoomId = roomId
+      this.$router.push(`/chat/${roomId}`)
+    },
     async joinRoom (roomId) {
       if (!this.user) {
         return this.$swal({
@@ -426,6 +715,9 @@ export default {
         }
 
         console.log('Room updated:', this.rooms[roomIndex])
+        if (result && result.status === 'success') {
+          this.$router.push(`/chat/${roomId}`)
+        }
 
         await this.$swal({
           icon: 'success',
@@ -607,7 +899,14 @@ export default {
   position: relative;
   z-index: 2;
 }
+.sidebar {
+  border-right: 1px solid #444;
+}
 
+.hover-bg:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: 0.2s;
+}
 .setting-btn {
   position: fixed;
   bottom: 100px;

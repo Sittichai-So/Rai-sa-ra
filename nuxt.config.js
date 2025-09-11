@@ -41,6 +41,7 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    { src: '~/plugins/socket.client.js', mode: 'client' },
     { src: '~/plugins/vee-validate.js' }
   ],
 
@@ -74,7 +75,10 @@ export default {
 
     // room
     API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom',
-    API_JOIN_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/joinRoom'
+    API_JOIN_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/joinRoom',
+
+    // socket
+    SOCKET_URL: process.env.SOCKET_URL
   },
 
   bootstrapVue: {
@@ -90,7 +94,8 @@ export default {
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     transpile: [
-      'vee-validate/dist/rules'
+      'vee-validate/dist/rules',
+      'date-fns'
     ]
   }
 }
