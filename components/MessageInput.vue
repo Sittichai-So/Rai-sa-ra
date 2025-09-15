@@ -4,16 +4,11 @@
     <div v-if="replyTo" class="reply-preview">
       <div class="reply-content">
         <div class="reply-header">
-          <i class="fas fa-reply mr-1" />
+          <i class="fas fa-reply" />
           <span class="reply-to">ตอบกลับ {{ replyTo.username }}</span>
-          <b-button
-            size="sm"
-            variant="link"
-            class="reply-close"
-            @click="cancelReply"
-          >
+          <button class="reply-close" @click="cancelReply">
             <i class="fas fa-times" />
-          </b-button>
+          </button>
         </div>
         <div class="reply-message">
           {{ truncateText(replyTo.content, 50) }}
@@ -23,7 +18,7 @@
 
     <!-- File preview -->
     <div v-if="selectedFiles.length" class="file-preview">
-      <div class="file-list">
+      <div class="file-grid">
         <div
           v-for="(file, index) in selectedFiles"
           :key="index"
@@ -31,27 +26,21 @@
         >
           <div v-if="isImageFile(file)" class="image-preview">
             <img :src="getFilePreview(file)" alt="Preview">
-            <b-button
-              size="sm"
-              variant="danger"
-              class="remove-file"
-              @click="removeFile(index)"
-            >
+            <button class="remove-file" @click="removeFile(index)">
               <i class="fas fa-times" />
-            </b-button>
+            </button>
           </div>
           <div v-else class="file-info">
-            <i class="fas fa-file mr-2" />
-            <span class="file-name">{{ file.name }}</span>
-            <small class="file-size">({{ formatFileSize(file.size) }})</small>
-            <b-button
-              size="sm"
-              variant="danger"
-              class="remove-file ml-2"
-              @click="removeFile(index)"
-            >
+            <div class="file-icon">
+              <i class="fas fa-file" />
+            </div>
+            <div class="file-details">
+              <span class="file-name">{{ file.name }}</span>
+              <span class="file-size">{{ formatFileSize(file.size) }}</span>
+            </div>
+            <button class="remove-file" @click="removeFile(index)">
               <i class="fas fa-times" />
-            </b-button>
+            </button>
           </div>
         </div>
       </div>
@@ -61,15 +50,13 @@
     <div class="input-area">
       <div class="input-wrapper">
         <!-- File attachment button -->
-        <b-button
+        <button
           v-b-tooltip.top="'แนบไฟล์'"
-          variant="link"
-          size="sm"
-          class="attach-btn"
+          class="action-btn attach-btn"
           @click="$refs.fileInput.click()"
         >
           <i class="fas fa-paperclip" />
-        </b-button>
+        </button>
 
         <!-- Hidden file input -->
         <input
@@ -88,7 +75,7 @@
             v-model="messageText"
             :placeholder="placeholder"
             rows="1"
-            max-rows="5"
+            max-rows="4"
             no-resize
             class="message-input"
             @keydown="handleKeyDown"
@@ -97,28 +84,24 @@
           />
 
           <!-- Emoji button -->
-          <b-button
+          <button
             v-b-tooltip.top="'เลือก Emoji'"
-            variant="link"
-            size="sm"
-            class="emoji-btn"
+            class="action-btn emoji-btn"
             @click="toggleEmojiPicker"
           >
             <i class="fas fa-smile" />
-          </b-button>
+          </button>
         </div>
 
         <!-- Send button -->
-        <b-button
+        <button
           :disabled="!canSend"
-          variant="warning"
-          size="sm"
-          class="send-btn"
+          :class="['send-btn', { 'active': canSend }]"
           @click="sendMessage"
         >
           <i v-if="sending" class="fas fa-spinner fa-spin" />
           <i v-else class="fas fa-paper-plane" />
-        </b-button>
+        </button>
       </div>
     </div>
 
@@ -128,38 +111,6 @@
       @emoji-selected="addEmoji"
       @close="showEmojiPicker = false"
     />
-
-    <!-- Voice recording (future feature) -->
-    <div v-if="isRecording" class="recording-overlay">
-      <div class="recording-content">
-        <div class="recording-animation">
-          <div class="pulse-ring" />
-          <div class="recording-dot" />
-        </div>
-        <div class="recording-text">
-          <div>กำลังบันทึกเสียง...</div>
-          <div class="recording-time">
-            {{ recordingTime }}
-          </div>
-        </div>
-        <div class="recording-controls">
-          <b-button
-            variant="danger"
-            size="sm"
-            @click="cancelRecording"
-          >
-            ยกเลิก
-          </b-button>
-          <b-button
-            variant="success"
-            size="sm"
-            @click="stopRecording"
-          >
-            ส่ง
-          </b-button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -193,8 +144,6 @@ export default {
       selectedFiles: [],
       showEmojiPicker: false,
       sending: false,
-      isRecording: false,
-      recordingTime: '00:00',
       typingTimeout: null,
       isTyping: false
     }
@@ -220,7 +169,6 @@ export default {
   mounted () {
     this.focusInput()
   },
-
   beforeDestroy () {
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout)
@@ -437,18 +385,6 @@ export default {
 
     cancelReply () {
       this.$emit('cancel-reply')
-    },
-
-    startRecording () {
-      this.isRecording = true
-    },
-
-    stopRecording () {
-      this.isRecording = false
-    },
-
-    cancelRecording () {
-      this.isRecording = false
     }
   }
 }
@@ -457,74 +393,91 @@ export default {
 <style scoped>
 .message-input-container {
   position: relative;
-  background: white;
-  border-top: 1px solid #e9ecef;
+  background: #ffffff;
+  border-top: 1px solid #e3e8ef;
+  border-radius: 0 0 16px 16px;
 }
 
 .reply-preview {
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e3e8ef;
+  padding: 16px 20px;
 }
 
 .reply-content {
   position: relative;
   background: white;
-  border-left: 4px solid #ffc107;
-  padding: 8px 12px;
-  border-radius: 4px;
+  border-left: 4px solid #3b82f6;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .reply-header {
   display: flex;
   align-items: center;
-  font-size: 0.8rem;
-  color: #6c757d;
-  margin-bottom: 4px;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 6px;
 }
 
 .reply-to {
   font-weight: 600;
-  margin-right: auto;
+  color: #3b82f6;
+  flex: 1;
 }
 
 .reply-close {
-  padding: 0;
-  width: 20px;
-  height: 20px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.reply-close:hover {
+  background: #f1f5f9;
+  color: #ef4444;
 }
 
 .reply-message {
   font-size: 0.9rem;
-  color: #495057;
+  color: #475569;
   font-style: italic;
 }
 
 .file-preview {
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e3e8ef;
+  padding: 16px 20px;
 }
 
-.file-list {
+.file-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
 .file-item {
   position: relative;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .image-preview {
   position: relative;
   width: 80px;
   height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 .image-preview img {
@@ -533,79 +486,115 @@ export default {
   object-fit: cover;
 }
 
-.remove-file {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-}
-
 .file-info {
   display: flex;
   align-items: center;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
-  max-width: 250px;
+  padding: 12px 16px;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.file-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.file-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .file-name {
-  font-size: 0.9rem;
+  display: block;
   font-weight: 500;
-  margin-right: 4px;
+  color: #1e293b;
+  font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
 }
 
 .file-size {
-  color: #6c757d;
-  margin-right: 8px;
+  display: block;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.remove-file {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 24px;
+  height: 24px;
+  background: #ef4444;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-file:hover {
+  background: #dc2626;
+  transform: scale(1.1);
 }
 
 .input-area {
-  padding: 16px;
+  padding: 20px;
 }
 
 .input-wrapper {
   display: flex;
   align-items: flex-end;
-  background: #f8f9fa;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
   border-radius: 24px;
   padding: 8px;
-  border: 1px solid #dee2e6;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
 .input-wrapper:focus-within {
-  border-color: #ffc107;
-  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+  background: #ffffff;
 }
 
-.attach-btn {
-  color: #6c757d;
-  padding: 8px;
+.action-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 10px;
   border-radius: 50%;
-  transition: all 0.2s;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.attach-btn:hover {
-  color: #ffc107;
-  background-color: rgba(255, 193, 7, 0.1);
+.action-btn:hover {
+  background: #e2e8f0;
+  color: #3b82f6;
+  transform: scale(1.05);
 }
 
 .text-input-wrapper {
   flex: 1;
-  position: relative;
   display: flex;
   align-items: flex-end;
 }
@@ -614,153 +603,120 @@ export default {
   border: none;
   background: transparent;
   resize: none;
-  padding: 8px 12px;
-  line-height: 1.4;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  line-height: 1.5;
   max-height: 120px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .message-input:focus {
   box-shadow: none;
   border: none;
+  outline: none;
 }
 
-.emoji-btn {
-  color: #6c757d;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.emoji-btn:hover {
-  color: #ffc107;
-  background-color: rgba(255, 193, 7, 0.1);
+.message-input::placeholder {
+  color: #94a3b8;
 }
 
 .send-btn {
-  width: 36px;
-  height: 36px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 8px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.send-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
 }
 
 .send-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
-.recording-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
+.send-btn.active:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.recording-content {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  text-align: center;
-  max-width: 300px;
+.message-input::-webkit-scrollbar {
+  width: 4px;
 }
 
-.recording-animation {
-  position: relative;
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 16px;
+.message-input::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.pulse-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border: 2px solid #dc3545;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
+.message-input::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
 }
 
-.recording-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 32px;
-  height: 32px;
-  background: #dc3545;
-  border-radius: 50%;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-}
-
-.recording-text {
-  margin-bottom: 24px;
-}
-
-.recording-time {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #dc3545;
-  font-family: monospace;
-}
-
-.recording-controls {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
+.message-input::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 @media (max-width: 768px) {
   .input-area {
-    padding: 12px;
+    padding: 16px;
   }
 
-  .file-list {
-    max-width: 100%;
-    overflow-x: auto;
+  .file-grid {
+    gap: 8px;
   }
 
   .file-info {
-    max-width: 200px;
+    min-width: 160px;
+    padding: 10px 12px;
   }
 
-  .recording-content {
-    margin: 16px;
-    padding: 24px;
+  .file-name {
+    font-size: 0.85rem;
+  }
+
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+  }
+
+  .send-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+.file-item {
+  animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.file-list::-webkit-scrollbar {
-  height: 4px;
-}
-
-.file-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.file-list::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2);
-  border-radius: 2px;
+* {
+  transition: all 0.2s ease;
 }
 </style>

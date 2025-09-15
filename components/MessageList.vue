@@ -5,13 +5,11 @@
       class="message-list"
       @scroll="handleScroll"
     >
-      <!-- Loading more messages -->
       <div v-if="loadingMore" class="text-center py-3">
         <b-spinner small class="mr-2" />
         <span class="text-muted">กำลังโหลดข้อความ...</span>
       </div>
 
-      <!-- Date separator -->
       <div
         v-for="(group, date) in groupedMessages"
         :key="date"
@@ -21,7 +19,6 @@
           <small class="bg-light text-muted px-2 py-1 rounded">{{ formatDate(date) }}</small>
         </div>
 
-        <!-- Messages for this date -->
         <div
           v-for="message in group"
           :key="message._id"
@@ -31,7 +28,6 @@
           ]"
         >
           <div class="message-bubble-container">
-            <!-- Avatar for other users -->
             <b-avatar
               v-if="message.userId !== currentUserId"
               :text="getInitials(message.username)"
@@ -47,7 +43,6 @@
                 message.userId === currentUserId ? 'own' : 'other'
               ]"
             >
-              <!-- Sender name (for other users) -->
               <div
                 v-if="message.userId !== currentUserId"
                 class="sender-name"
@@ -55,14 +50,11 @@
                 {{ message.username }}
               </div>
 
-              <!-- Message content -->
               <div class="message-content">
-                <!-- Text message -->
                 <div v-if="message.type === 'text'" class="message-text">
                   {{ message.content }}
                 </div>
 
-                <!-- Image message -->
                 <div v-else-if="message.type === 'image'" class="message-image">
                   <img
                     :src="message.fileUrl"
@@ -75,7 +67,6 @@
                   </div>
                 </div>
 
-                <!-- File message -->
                 <div v-else-if="message.type === 'file'" class="message-file">
                   <div class="file-info d-flex align-items-center">
                     <i class="fas fa-file mr-2" />
@@ -97,7 +88,6 @@
                 </div>
               </div>
 
-              <!-- Message reactions -->
               <div v-if="message.reactions && message.reactions.length" class="message-reactions">
                 <b-button
                   v-for="reaction in getUniqueReactions(message.reactions)"
@@ -111,7 +101,6 @@
                 </b-button>
               </div>
 
-              <!-- Message time & status -->
               <div class="message-meta">
                 <small class="text-muted">
                   {{ formatMessageTime(message.createdAt) }}
@@ -128,7 +117,6 @@
               </div>
             </div>
 
-            <!-- Message actions -->
             <div class="message-actions">
               <b-dropdown
                 variant="link"
@@ -166,7 +154,6 @@
         </div>
       </div>
 
-      <!-- Typing indicators -->
       <div v-if="typingUsers.length" class="typing-container">
         <div class="typing-bubble">
           <div class="typing-dots">
@@ -181,7 +168,6 @@
       </div>
     </div>
 
-    <!-- Scroll to bottom button -->
     <b-button
       v-if="!isAtBottom"
       variant="warning"
@@ -195,7 +181,6 @@
       </b-badge>
     </b-button>
 
-    <!-- Image modal -->
     <b-modal
       id="image-modal"
       v-model="showImageModalFlag"
@@ -248,13 +233,42 @@ export default {
   },
   computed: {
     groupedMessages () {
+      if (!Array.isArray(this.messages)) {
+        return {}
+      }
+
       const grouped = {}
       this.messages.forEach((message) => {
-        const date = format(parseISO(message.createdAt), 'yyyy-MM-dd')
-        if (!grouped[date]) {
-          grouped[date] = []
+        try {
+          // Ensure we have a valid date string
+          let dateString = message.createdAt
+          if (!dateString) {
+            dateString = new Date().toISOString()
+          }
+
+          // Try to parse the date
+          let parsedDate
+          try {
+            parsedDate = parseISO(dateString)
+          } catch (parseError) {
+            // If parsing fails, use current date
+            parsedDate = new Date()
+          }
+
+          // Check if parsed date is valid
+          if (isNaN(parsedDate.getTime())) {
+            parsedDate = new Date()
+          }
+
+          const date = format(parsedDate, 'yyyy-MM-dd')
+          if (!grouped[date]) {
+            grouped[date] = []
+          }
+          grouped[date].push(message)
+        } catch (error) {
+          console.error('Error processing message date:', error, message)
+          // Skip this message if we can't process its date
         }
-        grouped[date].push(message)
       })
       return grouped
     }
@@ -274,44 +288,78 @@ export default {
     }
   },
   mounted () {
-    this.scrollToBottom()
+    this.$nextTick(() => {
+      setTimeout(() => {
+        this.scrollToBottom()
+      }, 100)
+    })
   },
   methods: {
     handleScroll () {
       const element = this.$refs.messageList
-      const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 100
+      if (!element) { return }
 
-      if (isAtBottom && !this.isAtBottom) {
-        this.isAtBottom = true
-        this.newMessagesCount = 0
-      } else if (!isAtBottom) {
-        this.isAtBottom = false
-      }
+      try {
+        const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 100
 
-      // Load more messages when scrolled to top
-      if (element.scrollTop === 0 && !this.loadingMore) {
-        this.$emit('load-more')
+        if (isAtBottom && !this.isAtBottom) {
+          this.isAtBottom = true
+          this.newMessagesCount = 0
+        } else if (!isAtBottom) {
+          this.isAtBottom = false
+        }
+
+        // Load more messages when scrolled to top
+        if (element.scrollTop === 0 && !this.loadingMore) {
+          this.$emit('load-more')
+        }
+      } catch (error) {
+        console.error('Error in handleScroll:', error)
       }
     },
 
     scrollToBottom () {
       this.$nextTick(() => {
-        const element = this.$refs.messageList
-        element.scrollTop = element.scrollHeight
-        this.isAtBottom = true
-        this.newMessagesCount = 0
+        try {
+          const element = this.$refs.messageList
+          if (element && typeof element.scrollHeight === 'number') {
+            element.scrollTop = element.scrollHeight
+            this.isAtBottom = true
+            this.newMessagesCount = 0
+          }
+        } catch (error) {
+          console.error('Error in scrollToBottom:', error)
+        }
       })
     },
 
     formatDate (dateString) {
-      const date = parseISO(dateString)
-      if (isToday(date)) { return 'วันนี้' }
-      if (isYesterday(date)) { return 'เมื่อวาน' }
-      return format(date, 'dd MMMM yyyy', { locale: th })
+      try {
+        const date = parseISO(dateString)
+        if (isNaN(date.getTime())) {
+          return 'วันนี้'
+        }
+
+        if (isToday(date)) { return 'วันนี้' }
+        if (isYesterday(date)) { return 'เมื่อวาน' }
+        return format(date, 'dd MMMM yyyy', { locale: th })
+      } catch (error) {
+        console.error('Error formatting date:', error)
+        return 'วันนี้'
+      }
     },
 
     formatMessageTime (dateString) {
-      return format(parseISO(dateString), 'HH:mm')
+      try {
+        const date = parseISO(dateString)
+        if (isNaN(date.getTime())) {
+          return format(new Date(), 'HH:mm')
+        }
+        return format(date, 'HH:mm')
+      } catch (error) {
+        console.error('Error formatting time:', error)
+        return format(new Date(), 'HH:mm')
+      }
     },
 
     getInitials (name) {
@@ -319,6 +367,8 @@ export default {
     },
 
     getUniqueReactions (reactions) {
+      if (!Array.isArray(reactions)) { return [] }
+
       const grouped = reactions.reduce((acc, reaction) => {
         if (!acc[reaction.emoji]) {
           acc[reaction.emoji] = { emoji: reaction.emoji, count: 0 }
@@ -358,7 +408,7 @@ export default {
     },
 
     formatFileSize (bytes) {
-      if (bytes === 0) { return '0 B' }
+      if (!bytes || bytes === 0) { return '0 B' }
       const k = 1024
       const sizes = ['B', 'KB', 'MB', 'GB']
       const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -404,10 +454,12 @@ export default {
 .message-list-container {
   position: relative;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-list {
-  height: 100%;
+  flex: 1;
   overflow-y: auto;
   padding: 16px;
   scroll-behavior: smooth;
@@ -418,79 +470,63 @@ export default {
 }
 
 .date-separator {
-  position: relative;
-  margin: 20px 0;
-}
-
-.date-separator::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e9ecef;
-  z-index: 0;
-}
-
-.date-separator small {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 1;
 }
 
-.message-wrapper {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: flex-end;
+.date-separator small {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  border: 1px solid #e9ecef;
 }
 
-.message-wrapper.own-message {
-  justify-content: flex-end;
+.message-wrapper {
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.message-wrapper:hover .message-actions {
+  opacity: 1;
 }
 
 .message-bubble-container {
   display: flex;
   align-items: flex-end;
-  max-width: 70%;
+  gap: 8px;
   position: relative;
 }
 
 .own-message .message-bubble-container {
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
 .message-avatar {
-  margin-right: 8px;
   flex-shrink: 0;
 }
 
-.own-message .message-avatar {
-  margin-right: 0;
-  margin-left: 8px;
-}
-
 .message-bubble {
-  background: white;
-  border-radius: 18px;
+  max-width: 70%;
   padding: 12px 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 18px;
   position: relative;
   word-wrap: break-word;
 }
 
 .message-bubble.own {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #007bff;
   color: white;
-  margin-right: 8px;
+  border-bottom-right-radius: 6px;
 }
 
 .message-bubble.other {
-  background: white;
-  margin-left: 8px;
+  background: #f8f9fa;
+  color: #212529;
+  border-bottom-left-radius: 6px;
 }
 
 .sender-name {
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 600;
   color: #6c757d;
   margin-bottom: 4px;
@@ -505,7 +541,8 @@ export default {
 }
 
 .message-image img {
-  max-width: 200px;
+  max-width: 250px;
+  border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -515,33 +552,34 @@ export default {
 }
 
 .image-caption {
-  font-size: 0.9rem;
-  opacity: 0.9;
+  font-size: 14px;
+  color: #6c757d;
 }
 
 .message-file {
-  min-width: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .file-info {
-  padding: 8px;
-  background: rgba(0,0,0,0.05);
-  border-radius: 8px;
+  min-width: 200px;
 }
 
 .file-name {
-  font-size: 0.9rem;
   font-weight: 500;
-  margin-bottom: 2px;
+  font-size: 14px;
 }
 
 .message-reactions {
-  margin-top: 6px;
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 4px 0;
 }
 
 .reaction-btn {
-  font-size: 0.8rem;
-  margin-right: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
   border-radius: 12px;
 }
 
@@ -549,86 +587,75 @@ export default {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  font-size: 0.7rem;
+  font-size: 11px;
 }
 
 .message-bubble.other .message-meta {
   justify-content: flex-start;
 }
 
+.message-status {
+  opacity: 0.7;
+}
+
 .message-actions {
+  position: absolute;
+  top: -10px;
+  right: 10px;
   opacity: 0;
   transition: opacity 0.2s;
 }
 
-.message-wrapper:hover .message-actions {
-  opacity: 1;
-}
-
-.message-menu {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: -30px;
-}
-
-.own-message .message-menu {
-  left: -30px;
+.own-message .message-actions {
+  left: 10px;
   right: auto;
 }
 
+.message-menu {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+
 .typing-container {
-  display: flex;
-  align-items: flex-end;
-  margin-top: 12px;
+  padding: 8px 16px;
 }
 
 .typing-bubble {
-  background: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 8px 16px;
   border-radius: 18px;
-  padding: 12px 16px;
-  margin-left: 40px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  max-width: fit-content;
 }
 
 .typing-dots {
   display: flex;
-  align-items: center;
-  margin-bottom: 4px;
+  gap: 4px;
 }
 
 .typing-dots span {
-  height: 6px;
-  width: 6px;
-  background: #6c757d;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  margin-right: 4px;
-  animation: typing 1.4s infinite ease-in-out;
+  background: #6c757d;
+  animation: typing 1.4s ease-in-out infinite both;
 }
 
-.typing-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-  margin-right: 0;
-}
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
 
 @keyframes typing {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.4;
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
   }
-  30% {
-    transform: translateY(-10px);
+  40% {
+    transform: scale(1);
     opacity: 1;
   }
-}
-
-.typing-text {
-  color: #6c757d;
-  font-size: 0.75rem;
 }
 
 .scroll-bottom-btn {
@@ -636,12 +663,14 @@ export default {
   bottom: 20px;
   right: 20px;
   border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.typing-text {
+  color: #6c757d;
+  font-style: italic;
 }
 
 .message-list::-webkit-scrollbar {
@@ -653,11 +682,11 @@ export default {
 }
 
 .message-list::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2);
+  background: #cbd5e0;
   border-radius: 3px;
 }
 
 .message-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.3);
+  background: #a0aec0;
 }
 </style>

@@ -77,6 +77,13 @@ export default {
     API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom',
     API_JOIN_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/joinRoom',
 
+    // chat
+    API_GET_ROOMID_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/messages',
+    API_SENT_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/messages',
+    API_UPDATE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
+    API_DELETE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
+    API_SEARCH_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/search',
+
     // socket
     SOCKET_URL: process.env.SOCKET_URL
   },

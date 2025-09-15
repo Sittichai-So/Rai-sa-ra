@@ -85,7 +85,7 @@ export default {
           localStorage.setItem('userData', JSON.stringify(login.result))
 
           this.$store.commit('setUserData', userData)
-          this.$router.push('/chat')
+          this.$router.push('/chat/chat')
         } else {
           await this.$swal({
             icon: 'error',

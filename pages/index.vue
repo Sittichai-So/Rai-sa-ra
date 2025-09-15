@@ -25,9 +25,6 @@
               <b-nav-item class="nav-item-custom" @click="scrollToSection('about')">
                 <i class="fa-solid fa-handshake mr-1" />เกี่ยวกับเรา
               </b-nav-item>
-              <b-nav-item class="nav-item-custom" @click="scrollToSection('testimonials')">
-                <i class="fa-solid fa-magnifying-glass mr-1" />เสียงจากชุมชน
-              </b-nav-item>
               <b-nav-item class="nav-item-custom" @click="scrollToSection('stats')">
                 <i class="fas fa-chart-bar mr-1" />สถิติ
               </b-nav-item>
