@@ -20,135 +20,131 @@
         </div>
 
         <div
-          v-for="message in group"
-          :key="message._id"
+          v-for="(message, index) in group"
+          :key="message._id || (message.createdAt + '-' + index)"
           :class="[
             'message-wrapper',
             { 'own-message': message.userId === currentUserId }
           ]"
         >
-          <div class="message-bubble-container">
+          <div class="message-bubble-container d-flex align-items-start">
             <b-avatar
               v-if="message.userId !== currentUserId"
               :text="getInitials(message.username)"
               :src="message.avatar"
               size="32"
-              class="message-avatar"
+              class="message-avatar mr-2"
               variant="secondary"
             />
 
-            <div
-              :class="[
-                'message-bubble',
-                message.userId === currentUserId ? 'own' : 'other'
-              ]"
-            >
+            <div class="message-main">
               <div
-                v-if="message.userId !== currentUserId"
-                class="sender-name"
+                :class="[
+                  'message-bubble',
+                  message.userId === currentUserId ? 'own' : 'other'
+                ]"
               >
-                {{ message.username }}
-              </div>
-
-              <div class="message-content">
-                <div v-if="message.type === 'text'" class="message-text">
-                  {{ message.content }}
+                <div v-if="message.userId !== currentUserId" class="sender-name">
+                  {{ message.username }}
                 </div>
 
-                <div v-else-if="message.type === 'image'" class="message-image">
-                  <img
-                    :src="message.fileUrl"
-                    :alt="message.content"
-                    class="img-fluid rounded"
-                    @click="showImageModal(message.fileUrl)"
-                  >
-                  <div v-if="message.content" class="image-caption mt-1">
+                <div class="message-content">
+                  <div v-if="message.type === 'text'" class="message-text">
                     {{ message.content }}
                   </div>
-                </div>
 
-                <div v-else-if="message.type === 'file'" class="message-file">
-                  <div class="file-info d-flex align-items-center">
-                    <i class="fas fa-file mr-2" />
-                    <div>
-                      <div class="file-name">
-                        {{ message.fileName }}
-                      </div>
-                      <small class="text-muted">{{ formatFileSize(message.fileSize) }}</small>
-                    </div>
-                    <b-button
-                      size="sm"
-                      variant="outline-primary"
-                      class="ml-auto"
-                      @click="downloadFile(message.fileUrl, message.fileName)"
+                  <div v-else-if="message.type === 'image'" class="message-image">
+                    <img
+                      :src="message.fileUrl"
+                      :alt="message.content"
+                      class="img-fluid rounded"
+                      @click="showImageModal(message.fileUrl)"
                     >
-                      <i class="fas fa-download" />
-                    </b-button>
+                    <div v-if="message.content" class="image-caption mt-1">
+                      {{ message.content }}
+                    </div>
+                  </div>
+
+                  <div v-else-if="message.type === 'file'" class="message-file">
+                    <div class="file-info d-flex align-items-center">
+                      <i class="fas fa-file mr-2" />
+                      <div>
+                        <div class="file-name">
+                          {{ message.fileName }}
+                        </div>
+                        <small class="text-muted">{{ formatFileSize(message.fileSize) }}</small>
+                      </div>
+                      <b-button
+                        size="sm"
+                        variant="outline-primary"
+                        class="ml-auto"
+                        @click="downloadFile(message.fileUrl, message.fileName)"
+                      >
+                        <i class="fas fa-download" />
+                      </b-button>
+                    </div>
                   </div>
                 </div>
+
+                <div v-if="message.reactions && message.reactions.length" class="message-reactions">
+                  <b-button
+                    v-for="reaction in getUniqueReactions(message.reactions)"
+                    :key="reaction.emoji"
+                    size="sm"
+                    variant="light"
+                    class="reaction-btn"
+                    @click="toggleReaction(message._id, reaction.emoji)"
+                  >
+                    {{ reaction.emoji }} {{ reaction.count }}
+                  </b-button>
+                </div>
+
+                <div class="message-meta d-flex align-items-center justify-content-between">
+                  <small class="text-muted">
+                    {{ formatMessageTime(message.createdAt) }}
+                  </small>
+                  <span v-if="message.userId === currentUserId" class="message-status ml-1">
+                    <i
+                      :class="getStatusIcon(message.status)"
+                      :title="getStatusTitle(message.status)"
+                    />
+                  </span>
+                </div>
               </div>
 
-              <div v-if="message.reactions && message.reactions.length" class="message-reactions">
-                <b-button
-                  v-for="reaction in getUniqueReactions(message.reactions)"
-                  :key="reaction.emoji"
+              <div class="message-actions ml-1">
+                <b-dropdown
+                  variant="link"
                   size="sm"
-                  variant="light"
-                  class="reaction-btn"
-                  @click="toggleReaction(message._id, reaction.emoji)"
+                  no-caret
+                  right
+                  class="message-menu"
                 >
-                  {{ reaction.emoji }} {{ reaction.count }}
-                </b-button>
+                  <template #button-content>
+                    <i class="fas fa-ellipsis-v" />
+                  </template>
+                  <b-dropdown-item @click="addReaction(message._id)">
+                    <i class="fas fa-smile mr-2" /> เพิ่มรีแอคชัน
+                  </b-dropdown-item>
+                  <b-dropdown-item @click="replyToMessage(message)">
+                    <i class="fas fa-reply mr-2" /> ตอบกลับ
+                  </b-dropdown-item>
+                  <b-dropdown-divider v-if="message.userId === currentUserId" />
+                  <b-dropdown-item
+                    v-if="message.userId === currentUserId"
+                    @click="editMessage(message)"
+                  >
+                    <i class="fas fa-edit mr-2" /> แก้ไข
+                  </b-dropdown-item>
+                  <b-dropdown-item
+                    v-if="message.userId === currentUserId"
+                    variant="danger"
+                    @click="deleteMessage(message._id)"
+                  >
+                    <i class="fas fa-trash mr-2" /> ลบ
+                  </b-dropdown-item>
+                </b-dropdown>
               </div>
-
-              <div class="message-meta">
-                <small class="text-muted">
-                  {{ formatMessageTime(message.createdAt) }}
-                </small>
-                <span
-                  v-if="message.userId === currentUserId"
-                  class="message-status ml-1"
-                >
-                  <i
-                    :class="getStatusIcon(message.status)"
-                    :title="getStatusTitle(message.status)"
-                  />
-                </span>
-              </div>
-            </div>
-
-            <div class="message-actions">
-              <b-dropdown
-                variant="link"
-                size="sm"
-                no-caret
-                right
-                class="message-menu"
-              >
-                <template #button-content>
-                  <i class="fas fa-ellipsis-v" />
-                </template>
-                <b-dropdown-item @click="addReaction(message._id)">
-                  <i class="fas fa-smile mr-2" /> เพิ่มรีแอคชัน
-                </b-dropdown-item>
-                <b-dropdown-item @click="replyToMessage(message)">
-                  <i class="fas fa-reply mr-2" /> ตอบกลับ
-                </b-dropdown-item>
-                <b-dropdown-divider v-if="message.userId === currentUserId" />
-                <b-dropdown-item
-                  v-if="message.userId === currentUserId"
-                  @click="editMessage(message)"
-                >
-                  <i class="fas fa-edit mr-2" /> แก้ไข
-                </b-dropdown-item>
-                <b-dropdown-item
-                  v-if="message.userId === currentUserId"
-                  variant="danger"
-                  @click="deleteMessage(message._id)"
-                >
-                  <i class="fas fa-trash mr-2" /> ลบ
-                </b-dropdown-item>
-              </b-dropdown>
             </div>
           </div>
         </div>
@@ -161,9 +157,9 @@
             <span />
             <span />
           </div>
-          <small class="typing-text">
+          <p class="typing-text">
             {{ getTypingText() }}
-          </small>
+          </p>
         </div>
       </div>
     </div>
@@ -240,22 +236,18 @@ export default {
       const grouped = {}
       this.messages.forEach((message) => {
         try {
-          // Ensure we have a valid date string
           let dateString = message.createdAt
           if (!dateString) {
             dateString = new Date().toISOString()
           }
 
-          // Try to parse the date
           let parsedDate
           try {
             parsedDate = parseISO(dateString)
           } catch (parseError) {
-            // If parsing fails, use current date
             parsedDate = new Date()
           }
 
-          // Check if parsed date is valid
           if (isNaN(parsedDate.getTime())) {
             parsedDate = new Date()
           }
@@ -267,7 +259,6 @@ export default {
           grouped[date].push(message)
         } catch (error) {
           console.error('Error processing message date:', error, message)
-          // Skip this message if we can't process its date
         }
       })
       return grouped
@@ -308,8 +299,6 @@ export default {
         } else if (!isAtBottom) {
           this.isAtBottom = false
         }
-
-        // Load more messages when scrolled to top
         if (element.scrollTop === 0 && !this.loadingMore) {
           this.$emit('load-more')
         }
@@ -451,6 +440,28 @@ export default {
 </script>
 
 <style scoped>
+.message-bubble-container {
+  display: flex;
+  align-items: flex-start;
+}
+
+.message-main {
+  display: flex;
+  align-items: flex-start;
+}
+
+.message-bubble {
+  position: relative;
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
 .message-list-container {
   position: relative;
   height: 100%;
@@ -490,13 +501,6 @@ export default {
   opacity: 1;
 }
 
-.message-bubble-container {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  position: relative;
-}
-
 .own-message .message-bubble-container {
   justify-content: flex-end;
 }
@@ -505,16 +509,8 @@ export default {
   flex-shrink: 0;
 }
 
-.message-bubble {
-  max-width: 70%;
-  padding: 12px 16px;
-  border-radius: 18px;
-  position: relative;
-  word-wrap: break-word;
-}
-
 .message-bubble.own {
-  background: #007bff;
+  background: #81beff;
   color: white;
   border-bottom-right-radius: 6px;
 }
@@ -587,7 +583,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .message-bubble.other .message-meta {
@@ -596,14 +592,6 @@ export default {
 
 .message-status {
   opacity: 0.7;
-}
-
-.message-actions {
-  position: absolute;
-  top: -10px;
-  right: 10px;
-  opacity: 0;
-  transition: opacity 0.2s;
 }
 
 .own-message .message-actions {
@@ -671,6 +659,7 @@ export default {
 .typing-text {
   color: #6c757d;
   font-style: italic;
+  font-size: 11px !important;
 }
 
 .message-list::-webkit-scrollbar {

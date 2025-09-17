@@ -79,24 +79,36 @@ export default {
         const login = await this.$axios.$post(process.env.API_LOGIN, this.form)
 
         if (login.status === 'success') {
-          const token = login.token
+          const token = login.result.token
           const userData = login.result
+
           localStorage.setItem('token', token)
-          localStorage.setItem('userData', JSON.stringify(login.result))
+          localStorage.setItem('userData', JSON.stringify(userData))
+
+          await this.$axios.$patch(
+            `${process.env.API_URL}/user/${userData._id}/status`,
+            { status: 'online' },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+
+          userData.status = 'online'
+          localStorage.setItem('userData', JSON.stringify(userData))
 
           this.$store.commit('setUserData', userData)
           this.$router.push('/chat/chat')
         } else {
           await this.$swal({
             icon: 'error',
-            title: 'ไม่พบข้อมูล'
+            title: 'ไม่พบข้อมูล',
+            text: login.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ'
           })
         }
       } catch (error) {
-        console.log(error)
+        const errorMessage = error.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
         await this.$swal({
           icon: 'error',
-          title: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+          title: 'เข้าสู่ระบบไม่สำเร็จ',
+          text: errorMessage
         })
       }
     }

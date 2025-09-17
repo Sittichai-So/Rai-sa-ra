@@ -42,7 +42,9 @@ export default {
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
     { src: '~/plugins/socket.client.js', mode: 'client' },
-    { src: '~/plugins/vee-validate.js' }
+    { src: '~/plugins/vee-validate.js' },
+    { src: '~/plugins/loading.js' },
+    { src: '~/plugins/initAuth.js', mode: 'client' }
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -83,6 +85,10 @@ export default {
     API_UPDATE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
     API_DELETE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
     API_SEARCH_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/search',
+    API_GET_ROOM_MEMBER: environment[process.env.NODE_ENV].api + '/chat/:roomId/members',
+
+    // users
+    API_PATCH_USER_STATUS: environment[process.env.NODE_ENV].api + '/users/:roomId/members',
 
     // socket
     SOCKET_URL: process.env.SOCKET_URL

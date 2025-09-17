@@ -253,6 +253,7 @@
 <script>
 export default {
   name: 'CommunityChat',
+  middleware: 'middlewareAuth',
   data () {
     const storedUser = localStorage.getItem('userData')
     const parsedUser = storedUser ? JSON.parse(storedUser) : null
@@ -276,6 +277,10 @@ export default {
     }
   },
   computed: {
+    userStatus () {
+      const user = JSON.parse(localStorage.getItem('userData') || '{}')
+      return user.status || 'offline'
+    },
     joinedRooms () {
       return this.rooms.filter(room => this.isUserInRoom(room._id))
     },
@@ -463,7 +468,7 @@ export default {
             path: '/chat/room',
             query: {
               id: roomId,
-              name: result.name || `ห้อง ${roomId}`,
+              name: result.name,
               category: result.category || '',
               description: result.description || '',
               memberCount: result.memberCount || 1,
@@ -563,11 +568,14 @@ export default {
         })
 
         if (result.isConfirmed) {
+          if (this.$socket && this.user?._id) {
+            this.$socket.emit('statusChanged', { userId: this.user._id, status: 'offline' })
+          }
+
           localStorage.removeItem('authPayrollToken')
-          sessionStorage.removeItem('authPayrollToken')
           localStorage.removeItem('token')
           localStorage.removeItem('userData')
-
+          localStorage.removeItem('userStatus')
           this.$router.push('/')
         }
       } catch (err) {

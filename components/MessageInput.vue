@@ -1,111 +1,42 @@
 <template>
   <div class="message-input-container">
-    <!-- Reply preview -->
     <div v-if="replyTo" class="reply-preview">
       <div class="reply-content">
-        <div class="reply-header">
-          <i class="fas fa-reply" />
-          <span class="reply-to">ตอบกลับ {{ replyTo.username }}</span>
-          <button class="reply-close" @click="cancelReply">
+        <div class="reply-header d-flex justify-content-between align-items-center">
+          <span>ตอบกลับ {{ replyTo.username }}</span>
+          <button class="reply-close btn btn-sm btn-light" @click="cancelReply">
             <i class="fas fa-times" />
           </button>
         </div>
         <div class="reply-message">
-          {{ truncateText(replyTo.content, 50) }}
+          {{ replyTo.content }}
         </div>
       </div>
     </div>
 
-    <!-- File preview -->
-    <div v-if="selectedFiles.length" class="file-preview">
-      <div class="file-grid">
-        <div
-          v-for="(file, index) in selectedFiles"
-          :key="index"
-          class="file-item"
-        >
-          <div v-if="isImageFile(file)" class="image-preview">
-            <img :src="getFilePreview(file)" alt="Preview">
-            <button class="remove-file" @click="removeFile(index)">
-              <i class="fas fa-times" />
-            </button>
-          </div>
-          <div v-else class="file-info">
-            <div class="file-icon">
-              <i class="fas fa-file" />
-            </div>
-            <div class="file-details">
-              <span class="file-name">{{ file.name }}</span>
-              <span class="file-size">{{ formatFileSize(file.size) }}</span>
-            </div>
-            <button class="remove-file" @click="removeFile(index)">
-              <i class="fas fa-times" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main input area -->
     <div class="input-area">
-      <div class="input-wrapper">
-        <!-- File attachment button -->
-        <button
-          v-b-tooltip.top="'แนบไฟล์'"
-          class="action-btn attach-btn"
-          @click="$refs.fileInput.click()"
-        >
-          <i class="fas fa-paperclip" />
-        </button>
-
-        <!-- Hidden file input -->
-        <input
-          ref="fileInput"
-          type="file"
-          multiple
-          accept="image/*,.pdf,.doc,.docx,.txt"
-          style="display: none"
-          @change="handleFileSelect"
-        >
-
-        <!-- Text input -->
-        <div class="text-input-wrapper">
-          <b-form-textarea
-            ref="messageInput"
+      <div class="input-wrapper d-flex align-items-center">
+        <div class="text-input-wrapper flex-grow-1 d-flex align-items-center position-relative">
+          <textarea
+            ref="textarea"
             v-model="messageText"
-            :placeholder="placeholder"
+            class="form-control message-input"
             rows="1"
-            max-rows="4"
-            no-resize
-            class="message-input"
-            @keydown="handleKeyDown"
-            @input="handleInput"
-            @paste="handlePaste"
+            @keydown.enter.prevent="onEnter"
           />
 
-          <!-- Emoji button -->
-          <button
-            v-b-tooltip.top="'เลือก Emoji'"
-            class="action-btn emoji-btn"
-            @click="toggleEmojiPicker"
-          >
+          <button class="action-btn emoji-btn position-absolute" style="right:5px;" @click="toggleEmojiPicker">
             <i class="fas fa-smile" />
           </button>
         </div>
 
-        <!-- Send button -->
-        <button
-          :disabled="!canSend"
-          :class="['send-btn', { 'active': canSend }]"
-          @click="sendMessage"
-        >
+        <button :disabled="!canSend" class="send-btn ml-2" @click="onEnter">
           <i v-if="sending" class="fas fa-spinner fa-spin" />
           <i v-else class="fas fa-paper-plane" />
         </button>
       </div>
     </div>
 
-    <!-- Emoji Picker -->
     <EmojiPicker
       v-if="showEmojiPicker"
       @emoji-selected="addEmoji"
@@ -115,274 +46,54 @@
 </template>
 
 <script>
+import EmojiPicker from '~/components/EmojiPicker.vue'
 export default {
-  name: 'MessageInput',
-  components: {
-    EmojiPicker: () => import('./EmojiPicker.vue')
-  },
+  components: { EmojiPicker },
   props: {
-    replyTo: {
-      type: Object,
-      default: null
-    },
-    placeholder: {
-      type: String,
-      default: 'พิมพ์ข้อความ...'
-    },
-    maxFileSize: {
-      type: Number,
-      default: 10 * 1024 * 1024
-    },
-    allowedFileTypes: {
-      type: Array,
-      default: () => ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain']
-    }
+    replyTo: Object
   },
   data () {
     return {
       messageText: '',
-      selectedFiles: [],
-      showEmojiPicker: false,
       sending: false,
-      typingTimeout: null,
-      isTyping: false
+      showEmojiPicker: false
     }
   },
   computed: {
     canSend () {
-      return !this.sending && (this.messageText.trim() || this.selectedFiles.length > 0)
+      return this.messageText.trim().length > 0
     }
-  },
-  watch: {
-    messageText (newVal, oldVal) {
-      if (newVal && !this.isTyping) {
-        this.startTyping()
-      } else if (!newVal && this.isTyping) {
-        this.stopTyping()
-      }
-
-      this.$nextTick(() => {
-        this.autoResize()
-      })
-    }
-  },
-  mounted () {
-    this.focusInput()
-  },
-  beforeDestroy () {
-    if (this.typingTimeout) {
-      clearTimeout(this.typingTimeout)
-    }
-    this.stopTyping()
-
-    this.selectedFiles.forEach((file) => {
-      if (this.isImageFile(file)) {
-        URL.revokeObjectURL(this.getFilePreview(file))
-      }
-    })
   },
   methods: {
-    focusInput () {
-      this.$nextTick(() => {
-        this.$refs.messageInput?.focus()
+    onEnter () {
+      if (!this.canSend) { return }
+      this.sending = true
+      this.$emit('send-message', {
+        content: this.messageText,
+        files: [],
+        replyTo: this.replyTo
       })
+      this.messageText = ''
+      this.sending = false
     },
-
-    autoResize () {
-      const textarea = this.$refs.messageInput?.$el
-      if (textarea) {
-        textarea.style.height = 'auto'
-        textarea.style.height = `${textarea.scrollHeight}px`
-      }
-    },
-
-    handleKeyDown (event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault()
-        this.sendMessage()
-      }
-
-      if (event.key === 'Escape') {
-        this.cancelReply()
-        this.showEmojiPicker = false
-      }
-    },
-
-    handleInput () {
-      if (this.typingTimeout) {
-        clearTimeout(this.typingTimeout)
-      }
-
-      this.typingTimeout = setTimeout(() => {
-        this.stopTyping()
-      }, 1000)
-    },
-
-    handlePaste (event) {
-      const items = event.clipboardData?.items
-      if (!items) { return }
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        if (item.type.startsWith('image/')) {
-          event.preventDefault()
-          const file = item.getAsFile()
-          if (file) {
-            this.addFile(file)
-          }
-        }
-      }
-    },
-
-    handleFileSelect (event) {
-      const files = Array.from(event.target.files)
-      files.forEach((file) => {
-        if (this.validateFile(file)) {
-          this.addFile(file)
-        }
-      })
-      event.target.value = ''
-    },
-
-    validateFile (file) {
-      if (!this.allowedFileTypes.includes(file.type)) {
-        this.$bvToast.toast('ประเภทไฟล์ไม่ได้รับอนุญาต', {
-          title: 'ข้อผิดพลาด',
-          variant: 'danger',
-          solid: true
-        })
-        return false
-      }
-
-      if (file.size > this.maxFileSize) {
-        this.$bvToast.toast(`ไฟล์ใหญ่เกินไป (สูงสุด ${this.formatFileSize(this.maxFileSize)})`, {
-          title: 'ข้อผิดพลาด',
-          variant: 'danger',
-          solid: true
-        })
-        return false
-      }
-
-      return true
-    },
-
-    addFile (file) {
-      const exists = this.selectedFiles.some(f =>
-        f.name === file.name && f.size === file.size
-      )
-      if (exists) { return }
-
-      if (this.selectedFiles.length >= 5) {
-        this.$bvToast.toast('สามารถแนบไฟล์ได้สูงสุด 5 ไฟล์', {
-          title: 'ข้อจำกัด',
-          variant: 'warning',
-          solid: true
-        })
-        return
-      }
-
-      this.selectedFiles.push(file)
-    },
-
-    removeFile (index) {
-      this.selectedFiles.splice(index, 1)
-    },
-
-    isImageFile (file) {
-      return file.type.startsWith('image/')
-    },
-
-    getFilePreview (file) {
-      if (this.isImageFile(file)) {
-        return URL.createObjectURL(file)
-      }
-      return null
-    },
-
-    formatFileSize (bytes) {
-      if (bytes === 0) { return '0 B' }
-      const k = 1024
-      const sizes = ['B', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    },
-
-    truncateText (text, maxLength) {
-      if (text.length <= maxLength) { return text }
-      return text.substring(0, maxLength) + '...'
-    },
-
     toggleEmojiPicker () {
       this.showEmojiPicker = !this.showEmojiPicker
     },
-
     addEmoji (emoji) {
-      const cursorPos = this.$refs.messageInput.$el.selectionStart
+      const textarea = this.$refs.textarea
+      const cursorPos = textarea.selectionStart
       const textBefore = this.messageText.substring(0, cursorPos)
       const textAfter = this.messageText.substring(cursorPos)
-      this.messageText = textBefore + emoji + textAfter
-
+      const val = emoji.native || emoji
+      this.messageText = textBefore + val + textAfter
       this.$nextTick(() => {
-        const newPos = cursorPos + emoji.length
-        this.$refs.messageInput.$el.setSelectionRange(newPos, newPos)
-        this.$refs.messageInput.$el.focus()
+        textarea.setSelectionRange(cursorPos + val.length, cursorPos + val.length)
+        textarea.focus()
       })
     },
-
-    startTyping () {
-      if (!this.isTyping) {
-        this.isTyping = true
-        this.$emit('typing-start')
-      }
+    focusInput () {
+      this.$refs.textarea.focus()
     },
-
-    stopTyping () {
-      if (this.isTyping) {
-        this.isTyping = false
-        this.$emit('typing-stop')
-      }
-      if (this.typingTimeout) {
-        clearTimeout(this.typingTimeout)
-        this.typingTimeout = null
-      }
-    },
-
-    async sendMessage () {
-      if (!this.canSend) { return }
-
-      this.sending = true
-      this.stopTyping()
-
-      try {
-        const messageData = {
-          content: this.messageText.trim(),
-          files: this.selectedFiles,
-          replyTo: this.replyTo?._id || null,
-          type: this.selectedFiles.length > 0 ? 'file' : 'text'
-        }
-
-        await this.$emit('send-message', messageData)
-
-        this.messageText = ''
-        this.selectedFiles = []
-        this.cancelReply()
-
-        this.$nextTick(() => {
-          this.autoResize()
-        })
-      } catch (error) {
-        console.error('Error sending message:', error)
-        this.$bvToast.toast('ไม่สามารถส่งข้อความได้', {
-          title: 'ข้อผิดพลาด',
-          variant: 'danger',
-          solid: true
-        })
-      } finally {
-        this.sending = false
-        this.focusInput()
-      }
-    },
-
     cancelReply () {
       this.$emit('cancel-reply')
     }

@@ -1,7 +1,6 @@
 <template>
   <div class="emoji-picker-container">
     <div class="emoji-picker" @click.stop>
-      <!-- Header with categories -->
       <div class="emoji-header">
         <div class="emoji-search">
           <b-form-input
@@ -24,9 +23,7 @@
         </div>
       </div>
 
-      <!-- Emoji grid -->
       <div class="emoji-grid" @scroll="handleScroll">
-        <!-- Recently used -->
         <div v-if="!searchQuery && recentEmojis.length && activeCategory === 'recent'" class="emoji-section">
           <div class="section-title">
             ใช้ล่าสุด
@@ -43,7 +40,6 @@
           </div>
         </div>
 
-        <!-- Filtered emojis -->
         <div v-if="filteredEmojis.length" class="emoji-section">
           <div v-if="searchQuery" class="section-title">
             ผลการค้นหา
@@ -60,7 +56,6 @@
             </button>
           </div>
 
-          <!-- Load more indicator -->
           <div v-if="hasMore" ref="loadMore" class="load-more">
             <div class="text-center py-2">
               <small class="text-muted">เลื่อนลงเพื่อดูเพิ่มเติม</small>
@@ -68,7 +63,6 @@
           </div>
         </div>
 
-        <!-- No results -->
         <div v-if="searchQuery && !filteredEmojis.length" class="no-results">
           <div class="text-center py-4">
             <div class="mb-2">
@@ -79,7 +73,6 @@
         </div>
       </div>
 
-      <!-- Skin tone selector (for applicable emojis) -->
       <div v-if="showSkinTones" class="skin-tone-selector">
         <div class="skin-tone-title">
           เลือกโทนสีผิว:
