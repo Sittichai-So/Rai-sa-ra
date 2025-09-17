@@ -80,11 +80,13 @@ export default {
       this.showEmojiPicker = !this.showEmojiPicker
     },
     addEmoji (emoji) {
+      console.log('👉 MessagesInput received:', emoji)
       const textarea = this.$refs.textarea
+      if (!textarea) { return }
       const cursorPos = textarea.selectionStart
       const textBefore = this.messageText.substring(0, cursorPos)
       const textAfter = this.messageText.substring(cursorPos)
-      const val = emoji.native || emoji
+      const val = typeof emoji === 'string' ? emoji : (emoji.native || '')
       this.messageText = textBefore + val + textAfter
       this.$nextTick(() => {
         textarea.setSelectionRange(cursorPos + val.length, cursorPos + val.length)

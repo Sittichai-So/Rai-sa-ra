@@ -1,6 +1,6 @@
 <template>
-  <div class="emoji-picker-container">
-    <div class="emoji-picker" @click.stop>
+  <div class="emoji-picker-container" @click.stop>
+    <div class="emoji-picker">
       <div class="emoji-header">
         <div class="emoji-search">
           <b-form-input
@@ -80,9 +80,8 @@
         <div class="skin-tone-options">
           <button
             v-for="(tone, index) in skinTones"
-            :key="index"
-            class="skin-tone-btn"
-            :class="{ active: selectedSkinTone === index }"
+            :key="tone"
+            :class="['skin-tone-btn', { active: selectedSkinTone === index }]"
             @click="selectedSkinTone = index"
           >
             {{ tone }}
@@ -205,15 +204,142 @@ export default {
           { emoji: '🥝', name: 'kiwi fruit', keywords: ['kiwi', 'กีวี่'] },
           { emoji: '🍅', name: 'tomato', keywords: ['tomato', 'มะเขือเทศ'] }
         ],
-        activity: [],
-        travel: [],
-        objects: [],
-        symbols: [],
-        flags: []
+        activity: [
+          { emoji: '⚽', name: 'soccer ball', keywords: ['football', 'ฟุตบอล', 'soccer'] },
+          { emoji: '🏀', name: 'basketball', keywords: ['basketball', 'บาส'] },
+          { emoji: '🏈', name: 'american football', keywords: ['football', 'อเมริกันฟุตบอล'] },
+          { emoji: '⚾', name: 'baseball', keywords: ['baseball', 'เบสบอล'] },
+          { emoji: '🥎', name: 'softball', keywords: ['softball', 'ซอฟท์บอล'] },
+          { emoji: '🎾', name: 'tennis', keywords: ['tennis', 'เทนนิส'] },
+          { emoji: '🏐', name: 'volleyball', keywords: ['volleyball', 'วอลเลย์บอล'] },
+          { emoji: '🏉', name: 'rugby football', keywords: ['rugby', 'รักบี้'] },
+          { emoji: '🥏', name: 'flying disc', keywords: ['frisbee', 'ฟริสบี้'] },
+          { emoji: '🎱', name: 'pool 8 ball', keywords: ['billiards', 'บิลเลียด'] },
+          { emoji: '🏓', name: 'ping pong', keywords: ['table tennis', 'ปิงปอง'] },
+          { emoji: '🏸', name: 'badminton', keywords: ['badminton', 'แบดมินตัน'] },
+          { emoji: '🎯', name: 'direct hit', keywords: ['target', 'เป้าหมาย'] },
+          { emoji: '🎮', name: 'video game', keywords: ['gaming', 'เกม'] },
+          { emoji: '🎲', name: 'game die', keywords: ['dice', 'ลูกเต๋า'] },
+          { emoji: '🎭', name: 'performing arts', keywords: ['theater', 'โรงละคร'] },
+          { emoji: '🎨', name: 'artist palette', keywords: ['art', 'ศิลปะ'] },
+          { emoji: '🎪', name: 'circus tent', keywords: ['circus', 'ละครสัตว์'] },
+          { emoji: '🎵', name: 'musical note', keywords: ['music', 'ดนตรี'] },
+          { emoji: '🎤', name: 'microphone', keywords: ['microphone', 'ไมโครโฟน'] }
+        ],
+
+        travel: [
+          { emoji: '🚗', name: 'automobile', keywords: ['car', 'รถยนต์'] },
+          { emoji: '🚕', name: 'taxi', keywords: ['taxi', 'แท็กซี่'] },
+          { emoji: '🚙', name: 'sport utility vehicle', keywords: ['suv', 'รถเอสยูวี'] },
+          { emoji: '🚌', name: 'bus', keywords: ['bus', 'รถเมล์'] },
+          { emoji: '✈️', name: 'airplane', keywords: ['plane', 'เครื่องบิน'] },
+          { emoji: '🚂', name: 'locomotive', keywords: ['train', 'รถไฟ'] },
+          { emoji: '🚢', name: 'ship', keywords: ['ship', 'เรือ'] },
+          { emoji: '⛵', name: 'sailboat', keywords: ['boat', 'เรือใบ'] },
+          { emoji: '🚤', name: 'speedboat', keywords: ['speedboat', 'เรือเร็ว'] },
+          { emoji: '🛥️', name: 'motor boat', keywords: ['motorboat', 'เรือยนต์'] },
+          { emoji: '🏔️', name: 'mountain snow capped', keywords: ['mountain', 'ภูเขา'] },
+          { emoji: '⛰️', name: 'mountain', keywords: ['mountain', 'ภูเขา'] },
+          { emoji: '🌋', name: 'volcano', keywords: ['volcano', 'ภูเขาไฟ'] },
+          { emoji: '🏕️', name: 'camping', keywords: ['camping', 'แคมป์ปิ้ง'] },
+          { emoji: '⛺', name: 'tent', keywords: ['tent', 'เต็นท์'] },
+          { emoji: '🏖️', name: 'beach with umbrella', keywords: ['beach', 'ชายหาด'] },
+          { emoji: '🏝️', name: 'desert island', keywords: ['island', 'เกาะ'] },
+          { emoji: '🏞️', name: 'national park', keywords: ['park', 'อุทยาน'] },
+          { emoji: '🏜️', name: 'desert', keywords: ['desert', 'ทะเลทราย'] },
+          { emoji: '🌊', name: 'water wave', keywords: ['wave', 'คลื่น', 'ว่ายน้ำ'] },
+          { emoji: '🏊', name: 'person swimming', keywords: ['swimming', 'ว่ายน้ำ'] },
+          { emoji: '🏊‍♂️', name: 'man swimming', keywords: ['swimming', 'ว่ายน้ำ'] },
+          { emoji: '🏊‍♀️', name: 'woman swimming', keywords: ['swimming', 'ว่ายน้ำ'] },
+          { emoji: '🏄', name: 'person surfing', keywords: ['surfing', 'เล่นเซิร์ฟ'] },
+          { emoji: '🤿', name: 'diving mask', keywords: ['diving', 'ดำน้ำ'] },
+          { emoji: '🏂', name: 'snowboarder', keywords: ['snowboard', 'สโนว์บอร์ด'] },
+          { emoji: '⛷️', name: 'skier', keywords: ['skiing', 'สกี'] },
+          { emoji: '🧗', name: 'person climbing', keywords: ['climbing', 'ปีนเขา'] },
+          { emoji: '🚵', name: 'person mountain biking', keywords: ['cycling', 'ปั่นจักรยาน'] },
+          { emoji: '🎿', name: 'skis', keywords: ['ski', 'สกี'] },
+          { emoji: '🛷', name: 'sled', keywords: ['sled', 'เลื่อนหิมะ'] }
+        ],
+
+        objects: [
+          { emoji: '💻', name: 'laptop computer', keywords: ['laptop', 'แล็ปท็อป'] },
+          { emoji: '🖥️', name: 'desktop computer', keywords: ['computer', 'คอมพิวเตอร์'] },
+          { emoji: '📱', name: 'mobile phone', keywords: ['phone', 'มือถือ'] },
+          { emoji: '☎️', name: 'telephone', keywords: ['phone', 'โทรศัพท์'] },
+          { emoji: '📞', name: 'telephone receiver', keywords: ['phone', 'หูฟัง'] },
+          { emoji: '📟', name: 'pager', keywords: ['pager', 'เพจเจอร์'] },
+          { emoji: '📠', name: 'fax machine', keywords: ['fax', 'แฟกซ์'] },
+          { emoji: '📺', name: 'television', keywords: ['tv', 'ทีวี'] },
+          { emoji: '📻', name: 'radio', keywords: ['radio', 'วิทยุ'] },
+          { emoji: '🎥', name: 'movie camera', keywords: ['camera', 'กล้องถ่ายหนัง'] },
+          { emoji: '📷', name: 'camera', keywords: ['camera', 'กล้อง'] },
+          { emoji: '📹', name: 'video camera', keywords: ['video', 'กล้องวิดีโอ'] },
+          { emoji: '💡', name: 'light bulb', keywords: ['bulb', 'หลอดไฟ'] },
+          { emoji: '🔦', name: 'flashlight', keywords: ['flashlight', 'ไฟฉาย'] },
+          { emoji: '🕯️', name: 'candle', keywords: ['candle', 'เทียน'] },
+          { emoji: '🪔', name: 'diya lamp', keywords: ['lamp', 'โคมไฟ'] },
+          { emoji: '🔌', name: 'electric plug', keywords: ['plug', 'ปลั๊ก'] },
+          { emoji: '🔋', name: 'battery', keywords: ['battery', 'แบตเตอรี่'] },
+          { emoji: '📚', name: 'books', keywords: ['books', 'หนังสือ'] },
+          { emoji: '📖', name: 'open book', keywords: ['book', 'หนังสือเปิด'] }
+        ],
+
+        symbols: [
+          { emoji: '❤️', name: 'red heart', keywords: ['love', 'รัก', 'heart'] },
+          { emoji: '💛', name: 'yellow heart', keywords: ['heart', 'หัวใจเหลือง'] },
+          { emoji: '💙', name: 'blue heart', keywords: ['heart', 'หัวใจน้ำเงิน'] },
+          { emoji: '💚', name: 'green heart', keywords: ['heart', 'หัวใจเขียว'] },
+          { emoji: '🧡', name: 'orange heart', keywords: ['heart', 'หัวใจส้ม'] },
+          { emoji: '💜', name: 'purple heart', keywords: ['heart', 'หัวใจม่วง'] },
+          { emoji: '🖤', name: 'black heart', keywords: ['heart', 'หัวใจดำ'] },
+          { emoji: '🤍', name: 'white heart', keywords: ['heart', 'หัวใจขาว'] },
+          { emoji: '🤎', name: 'brown heart', keywords: ['heart', 'หัวใจน้ำตาล'] },
+          { emoji: '💯', name: 'hundred points', keywords: ['100', '100 แต้ม'] },
+          { emoji: '✅', name: 'check mark button', keywords: ['check', 'ถูก'] },
+          { emoji: '❌', name: 'cross mark', keywords: ['x', 'ผิด'] },
+          { emoji: '⭐', name: 'star', keywords: ['star', 'ดาว'] },
+          { emoji: '🌟', name: 'glowing star', keywords: ['star', 'ดาวเปล่งแสง'] },
+          { emoji: '💫', name: 'dizzy', keywords: ['dizzy', 'เวียนหัว'] },
+          { emoji: '⚡', name: 'high voltage', keywords: ['lightning', 'ฟ้าผา'] },
+          { emoji: '🔥', name: 'fire', keywords: ['fire', 'ไฟ'] },
+          { emoji: '💥', name: 'collision', keywords: ['boom', 'ระเบิด'] },
+          { emoji: '💢', name: 'anger symbol', keywords: ['angry', 'โกรธ'] },
+          { emoji: '💦', name: 'sweat droplets', keywords: ['sweat', 'เหงื่อ'] }
+        ],
+
+        flags: [
+          { emoji: 'TH', name: 'Thailand', keywords: ['Thailand', 'ไทย'] },
+          { emoji: 'US', name: 'United States', keywords: ['USA', 'อเมริกา'] },
+          { emoji: 'GB', name: 'United Kingdom', keywords: ['UK', 'อังกฤษ'] },
+          { emoji: 'JP', name: 'Japan', keywords: ['Japan', 'ญี่ปุ่น'] },
+          { emoji: 'KR', name: 'South Korea', keywords: ['Korea', 'เกาหลี'] },
+          { emoji: 'CN', name: 'China', keywords: ['China', 'จีน'] },
+          { emoji: 'FR', name: 'France', keywords: ['France', 'ฝรั่งเศส'] },
+          { emoji: 'DE', name: 'Germany', keywords: ['Germany', 'เยอรมนี'] },
+          { emoji: 'IT', name: 'Italy', keywords: ['Italy', 'อิตาลี'] },
+          { emoji: 'ES', name: 'Spain', keywords: ['Spain', 'สเปน'] },
+          { emoji: 'BR', name: 'Brazil', keywords: ['Brazil', 'บราซิล'] },
+          { emoji: 'CA', name: 'Canada', keywords: ['Canada', 'แคนาดา'] },
+          { emoji: 'AU', name: 'Australia', keywords: ['Australia', 'ออสเตรเลีย'] },
+          { emoji: 'IN', name: 'India', keywords: ['India', 'อินเดีย'] },
+          { emoji: 'RU', name: 'Russia', keywords: ['Russia', 'รัสเซีย'] },
+          { emoji: 'SG', name: 'Singapore', keywords: ['Singapore', 'สิงคโปร์'] },
+          { emoji: 'MY', name: 'Malaysia', keywords: ['Malaysia', 'มาเลเซีย'] },
+          { emoji: 'ID', name: 'Indonesia', keywords: ['Indonesia', 'อินโดนีเซีย'] },
+          { emoji: 'PH', name: 'Philippines', keywords: ['Philippines', 'ฟิลิปปินส์'] },
+          { emoji: 'VN', name: 'Vietnam', keywords: ['Vietnam', 'เวียดนาม'] }
+        ]
       }
     }
   },
   computed: {
+    processedFlags () {
+      return this.emojis.flags.map(flag => ({
+        ...flag,
+        emoji: this.getCountryFlag(flag.emoji)
+      }))
+    },
+
     recentEmojis () {
       const recent = JSON.parse(localStorage.getItem('recent-emojis') || '[]')
       return recent.slice(0, 24)
@@ -223,6 +349,10 @@ export default {
       if (this.searchQuery) {
         return this.searchEmojis()
       }
+      if (this.activeCategory === 'flags') {
+        return this.processedFlags
+      }
+
       return this.emojis[this.activeCategory] || []
     },
 
@@ -239,67 +369,90 @@ export default {
     }
   },
   mounted () {
-    document.addEventListener('click', this.handleOutsideClick)
+    // document.addEventListener('click', this.handleOutsideClick)
   },
   beforeDestroy () {
     document.removeEventListener('click', this.handleOutsideClick)
   },
   methods: {
+    getCountryFlag (countryCode) {
+      return countryCode.toUpperCase().replace(/./g, char =>
+        String.fromCodePoint(char.charCodeAt(0) + 127397)
+      )
+    },
+
     searchEmojis () {
       const query = this.searchQuery.toLowerCase().trim()
       if (!query) { return [] }
 
-      const allEmojis = Object.values(this.emojis).flat()
+      const allEmojis = [
+        ...Object.entries(this.emojis)
+          .filter(([key]) => key !== 'flags')
+          .map(([key, emojis]) => emojis)
+          .flat(),
+        ...this.processedFlags
+      ]
+
       return allEmojis.filter((emoji) => {
         return emoji.name.toLowerCase().includes(query) ||
-               emoji.keywords.some(keyword => keyword.toLowerCase().includes(query))
+             emoji.keywords.some(keyword => keyword.toLowerCase().includes(query))
       })
     },
 
+    handleOutsideClick (event) {
+      if (this.$el.contains(event.target)) {
+        return
+      }
+      this.$emit('close')
+    },
+
     selectEmoji (emoji) {
+      console.log('👉 EmojiPicker emit:', emoji)
       this.addToRecent(emoji)
       this.$emit('emoji-selected', emoji)
     },
 
     addToRecent (emoji) {
       let recent = JSON.parse(localStorage.getItem('recent-emojis') || '[]')
-
       recent = recent.filter(e => e !== emoji)
-
       recent.unshift(emoji)
-
       recent = recent.slice(0, 24)
-
       localStorage.setItem('recent-emojis', JSON.stringify(recent))
     },
 
     handleScroll (event) {
       const { scrollTop, scrollHeight, clientHeight } = event.target
-
       if (scrollTop + clientHeight >= scrollHeight - 50 && this.hasMore) {
         this.displayLimit += this.loadIncrement
       }
-    },
-
-    handleOutsideClick () {
-      this.$emit('close')
     }
   }
 }
 </script>
 
 <style scoped>
-.emoji-picker-container {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  z-index: 1000;
-  margin-bottom: 8px;
+.input-wrapper {
+  position: relative;
+}
+.emoji-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 4px;
+}
+
+.emoji-btn {
+  font-size: 1.5rem;
+  padding: 4px;
+  aspect-ratio: 1;
 }
 
 .emoji-picker {
-  width: 320px;
-  height: 300px;
+  position: absolute;
+  top: -345px;
+  right: 0;
+  z-index: 1000;
+  width: 490px;
+  height: 320px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
@@ -365,12 +518,6 @@ export default {
   color: #6c757d;
   margin-bottom: 8px;
   padding: 0 4px;
-}
-
-.emoji-list {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
 }
 
 .emoji-btn {

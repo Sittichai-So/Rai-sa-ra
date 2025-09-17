@@ -209,12 +209,6 @@ export default {
       })
       this.replyTo = null
     },
-    addEmoji (emoji) {
-      const input = this.$refs.msgInput
-      if (input && input.addEmoji) {
-        input.addEmoji(emoji)
-      }
-    },
     setReply (message) {
       this.replyTo = message
       const input = this.$refs.msgInput
