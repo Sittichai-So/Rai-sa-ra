@@ -28,7 +28,7 @@ export default {
       { name: 'format-detection', content: 'telephone=no' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/rai.png' }
+      { rel: 'icon', type: 'image/x-icon', href: '/3.png' }
     ]
   },
 
@@ -86,6 +86,12 @@ export default {
     API_DELETE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
     API_SEARCH_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/search',
     API_GET_ROOM_MEMBER: environment[process.env.NODE_ENV].api + '/chat/:roomId/members',
+
+    // chatLog
+    API_GET_CHATLOG_ROOM_ID: environment[process.env.NODE_ENV].api + '/chatLog',
+    API_DELETE_CHATLOG_ROOM_ID: environment[process.env.NODE_ENV].api + '/chatLog',
+
+    API_GET_COUNT_ALL_CHAT_MESSAGES: environment[process.env.NODE_ENV].api + '/chatLog/counts/all',
 
     // users
     API_PATCH_USER_STATUS: environment[process.env.NODE_ENV].api + '/users/:roomId/members',

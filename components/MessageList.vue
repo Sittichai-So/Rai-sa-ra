@@ -440,6 +440,22 @@ export default {
 </script>
 
 <style scoped>
+.message-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+  position: relative;
+}
+
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  min-height: 0;
+}
+
 .message-bubble-container {
   display: flex;
   align-items: flex-start;
@@ -448,32 +464,27 @@ export default {
 .message-main {
   display: flex;
   align-items: flex-start;
+  max-width: calc(100% - 48px);
 }
 
 .message-bubble {
   position: relative;
-  max-width: 70%;
+  max-width: 100%;
   padding: 8px 12px;
   border-radius: 12px;
+  word-wrap: break-word;
 }
 
 .message-actions {
   display: flex;
   align-items: center;
   margin-left: 4px;
-}
-.message-list-container {
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  scroll-behavior: smooth;
+.message-wrapper:hover .message-actions {
+  opacity: 1;
 }
 
 .message-group {
@@ -497,12 +508,12 @@ export default {
   position: relative;
 }
 
-.message-wrapper:hover .message-actions {
-  opacity: 1;
-}
-
 .own-message .message-bubble-container {
   justify-content: flex-end;
+}
+
+.own-message .message-main {
+  flex-direction: row-reverse;
 }
 
 .message-avatar {
@@ -534,10 +545,13 @@ export default {
 
 .message-text {
   line-height: 1.4;
+  word-break: break-word;
 }
 
 .message-image img {
   max-width: 250px;
+  max-height: 200px;
+  object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s;
@@ -571,6 +585,7 @@ export default {
   display: flex;
   gap: 4px;
   margin: 8px 0 4px 0;
+  flex-wrap: wrap;
 }
 
 .reaction-btn {
@@ -583,7 +598,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .message-bubble.other .message-meta {
@@ -595,8 +610,9 @@ export default {
 }
 
 .own-message .message-actions {
-  left: 10px;
-  right: auto;
+  order: -1;
+  margin-right: 4px;
+  margin-left: 0;
 }
 
 .message-menu {
@@ -650,16 +666,21 @@ export default {
   position: absolute;
   bottom: 20px;
   right: 20px;
+  z-index: 10;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .typing-text {
   color: #6c757d;
   font-style: italic;
-  font-size: 11px !important;
+  font-size: 11px;
+  margin: 0;
 }
 
 .message-list::-webkit-scrollbar {
@@ -677,5 +698,19 @@ export default {
 
 .message-list::-webkit-scrollbar-thumb:hover {
   background: #a0aec0;
+}
+
+@media (max-width: 768px) {
+  .message-list-container {
+    height: calc(100vh - 100px);
+  }
+
+  .message-main {
+    max-width: calc(100% - 40px);
+  }
+
+  .message-image img {
+    max-width: 200px;
+  }
 }
 </style>

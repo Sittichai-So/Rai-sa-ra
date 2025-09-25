@@ -3,7 +3,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar">
       <b-container>
         <b-navbar-brand href="#" class="navbar-brand-custom">
-          <strong style="font-size: 32px;">RAI-SA-RA</strong>
+          <b-img src="@/assets/images/2.png" fluid alt="Responsive image" width="80%" />
         </b-navbar-brand>
 
         <b-navbar-toggle target="nav-collapse" />
@@ -217,7 +217,7 @@
       <b-container>
         <b-row>
           <b-col md="6">
-            <h3>RAI-SA-RA</h3>
+            <b-img src="@/assets/images/2.png" fluid alt="Responsive image" width="100%" />
             <p>ชุมชนแชทที่ดีที่สุดสำหรับคนไทย พร้อมพูดคุยทุกเรื่องที่คุณสนใจ</p>
           </b-col>
           <b-col md="6" class="text-right">
