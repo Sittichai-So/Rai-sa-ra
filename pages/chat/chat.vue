@@ -133,6 +133,7 @@
           </div>
         </div>
         <div class="user-actions">
+          <SettingDialog />
           <button class="user-action-btn" @click="setting">
             <i class="fas fa-cog" />
           </button>
@@ -403,8 +404,11 @@
 </template>
 
 <script>
+import SettingDialog from '~/components/setting.vue'
+
 export default {
   name: 'CommunityChat',
+  components: { SettingDialog },
   middleware: 'middlewareAuth',
   data () {
     const storedUser = localStorage.getItem('userData')
@@ -528,7 +532,7 @@ export default {
 
     setting () {
       this.$swal({ icon: 'warning', title: 'setting naaa', text: 'จะไป setting หรือจ้ะ ไม่ให้หรอก' })
-      console.log('setting naaa')
+      this.$refs.DialogSettingLeaveType.open()
     },
 
     formatNumber (num) {
