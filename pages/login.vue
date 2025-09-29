@@ -79,23 +79,21 @@ export default {
         const login = await this.$axios.$post(process.env.API_LOGIN, this.form)
 
         if (login.status === 'success') {
-          const token = login.result.token
-          const userData = login.result
+          this.$Notiflix.LoadingPic()
+          setTimeout(() => {
+            this.$Notiflix.Remove()
+            const token = login.result.token
+            const userData = login.result
 
-          localStorage.setItem('token', token)
-          localStorage.setItem('userData', JSON.stringify(userData))
+            localStorage.setItem('token', token)
+            localStorage.setItem('userData', JSON.stringify(userData))
 
-          await this.$axios.$patch(
-            `${process.env.API_URL}/user/${userData._id}/status`,
-            { status: 'online' },
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
+            userData.status = 'online'
+            localStorage.setItem('userData', JSON.stringify(userData))
 
-          userData.status = 'online'
-          localStorage.setItem('userData', JSON.stringify(userData))
-
-          this.$store.commit('setUserData', userData)
-          this.$router.push('/chat/chat')
+            this.$store.commit('setUserData', userData)
+            this.$router.push('/chat/chat')
+          }, 1000)
         } else {
           await this.$swal({
             icon: 'error',

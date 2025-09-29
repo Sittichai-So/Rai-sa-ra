@@ -215,26 +215,36 @@ export default {
 
 <style scoped>
 .discord-member-list {
-  width: 240px;
-  background-color: #2f3136;
+  width: 260px;
+  background: linear-gradient(180deg, #2f3136 0%, #232428 100%);
   display: flex;
   flex-direction: column;
   height: 100%;
   color: #dcddde;
+  border-left: 1px solid #202225;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.4);
+  font-family: "Segoe UI", sans-serif;
 }
-
 .search-container {
   padding: 16px;
   border-bottom: 1px solid #40444b;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
 }
 
 .search-box {
-  background-color: #40444b;
-  border-radius: 4px;
+  background: rgba(64, 68, 75, 0.8);
+  border-radius: 8px;
   padding: 8px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.search-box:focus-within {
+  background: rgba(88, 101, 242, 0.15);
+  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.4);
 }
 
 .search-box i {
@@ -245,7 +255,7 @@ export default {
 .search-box input {
   background: none;
   border: none;
-  color: #dcddde;
+  color: #fff;
   outline: none;
   flex: 1;
   font-size: 14px;
@@ -254,238 +264,10 @@ export default {
 .search-box input::placeholder {
   color: #72767d;
 }
-
 .members-container {
   flex: 1;
   overflow-y: auto;
   padding: 0 8px;
-}
-
-.member-category {
-  margin-bottom: 16px;
-}
-
-.category-header {
-  font-size: 12px;
-  font-weight: 600;
-  color: #8e9297;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 8px 8px 4px 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.category-header:hover {
-  color: #dcddde;
-}
-
-.member-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.member-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.member-item:hover {
-  background-color: #3c4043;
-}
-
-.member-item.current-user {
-  background-color: #404eed;
-}
-
-.member-item.current-user:hover {
-  background-color: #5865f2;
-}
-
-.member-item.offline {
-  opacity: 0.3;
-}
-
-.member-item.offline:hover {
-  opacity: 1;
-}
-
-.member-avatar {
-  position: relative;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.member-avatar img,
-.avatar-placeholder {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-.avatar-placeholder {
-  background-color: #5865f2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.avatar-placeholder.offline {
-  background-color: #72767d;
-}
-
-.status-indicator {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid #2f3136;
-}
-
-.status-indicator.online {
-  background-color: #3ba55c;
-  box-shadow: 0 0 0 2px #2f3136, 0 0 4px rgba(59, 165, 92, 0.6);
-}
-
-.status-indicator.offline {
-  background-color: #747f8d;
-}
-
-.member-info {
-  flex: 1;
-  overflow: hidden;
-}
-
-.member-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #dcddde;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
-}
-
-.current-user-badge {
-  font-size: 11px;
-  color: #b9bbbe;
-  font-weight: 400;
-}
-
-.member-status-text {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.member-status-text.online {
-  color: #3ba55c;
-}
-
-.member-status-text.offline {
-  color: #747f8d;
-}
-
-.status-icon {
-  font-size: 8px;
-}
-
-.last-seen {
-  color: #72767d;
-  font-size: 11px;
-}
-
-.member-activity {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.game-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-}
-
-.activity-details {
-  flex: 1;
-  overflow: hidden;
-}
-
-.activity-name {
-  font-size: 12px;
-  color: #dcddde;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.activity-detail {
-  font-size: 11px;
-  color: #b9bbbe;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 32px 16px;
-  color: #72767d;
-}
-
-.empty-state i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.status-summary {
-  border-top: 1px solid #40444b;
-  padding: 12px 16px;
-  background-color: #36393f;
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #b9bbbe;
-  margin-bottom: 4px;
-}
-
-.summary-item:last-child {
-  margin-bottom: 0;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.status-dot.online {
-  background-color: #3ba55c;
-  box-shadow: 0 0 4px rgba(59, 165, 92, 0.6);
-}
-
-.status-dot.offline {
-  background-color: #747f8d;
 }
 
 .members-container::-webkit-scrollbar {
@@ -505,20 +287,160 @@ export default {
   background: #1e2124;
 }
 
-@keyframes pulse-online {
-  0% {
-    box-shadow: 0 0 0 0 rgba(59, 165, 92, 0.7), 0 0 0 2px #2f3136;
-  }
-  70% {
-    box-shadow: 0 0 0 4px rgba(59, 165, 92, 0), 0 0 0 2px #2f3136;
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(59, 165, 92, 0), 0 0 0 2px #2f3136;
-  }
+.category-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8e9297;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 8px 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.category-header:hover {
+  color: #fff;
+}
+
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.member-item:hover {
+  background: rgba(88, 101, 242, 0.15);
+  transform: translateX(4px);
+}
+
+.member-item.current-user {
+  background: linear-gradient(90deg, #5865f2, #4752c4);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(88, 101, 242, 0.5);
+}
+
+.member-item.offline {
+  opacity: 0.4;
+  filter: grayscale(50%);
+}
+
+.member-avatar {
+  position: relative;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.member-avatar img,
+.avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.member-item:hover .member-avatar img,
+.member-item:hover .avatar-placeholder {
+  transform: scale(1.05);
+}
+
+.avatar-placeholder {
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.avatar-placeholder.offline {
+  background: #72767d;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid #2f3136;
+  transition: all 0.2s ease;
 }
 
 .status-indicator.online {
+  background-color: #3ba55c;
   animation: pulse-online 2s infinite;
+}
+
+.status-indicator.offline {
+  background-color: #747f8d;
+}
+
+@keyframes pulse-online {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 165, 92, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(59, 165, 92, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 165, 92, 0);
+  }
+}
+.member-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.member-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.member-status-text {
+  font-size: 12px;
+  color: #b9bbbe;
+}
+
+.member-status-text.online {
+  color: #3ba55c;
+}
+
+.member-status-text.offline {
+  color: #747f8d;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 16px;
+  color: #72767d;
+  font-style: italic;
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
 }
 
 @media (max-width: 768px) {
@@ -528,13 +450,13 @@ export default {
 
   .member-avatar img,
   .avatar-placeholder {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
   }
 
   .status-indicator {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
   }
 }
 </style>

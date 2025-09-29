@@ -1,6 +1,5 @@
 <template>
   <div class="community-chat-app">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="workspace-info">
@@ -12,17 +11,13 @@
             <span class="workspace-members">{{ userName }}</span>
           </div>
         </div>
-        <button class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
-          <i class="fas fa-bars" />
-        </button>
       </div>
 
       <div class="sidebar-content">
-        <!-- My Rooms Section -->
         <div class="section">
           <div class="section-header">
-            <h6>ช่องทางของคุณ</h6>
-            <button class="add-channel-btn" @click="$bvModal.show('create-room-modal')">
+            <h6>ช่องแชทรวมของฉัน</h6>
+            <button class="add-channel-btn" @click="showCreateRoom = true">
               <i class="fas fa-plus" />
             </button>
           </div>
@@ -43,16 +38,14 @@
           </div>
         </div>
 
-        <!-- Friends Section -->
         <div class="section">
           <div class="section-header">
-            <h6>ข้อความส่วนตัว</h6>
+            <h6>เพื่อนของฉัน</h6>
             <button class="add-channel-btn" @click="showAddFriend = true">
               <i class="fas fa-user-plus" />
             </button>
           </div>
 
-          <!-- Friend Requests -->
           <div v-if="friendRequests.length > 0" class="friend-requests">
             <div
               v-for="request in friendRequests"
@@ -79,46 +72,43 @@
             </div>
           </div>
 
-          <!-- Online Friends -->
           <div class="friends-list">
             <div
               v-for="friend in onlineFriends"
-              :key="friend._id"
+              :key="friend.friendId"
               class="friend-item online"
               @click="openDirectMessage(friend)"
             >
               <div class="user-avatar">
-                <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.fullname">
+                <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.displayName">
                 <div v-else class="avatar-placeholder">
-                  {{ friend.initials }}
+                  {{ getInitials(friend.displayName) }}
                 </div>
                 <div class="status-indicator online" />
               </div>
               <div class="friend-info">
-                <span class="friend-name">{{ friend.fullname }}</span>
+                <span class="friend-name">{{ friend.displayName }}</span>
                 <span v-if="friend.lastMessage" class="last-message">{{ friend.lastMessage }}</span>
               </div>
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
               </div>
             </div>
-
-            <!-- Offline Friends -->
             <div
               v-for="friend in offlineFriends"
-              :key="friend._id"
+              :key="friend.friendId"
               class="friend-item offline"
               @click="openDirectMessage(friend)"
             >
               <div class="user-avatar">
-                <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.fullname">
+                <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.displayName">
                 <div v-else class="avatar-placeholder">
-                  {{ friend.initials }}
+                  {{ getInitials(friend.displayName) }}
                 </div>
                 <div class="status-indicator offline" />
               </div>
               <div class="friend-info">
-                <span class="friend-name">{{ friend.fullname }}</span>
+                <span class="friend-name">{{ friend.displayName }}</span>
               </div>
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
@@ -128,7 +118,6 @@
         </div>
       </div>
 
-      <!-- User Profile -->
       <div class="user-profile">
         <div class="user-info">
           <div class="user-avatar">
@@ -154,12 +143,10 @@
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
-      <!-- Header -->
       <header class="main-header">
         <div class="header-left">
-          <h1>ค้นพบชุมชน</h1>
+          <h1>ชุมชนสำหรับคุณ</h1>
           <p>เลือกช่องทางที่คุณสนใจเพื่อเริ่มการสนทนา</p>
         </div>
         <div class="header-right">
@@ -177,7 +164,18 @@
         </div>
       </header>
 
-      <!-- Categories Filter -->
+      <div class="community-hero">
+        <div class="community-content">
+          <i class="community-icon-large fas fa-comments" />
+          <h3 class="community-title">
+            Community Chat
+          </h3>
+          <p class="community-subtitle">
+            เลือกห้องแชทที่ตรงกับความสนใจของคุณและเริ่มต้นการสนทนาที่น่าสนใจ
+          </p>
+        </div>
+      </div>
+
       <div class="categories-filter">
         <div class="filter-tabs">
           <button
@@ -193,7 +191,6 @@
         </div>
       </div>
 
-      <!-- Rooms Grid -->
       <div class="rooms-container">
         <div class="rooms-grid">
           <div
@@ -268,54 +265,51 @@
       </div>
     </main>
 
-    <!-- Modals -->
     <b-modal
-      id="create-room-modal"
+      v-model="showCreateRoom"
       title="สร้างช่องทางใหม่"
       centered
       hide-footer
       body-class="create-room-modal-body"
     >
-      <form class="create-room-form" @submit.prevent="createRoom">
-        <div class="form-group">
-          <label>ชื่อช่องทาง</label>
-          <input
+      <b-form class="create-room-form" @submit.stop.prevent="createRoom">
+        <b-form-group label="ชื่อช่องทาง" label-for="roomName">
+          <b-form-input
+            id="roomName"
             v-model="newRoom.name"
             type="text"
             placeholder="ระบุชื่อช่องทาง"
-            class="form-input"
             required
-          >
-        </div>
+          />
+        </b-form-group>
 
-        <div class="form-group">
-          <label>หมวดหมู่</label>
-          <select v-model="newRoom.category" class="form-select" required>
-            <option v-for="option in categoryOptions" :key="option.value" :value="option.value">
-              {{ option.text }}
-            </option>
-          </select>
-        </div>
+        <b-form-group label="หมวดหมู่" label-for="roomCategory">
+          <b-form-select
+            id="roomCategory"
+            v-model="newRoom.category"
+            :options="categoryOptions"
+            required
+          />
+        </b-form-group>
 
-        <div class="form-group">
-          <label>คำอธิบาย</label>
-          <textarea
+        <b-form-group label="คำอธิบาย" label-for="roomDescription">
+          <b-form-textarea
+            id="roomDescription"
             v-model="newRoom.description"
             placeholder="อธิบายเกี่ยวกับช่องทางนี้"
-            class="form-textarea"
             rows="3"
           />
-        </div>
+        </b-form-group>
 
         <div class="form-actions">
-          <button type="button" class="btn-secondary" @click="$bvModal.hide('create-room-modal')">
+          <b-button variant="secondary" @click="showCreateRoom = false">
             ยกเลิก
-          </button>
-          <button type="submit" class="btn-primary">
+          </b-button>
+          <b-button type="submit" variant="primary">
             สร้างช่องทาง
-          </button>
+          </b-button>
         </div>
-      </form>
+      </b-form>
     </b-modal>
 
     <b-modal
@@ -327,16 +321,34 @@
     >
       <div class="add-friend-form">
         <div class="search-user-section">
-          <div class="search-input-wrapper">
-            <i class="fas fa-search search-icon" />
-            <input
-              v-model="userSearchQuery"
-              type="text"
-              placeholder="ค้นหาด้วยชื่อหรืออีเมล..."
-              class="search-input"
-              @input="searchUsers"
-            >
-          </div>
+          <validation-observer ref="observer" v-slot="{ handleSubmit }">
+            <b-form @submit.stop.prevent="handleSubmit(searchUsers)">
+              <validation-provider
+                v-slot="validationContext"
+                name="searchUser"
+                :rules="{ required: true }"
+              >
+                <b-form-group label="ค้นหาชื่อผู้ใช้หรืออีเมล" label-for="searchUser">
+                  <b-input-group>
+                    <b-form-input
+                      id="searchUser"
+                      v-model="userSearchQuery"
+                      :state="getValidationState(validationContext)"
+                      placeholder="ค้นหาชื่อผู้ใช้หรืออีเมล..."
+                    />
+                    <b-input-group-append>
+                      <b-button variant="primary" type="submit">
+                        <i class="fas fa-search" />
+                      </b-button>
+                    </b-input-group-append>
+                  </b-input-group>
+                  <b-form-invalid-feedback>
+                    {{ validationContext.errors[0] }}
+                  </b-form-invalid-feedback>
+                </b-form-group>
+              </validation-provider>
+            </b-form>
+          </validation-observer>
         </div>
 
         <div v-if="isSearching" class="loading-state">
@@ -360,28 +372,30 @@
               <h4>{{ searchUser.fullname }}</h4>
               <p>{{ searchUser.email }}</p>
             </div>
-            <button
+            <b-button
               class="friend-action-btn"
-              :class="getFriendButtonClass(searchUser)"
+              :variant="getFriendButtonClass(searchUser)"
               :disabled="searchUser.friendStatus === 'pending_sent' || sendingRequest === searchUser._id"
               @click="sendFriendRequest(searchUser)"
             >
               <i v-if="sendingRequest === searchUser._id" class="fas fa-spinner fa-spin" />
               <i v-else :class="getFriendButtonIcon(searchUser)" />
               {{ getFriendButtonText(searchUser) }}
-            </button>
+            </b-button>
           </div>
         </div>
 
-        <div v-else-if="userSearchQuery && !isSearching" class="empty-state">
+        <div v-else-if="userSearchQuery && !isSearching && searchResults.length === 0" class="empty-state">
           <i class="fas fa-user-slash" />
-          <p>ไม่พบผู้ใช้ที่ค้นหา</p>
+          <p style="color: black;">
+            ไม่พบผู้ใช้ที่ค้นหา
+          </p>
         </div>
 
         <div class="modal-actions">
-          <button class="btn-secondary" @click="showAddFriend = false">
+          <b-button variant="secondary" @click="closeModal">
             ปิด
-          </button>
+          </b-button>
         </div>
       </div>
     </b-modal>
@@ -406,6 +420,9 @@ export default {
       activeRoomId: null,
       joiningRoom: null,
       sidebarCollapsed: false,
+      showCreateRoom: false,
+      showAddFriend: false,
+      searchUser: '',
       newRoom: {
         name: '',
         category: 'gaming',
@@ -414,12 +431,10 @@ export default {
       categories: [],
       rooms: [],
 
-      // Friend System Properties
       friendRequests: [],
       friends: [],
       onlineFriends: [],
       offlineFriends: [],
-      showAddFriend: false,
       userSearchQuery: '',
       searchResults: [],
       isSearching: false,
@@ -473,8 +488,18 @@ export default {
     await this.getCategories()
     await this.getRoom()
 
-    // เรียก Friend System functions
     await this.loadFriends()
+
+    this.$socket.on('friendStatusUpdate', ({ friendId, status, lastSeen }) => {
+      const friend = this.friends.find(f => f.friendId === friendId)
+      if (friend) {
+        friend.status = status
+        friend.isOnline = status === 'online'
+        friend.lastActive = lastSeen
+        this.updateFriendLists()
+      }
+    })
+
     await this.loadFriendRequests()
     this.setupNotifications()
 
@@ -497,119 +522,107 @@ export default {
     }
   },
   methods: {
-    // เดิม methods...
+    getValidationState ({ dirty, validated, valid = null }) {
+      return dirty || validated ? valid : null
+    },
+
     setting () {
+      this.$swal({ icon: 'warning', title: 'setting naaa', text: 'จะไป setting หรือจ้ะ ไม่ให้หรอก' })
       console.log('setting naaa')
     },
+
     formatNumber (num) {
-      if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'k'
-      }
-      return num.toString()
+      return num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num.toString()
     },
+
     async getCategories () {
       try {
-        const response = await this.$axios.$get(process.env.API_GET_CATEGORIES_ROOM)
-        if (response.status === 'success') {
-          this.categories = response.result
-        }
+        const res = await this.$axios.$get(process.env.API_GET_CATEGORIES_ROOM)
+        if (res.status === 'success') { this.categories = res.result }
       } catch (err) {
-        this.isLoading = false
         console.error(err)
+        this.isLoading = false
       }
     },
+
     async getRoom () {
       try {
-        const response = await this.$axios.$get(process.env.API_GET_ROOM)
-        if (response.status === 'success') {
-          this.rooms = response.result
+        const res = await this.$axios.$get(process.env.API_GET_ROOM)
+        if (res.status === 'success') {
+          this.rooms = res.result
           await this.getCountMessages()
           console.log('Rooms loaded:', this.rooms)
         }
       } catch (err) {
-        this.isLoading = false
         console.error('Error getting rooms:', err)
+        this.isLoading = false
       }
     },
+
     async getCountMessages () {
       try {
         const res = await this.$axios.$get(process.env.API_GET_COUNT_ALL_CHAT_MESSAGES)
         if (res.status === 'success') {
           const counts = res.result || []
-          console.log('counts:', counts)
           this.rooms = this.rooms.map((room) => {
             const found = counts.find(c => c.roomId === room._id)
-            return {
-              ...room,
-              messageCount: found ? found.count : 0
-            }
+            return { ...room, messageCount: found ? found.count : 0 }
           })
         }
       } catch (err) {
+        console.error('Error getting counts:', err)
         this.isLoading = false
-        console.error('Error getting rooms:', err)
       }
     },
+
     goToRoom (roomId) {
       this.activeRoomId = roomId
-      const roomData = this.rooms.find(room => room._id === roomId)
-
-      if (roomData) {
-        this.$router.push({
-          path: '/chat/room',
-          query: {
-            id: roomId,
-            name: roomData.name || '',
-            category: roomData.category || '',
-            description: roomData.description || '',
-            memberCount: roomData.memberCount || 0,
-            tags: roomData.tags ? JSON.stringify(roomData.tags) : '[]',
-            status: roomData.status || 'online'
-          }
-        })
-      }
+      const roomData = this.rooms.find(r => r._id === roomId)
+      if (!roomData) { return }
+      this.$router.push({
+        path: '/chat/room',
+        query: {
+          id: roomId,
+          name: roomData.name || '',
+          category: roomData.category || '',
+          description: roomData.description || '',
+          memberCount: roomData.memberCount || 0,
+          tags: roomData.tags ? JSON.stringify(roomData.tags) : '[]',
+          status: roomData.status || 'online'
+        }
+      })
     },
+
     async joinRoom (roomId) {
       if (!this.user) {
-        return this.$swal({
-          icon: 'warning',
-          title: 'ยังไม่ได้ล็อกอิน',
-          text: 'กรุณาเข้าสู่ระบบก่อนเข้าร่วมห้อง'
-        })
+        return this.$swal({ icon: 'warning', title: 'ยังไม่ได้ล็อกอิน', text: 'กรุณาเข้าสู่ระบบก่อนเข้าร่วมห้อง' })
       }
 
-      const currentRoom = this.rooms.find(room => room._id === roomId)
-      if (currentRoom && currentRoom.members) {
-        const isAlreadyMember = currentRoom.members.some(member => member.userId === this.user._id)
-        if (isAlreadyMember) {
-          return this.$swal({
-            icon: 'info',
-            title: 'แจ้งเตือน',
-            text: 'คุณได้เข้าร่วมห้องนี้แล้ว'
-          })
-        }
+      const token = localStorage.getItem('token')
+      if (!token) { return }
+
+      const currentRoom = this.rooms.find(r => r._id === roomId)
+      if (currentRoom?.members?.some(m => m.userId === this.user._id)) {
+        return this.$swal({ icon: 'info', title: 'แจ้งเตือน', text: 'คุณได้เข้าร่วมห้องนี้แล้ว' })
       }
 
       this.joiningRoom = roomId
 
       try {
-        const payload = {
-          roomId,
-          userId: this.user._id,
-          fullname: this.user.fullname,
-          avatar: this.user.avatar || ''
-        }
+        const payload = { roomId, userId: this.user._id, fullname: this.user.fullname, avatar: this.user.avatar || '' }
+        const result = await this.$axios.$post(process.env.API_JOIN_ROOM_USERS, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
 
-        const result = await this.$axios.$post(process.env.API_JOIN_ROOM_USERS, payload)
         this.currentRoom = result
-        const roomIndex = this.rooms.findIndex(room => room._id === roomId)
+        const roomIndex = this.rooms.findIndex(r => r._id === roomId)
         if (roomIndex !== -1) {
           this.rooms[roomIndex].memberCount = result.memberCount
           this.rooms[roomIndex].members = result.members || []
           this.$set(this.rooms, roomIndex, { ...this.rooms[roomIndex] })
         }
 
-        if (result && result.status === 'success') {
+        if (result.status === 'success') {
           this.$router.push({
             path: '/chat/room',
             query: {
@@ -625,51 +638,38 @@ export default {
           })
         }
 
-        await this.$swal({
-          icon: 'success',
-          title: 'สำเร็จ',
-          text: `เข้าร่วมห้อง ${result.name} สำเร็จ! (คนในห้อง: ${result.memberCount} คน)`,
-          timer: 2000,
-          showConfirmButton: false
-        })
+        await this.$swal({ icon: 'success', title: 'สำเร็จ', text: `เข้าร่วมห้อง ${result.name} สำเร็จ!`, timer: 2000, showConfirmButton: false })
         await this.getRoom()
       } catch (err) {
         console.error('error joinRoom', err)
-        await this.$swal({
-          icon: 'error',
-          title: 'ข้อผิดพลาด',
-          text: err.response?.data?.message || 'เข้าร่วมไม่สำเร็จ กรุณาลองใหม่'
-        })
+        await this.$swal({ icon: 'error', title: 'ข้อผิดพลาด', text: err.response?.data?.message || 'เข้าร่วมไม่สำเร็จ กรุณาลองใหม่' })
       } finally {
         this.joiningRoom = null
       }
     },
+
     isUserInRoom (roomId) {
-      if (!this.user || !this.rooms) { return false }
-      const room = this.rooms.find(room => room._id === roomId)
-      if (!room || !room.members) { return false }
-      return room.members.some(member => member.userId === this.user._id)
+      const room = this.rooms?.find(r => r._id === roomId)
+      return !!room?.members?.some(m => m.userId === this.user._id)
     },
+
     createRoom () {
       if (!this.newRoom.name.trim()) {
-        this.$bvToast.toast('กรุณาระบุชื่อห้อง', {
-          title: 'ข้อผิดพลาด',
-          variant: 'danger',
-          solid: true
-        })
-        return
+        return this.$bvToast.toast('กรุณาระบุชื่อห้อง', { title: 'ข้อผิดพลาด', variant: 'danger', solid: true })
       }
+
+      const categoryObj = this.categories.find(c => c.key === this.newRoom.category) || {}
       const newRoomData = {
         id: `room-${Date.now()}`,
         name: this.newRoom.name,
         category: this.newRoom.category,
-        categoryName: this.categories.find(c => c.key === this.newRoom.category)?.name || '',
+        categoryName: categoryObj.name || '',
         description: this.newRoom.description || 'ห้องแชทใหม่',
         members: 1,
         messages: 0,
         status: 'ออนไลน์',
         tags: ['ใหม่'],
-        icon: this.categories.find(c => c.key === this.newRoom.category)?.icon || 'chat',
+        icon: categoryObj.icon || 'chat',
         iconGradient: 'linear-gradient(135deg, #ffc107, #fd7e14)',
         online: true,
         featured: false,
@@ -680,14 +680,9 @@ export default {
       this.rooms.unshift(newRoomData)
       this.newRoom = { name: '', category: 'gaming', description: '' }
       this.$bvModal.hide('create-room-modal')
-
-      this.$bvToast.toast(`สร้างห้อง "${newRoomData.name}" สำเร็จ!`, {
-        title: '🎉 สำเร็จ',
-        variant: 'success',
-        solid: true,
-        autoHideDelay: 3000
-      })
+      this.$bvToast.toast(`สร้างห้อง "${newRoomData.name}" สำเร็จ!`, { title: '🎉 สำเร็จ', variant: 'success', solid: true, autoHideDelay: 3000 })
     },
+
     initialize () {
       const storedLoginData = JSON.parse(localStorage.getItem('userData'))
       if (storedLoginData) {
@@ -695,205 +690,180 @@ export default {
         this.isLogin = true
       }
     },
+
     async logout () {
       try {
-        const result = await this.$swal({
-          title: 'ยืนยันการออกจากระบบ',
-          text: 'คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#dc3545',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: 'ออกจากระบบ',
-          cancelButtonText: 'ยกเลิก'
-        })
-
+        const result = await this.$swal({ title: 'ยืนยันการออกจากระบบ', text: 'คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d', confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก' })
         if (result.isConfirmed) {
-          if (this.$socket && this.user?._id) {
-            this.$socket.emit('statusChanged', { userId: this.user._id, status: 'offline' })
-          }
-
-          localStorage.removeItem('authPayrollToken')
-          localStorage.removeItem('token')
-          localStorage.removeItem('userData')
-          localStorage.removeItem('userStatus')
+          this.$socket?.emit('statusChanged', { userId: this.user._id, status: 'offline' });
+          ['authPayrollToken', 'token', 'userData', 'userStatus'].forEach(key => localStorage.removeItem(key))
           this.$router.push('/')
         }
       } catch (err) {
-        await this.$swal({
-          icon: 'error',
-          title: 'ไม่สามารถออกจากระบบได้',
-          text: 'เกิดข้อผิดพลาดขณะพยายามออกจากระบบ'
-        })
+        await this.$swal({ icon: 'error', title: 'ไม่สามารถออกจากระบบได้', text: 'เกิดข้อผิดพลาดขณะพยายามออกจากระบบ' })
       }
     },
+
     startSessionTimeout () {
       setTimeout(() => {
-        localStorage.removeItem('token')
-        sessionStorage.removeItem('token')
-        localStorage.removeItem('userData')
-
-        this.$swal({
-          icon: 'warning',
-          title: 'เซสชันหมดอายุ',
-          text: 'กรุณาเข้าสู่ระบบใหม่'
-        }).then(() => {
-          this.$router.push('/')
-        })
+        ['token', 'userData'].forEach((key) => { localStorage.removeItem(key); sessionStorage.removeItem(key) })
+        this.$swal({ icon: 'warning', title: 'เซสชันหมดอายุ', text: 'กรุณาเข้าสู่ระบบใหม่' }).then(() => this.$router.push('/'))
       }, 30 * 60 * 1000)
     },
 
-    loadFriends () {
-      try {
-        const mockFriends = [
-          {
-            _id: 'friend1',
-            fullname: 'สมชาย ใจดี',
-            initials: 'สช',
-            isOnline: true,
-            lastMessage: 'สวัสดีครับ',
-            unreadCount: 2,
-            lastSeen: new Date()
-          },
-          {
-            _id: 'friend2',
-            fullname: 'สมศรี สวยงาม',
-            initials: 'สส',
-            isOnline: false,
-            lastMessage: 'ไว้คุยกันนะ',
-            unreadCount: 0,
-            lastSeen: new Date(Date.now() - 3600000)
-          }
-        ]
+    getInitials (username) {
+      if (!username) { return '?' }
+      return username.substring(0, 2).toUpperCase()
+    },
 
-        this.onlineFriends = mockFriends.filter(friend => friend.isOnline)
-        this.offlineFriends = mockFriends.filter(friend => !friend.isOnline)
-        this.friends = mockFriends
+    async loadFriends () {
+      try {
+        const res = await this.$axios.get(process.env.API_GET_ALL_FRIENDSHIP_ID)
+        const friendsData = res.data.friends || []
+        const currentUserId = this.$store.state.user?._id || localStorage.getItem('userId')
+        const filteredFriends = friendsData.filter(friend => friend.friendId !== currentUserId)
+
+        this.friends = filteredFriends.map(friend => ({
+          ...friend,
+          avatar: friend.avatar ? `${process.env.API_BASE_URL}${friend.avatar}` : null,
+          isOnline: friend.isOnline || false,
+          lastMessage: friend.lastMessage || null,
+          unreadCount: friend.unreadCount || 0
+        }))
+
+        this.onlineFriends = this.friends.filter(f => f.isOnline)
+        this.offlineFriends = this.friends.filter(f => !f.isOnline)
+
+        console.log('All friends loaded:', this.friends)
       } catch (err) {
         console.error('Error loading friends:', err)
+        this.$swal({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถโหลดรายชื่อเพื่อนได้'
+        })
       }
     },
 
-    loadFriendRequests () {
+    async loadFriendRequests () {
       try {
-        const mockRequests = [
-          {
-            _id: 'req1',
-            userName: 'นายทดสอบ',
-            userInitials: 'นท',
-            requestedAt: new Date()
+        const res = await this.$axios.get(process.env.API_PENDING_FRIEND)
+        this.friendRequests = (res.data.requests || []).map((r) => {
+          const requester = r.requester
+          const displayName = requester.displayName || `${requester.firstName || ''} ${requester.lastName || ''}`.trim() || requester.username || 'Unknown'
+          return {
+            _id: r._id,
+            userName: displayName,
+            avatar: requester.avatar,
+            requestedAt: r.requestedAt
           }
-        ]
-        this.friendRequests = mockRequests
+        })
+
+        console.log('Pending friend requests:', this.friendRequests)
       } catch (err) {
-        console.error('Error loading friend requests:', err)
+        console.error('Error loading pending requests:', err)
+        this.$swal({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถโหลดคำขอเป็นเพื่อนได้'
+        })
       }
     },
-
-    searchUsers () {
+    async searchUsers () {
       if (!this.userSearchQuery.trim()) {
         this.searchResults = []
         return
       }
-
       this.isSearching = true
       try {
-        const mockUsers = [
-          {
-            _id: 'user1',
-            fullname: 'ผู้ใช้ทดสอบ 1',
-            email: 'test1@example.com',
-            initials: 'ผท',
-            friendStatus: 'none'
-          },
-          {
-            _id: 'user2',
-            fullname: 'ผู้ใช้ทดสอบ 2',
-            email: 'test2@example.com',
-            initials: 'ผท',
-            friendStatus: 'pending_sent'
-          }
-        ]
+        const { data } = await this.$axios.get(process.env.API_SEARCH_FRIEND, {
+          params: { q: this.userSearchQuery }
+        })
 
-        this.searchResults = mockUsers.filter(user =>
-          user.fullname.toLowerCase().includes(this.userSearchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(this.userSearchQuery.toLowerCase())
-        )
+        const users = data.users || []
+        this.searchResults = users.map(u => ({
+          ...u,
+          friendStatus: u.friendStatus || 'none'
+        }))
       } catch (err) {
-        console.error('Error searching users:', err)
-        this.searchResults = []
+        console.error(err)
+        this.searchResults = [] || this.searchResults === null
+        this.$swal({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถค้นหาผู้ใช้ได้'
+        })
       } finally {
         this.isSearching = false
       }
     },
 
+    resetSearch () {
+      this.isSearching = false
+      this.userSearchQuery = ''
+      this.searchResults = []
+    },
+    closeModal () {
+      this.showAddFriend = false
+      this.resetSearch()
+    },
+
     getFriendButtonClass (user) {
-      const baseClass = 'friend-action-btn'
+      const base = 'friend-action-btn'
       switch (user.friendStatus) {
-        case 'friends':
-          return `${baseClass} success`
-        case 'pending_sent':
-          return `${baseClass} secondary`
-        case 'pending_received':
-          return `${baseClass} warning`
-        default:
-          return `${baseClass} primary`
+        case 'friends': return `${base} success`
+        case 'pending_sent': return `${base} secondary`
+        case 'pending_received': return `${base} warning`
+        default: return `${base} primary`
       }
     },
 
     getFriendButtonIcon (user) {
       switch (user.friendStatus) {
-        case 'friends':
-          return 'fas fa-check'
-        case 'pending_sent':
-          return 'fas fa-clock'
-        case 'pending_received':
-          return 'fas fa-user-plus'
-        default:
-          return 'fas fa-user-plus'
+        case 'friends': return 'fas fa-check'
+        case 'pending_sent': return 'fas fa-clock'
+        case 'pending_received': return 'fas fa-user-plus'
+        default: return 'fas fa-user-plus'
       }
     },
 
     getFriendButtonText (user) {
       switch (user.friendStatus) {
-        case 'friends':
-          return 'เพื่อนแล้ว'
-        case 'pending_sent':
-          return 'ส่งคำขอแล้ว'
-        case 'pending_received':
-          return 'ตอบรับ'
-        default:
-          return 'เพิ่มเพื่อน'
+        case 'friends': return 'เพื่อนแล้ว'
+        case 'pending_sent': return 'ส่งคำขอแล้ว'
+        case 'pending_received': return 'ตอบรับ'
+        default: return 'เพิ่มเพื่อน'
       }
     },
 
     async sendFriendRequest (targetUser) {
       if (targetUser.friendStatus !== 'none') { return }
-
       this.sendingRequest = targetUser._id
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
+        await this.$axios.post(process.env.API_SEND_FRIEND, {
+          recipientId: targetUser._id
+        })
         targetUser.friendStatus = 'pending_sent'
-        this.$bvToast.toast(`ส่งคำขอเป็นเพื่อนให้ ${targetUser.fullname} แล้ว`, {
+        this.$swal({
+          icon: 'success',
           title: 'สำเร็จ',
-          variant: 'success',
-          solid: true
+          text: `ส่งคำขอเป็นเพื่อนให้ ${targetUser.displayName} แล้ว`
         })
       } catch (err) {
-        console.error('Error sending friend request:', err)
-        this.$bvToast.toast('ไม่สามารถส่งคำขอเป็นเพื่อนได้', {
-          title: 'ข้อผิดพลาด',
-          variant: 'danger',
-          solid: true
+        console.error(err)
+        this.$swal({
+          icon: 'error',
+          title: 'ล้มเหลว',
+          text: 'ไม่สามารถส่งคำขอเป็นเพื่อนได้'
         })
       } finally {
         this.sendingRequest = null
       }
     },
 
-    acceptFriend (requestId) {
+    async acceptFriend (requestId) {
       try {
+        await this.$axios.post(process.env.API_POST_ACCEPT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
         const request = this.friendRequests.find(r => r._id === requestId)
         if (request) {
           this.onlineFriends.push({
@@ -904,67 +874,81 @@ export default {
             lastMessage: '',
             unreadCount: 0
           })
-
           this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
-
-          this.$bvToast.toast(`ตอบรับคำขอเป็นเพื่อนกับ ${request.userName} แล้ว`, {
-            title: 'สำเร็จ',
-            variant: 'success',
-            solid: true
-          })
         }
-      } catch (err) {
-        console.error('Error accepting friend:', err)
-      }
-    },
-
-    rejectFriend (requestId) {
-      try {
-        this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
-
-        this.$bvToast.toast('ปฏิเสธคำขอเป็นเพื่อนแล้ว', {
-          title: 'แจ้งเตือน',
-          variant: 'info',
-          solid: true
+        this.$swal({
+          icon: 'success',
+          title: 'สำเร็จ',
+          text: `ตอบรับคำขอเป็นเพื่อนกับ ${request.userName} แล้ว`
         })
       } catch (err) {
-        console.error('Error rejecting friend:', err)
+        console.error(err)
+        this.$swal({
+          icon: 'error',
+          title: 'ล้มเหลว',
+          text: 'ไม่สามารถตอบรับคำขอเป็นเพื่อนได้'
+        })
       }
     },
 
+    async rejectFriend (requestId) {
+      try {
+        await this.$axios.post(process.env.API_POST_REJECT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
+        this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
+        this.$swal({
+          icon: 'info',
+          title: 'แจ้งเตือน',
+          text: 'ปฏิเสธคำขอเป็นเพื่อนแล้ว'
+        })
+      } catch (err) {
+        console.error(err)
+        this.$swal({
+          icon: 'error',
+          title: 'ล้มเหลว',
+          text: 'ไม่สามารถปฏิเสธคำขอได้'
+        })
+      }
+    },
+
+    async removeFriend (friendId) {
+      try {
+        await this.$axios.delete(process.env.API_DELETE_REMOVE_FRIENDSHIP_ID.replace(':friendId', friendId))
+        this.onlineFriends = this.onlineFriends.filter(f => f._id !== friendId)
+        this.offlineFriends = this.offlineFriends.filter(f => f._id !== friendId)
+        this.$swal({
+          icon: 'success',
+          title: 'สำเร็จ',
+          text: 'ลบเพื่อนสำเร็จ'
+        })
+      } catch (err) {
+        console.error(err)
+        this.$swal({
+          icon: 'error',
+          title: 'ล้มเหลว',
+          text: 'ไม่สามารถลบเพื่อนได้'
+        })
+      }
+    },
     openDirectMessage (friend) {
-      this.$router.push({
-        path: '/chat/direct',
-        query: {
-          friendId: friend._id,
-          friendName: friend.fullname,
-          isOnline: friend.isOnline
-        }
-      })
+      this.$router.push({ path: '/chat/direct', query: { friendId: friend._id, friendName: friend.fullname, isOnline: friend.isOnline } })
     },
 
     setupNotifications () {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission()
-      }
+      if (Notification.permission === 'default') { Notification.requestPermission() }
     },
 
     showNotification (title, body) {
       if (Notification.permission === 'granted') {
-        const notification = new Notification(title, {
-          body,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico'
-        })
+        const notification = new Notification(title, { body, icon: '/favicon.ico', badge: '/favicon.ico' })
         setTimeout(() => notification.close(), 5000)
       }
     }
   }
+
 }
 </script>
 
 <style scoped>
-/* Reset and base styles */
 * {
   box-sizing: border-box;
 }
@@ -972,26 +956,55 @@ export default {
 .community-chat-app {
   display: flex;
   height: 100vh;
-  background: #1a1a1a;
+  background-image: radial-gradient(circle farthest-corner at 10% 20%, rgba(117,86,204,1) 0%, rgba(213,105,167,1) 90%);
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Sidebar Styles */
+.community-chat-app::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 60% 10%, rgba(255, 255, 255, 0.05) 0%, transparent 30%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-10px, -15px) rotate(1deg); }
+  50% { transform: translate(15px, -10px) rotate(-1deg); }
+  75% { transform: translate(-5px, 10px) rotate(0.5deg); }
+}
+
 .sidebar {
   width: 280px;
-  background: #2f3136;
+  background: rgba(47, 49, 54, 0.95);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #40444b;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .sidebar-header {
   padding: 16px;
-  border-bottom: 1px solid #40444b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(114, 137, 218, 0.1));
 }
 
 .workspace-info {
@@ -1002,14 +1015,33 @@ export default {
 .workspace-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #5865f2, #7289da);
-  border-radius: 8px;
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8, #5865f2);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 12px;
   color: white;
   font-size: 18px;
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.workspace-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
 .workspace-details h4 {
@@ -1017,32 +1049,35 @@ export default {
   font-size: 16px;
   font-weight: 600;
   color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .workspace-members {
   font-size: 12px;
-  color: #b9bbbe;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .sidebar-toggle {
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #b9bbbe;
+  color: #ffffff;
   cursor: pointer;
   padding: 8px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .sidebar-toggle:hover {
-  background: #40444b;
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
 
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
   padding: 8px 0;
+  position: relative;
 }
 
 .section {
@@ -1062,24 +1097,29 @@ export default {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  color: #8e9297;
+  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   letter-spacing: 0.5px;
 }
 
 .add-channel-btn {
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 3px;
+  padding: 6px;
+  border-radius: 6px;
   font-size: 12px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .add-channel-btn:hover {
-  background: #40444b;
+  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
   color: #ffffff;
+  transform: scale(1.1) rotate(90deg);
 }
 
 .channels-list,
@@ -1091,35 +1131,40 @@ export default {
 .friend-item {
   display: flex;
   align-items: center;
-  padding: 6px 8px;
-  margin-bottom: 2px;
-  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  backdrop-filter: blur(10px);
 }
 
 .channel-item:hover,
 .friend-item:hover {
-  background: #40444b;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .channel-item.active {
-  background: #5865f2;
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
   color: #ffffff;
+  box-shadow: 0 6px 20px rgba(196, 76, 216, 0.4);
 }
 
 .channel-prefix {
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
-  margin-right: 6px;
+  margin-right: 8px;
+  font-size: 16px;
 }
 
 .channel-name,
 .friend-name {
   font-size: 14px;
   flex: 1;
-  truncate: ellipsis;
+  font-weight: 500;
 }
 
 .user-avatar {
@@ -1133,16 +1178,18 @@ export default {
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .avatar-placeholder {
-  background: linear-gradient(135deg, #5865f2, #7289da);
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8, #5865f2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 12px;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .status-indicator {
@@ -1152,11 +1199,18 @@ export default {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid #2f3136;
+  border: 2px solid rgba(47, 49, 54, 0.95);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
 }
 
 .status-indicator.online {
-  background: #3ba55d;
+  background: linear-gradient(135deg, #00ff88, #00cc6a);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
 }
 
 .status-indicator.offline {
@@ -1177,8 +1231,7 @@ export default {
 
 .last-message {
   font-size: 12px;
-  color: #8e9297;
-  truncate: ellipsis;
+  color: rgba(255, 255, 255, 0.6);
   display: block;
 }
 
@@ -1187,17 +1240,24 @@ export default {
 }
 
 .unread-badge {
-  background: #ed4245;
+  background: linear-gradient(135deg, #ff4757, #ff3742);
   color: white;
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  min-width: 20px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+  animation: bounce 0.5s ease-out;
 }
 
-/* Friend Requests */
+@keyframes bounce {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
 .friend-requests {
   padding: 0 8px;
   margin-bottom: 16px;
@@ -1206,10 +1266,18 @@ export default {
 .friend-request {
   display: flex;
   align-items: center;
-  padding: 8px;
-  background: #40444b;
-  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 12px;
   margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .request-info {
@@ -1221,46 +1289,60 @@ export default {
 
 .request-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .btn-accept,
 .btn-reject {
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  padding: 6px;
-  border-radius: 4px;
+  padding: 8px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .btn-accept {
-  color: #3ba55d;
+  color: #00ff88;
 }
 
 .btn-accept:hover {
-  background: #3ba55d;
+  background: linear-gradient(135deg, #00ff88, #00cc6a);
   color: white;
+  transform: scale(1.1);
 }
 
 .btn-reject {
-  color: #ed4245;
+  color: #ff4757;
 }
 
 .btn-reject:hover {
-  background: #ed4245;
+  background: linear-gradient(135deg, #ff4757, #ff3742);
   color: white;
+  transform: scale(1.1);
 }
 
-/* User Profile */
 .user-profile {
-  padding: 8px;
-  background: #292b2f;
-  border-top: 1px solid #40444b;
+  padding: 12px;
+  background: rgba(41, 43, 47, 0.9);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+}
+
+.user-profile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ff6b9d, #c44cd8, transparent);
 }
 
 .user-info {
@@ -1280,62 +1362,83 @@ export default {
   font-weight: 600;
   color: #ffffff;
   display: block;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .user-status {
   font-size: 12px;
-  color: #3ba55d;
+  color: #00ff88;
 }
 
 .user-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .user-action-btn {
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: #b9bbbe;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .user-action-btn:hover {
-  background: #40444b;
+  background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
+  transform: scale(1.1) rotate(5deg);
 }
 
-/* Main Content */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #36393f;
+  background: rgba(54, 57, 63, 0.9);
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 1;
 }
 
 .main-header {
   padding: 24px 32px;
-  background: #36393f;
-  border-bottom: 1px solid #40444b;
+  background: rgba(54, 57, 63, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+}
+
+.main-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ff6b9d, #c44cd8, transparent);
 }
 
 .header-left h1 {
   margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
-  color: #ffffff;
+  background: linear-gradient(135deg, #ffffff, #ff6b9d, #c44cd8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .header-left p {
   margin: 0;
   font-size: 16px;
-  color: #b9bbbe;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .search-container {
@@ -1351,71 +1454,78 @@ export default {
 .search-icon {
   position: absolute;
   left: 16px;
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
   z-index: 2;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 16px 12px 40px;
-  background: #40444b;
-  border: none;
-  border-radius: 8px;
+  padding: 14px 16px 14px 44px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
   color: #ffffff;
   font-size: 14px;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-input::placeholder {
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .search-input:focus {
-  background: #484c52;
-  box-shadow: 0 0 0 2px #5865f2;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid #ff6b9d;
+  box-shadow: 0 0 20px rgba(255, 107, 157, 0.3);
+  transform: translateY(-1px);
 }
 
-/* Categories Filter */
 .categories-filter {
-  padding: 16px 32px;
-  border-bottom: 1px solid #40444b;
+  padding: 20px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(54, 57, 63, 0.5);
 }
 
 .filter-tabs {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .filter-tab {
-  background: transparent;
-  border: 1px solid #40444b;
-  color: #b9bbbe;
-  padding: 8px 16px;
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 10px 18px;
+  border-radius: 25px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .filter-tab:hover {
-  background: #40444b;
+  background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .filter-tab.active {
-  background: #5865f2;
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
   color: #ffffff;
-  border-color: #5865f2;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(196, 76, 216, 0.4);
 }
 
-/* Rooms Grid */
 .rooms-container {
   flex: 1;
   overflow-y: auto;
@@ -1425,28 +1535,47 @@ export default {
 .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  gap: 24px;
 }
 
 .room-card {
-  background: #2f3136;
-  border: 1px solid #40444b;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.2s;
+  background: rgba(47, 49, 54, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.room-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all 0.5s;
+}
+
+.room-card:hover::before {
+  left: 100%;
 }
 
 .room-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  border-color: #5865f2;
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border-color: #ff6b9d;
+  background: rgba(47, 49, 54, 0.95);
 }
 
 .room-card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .room-icon-wrapper {
@@ -1454,28 +1583,35 @@ export default {
 }
 
 .room-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 20px;
+  font-size: 22px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .room-title {
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
   font-size: 18px;
   font-weight: 600;
   color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .room-category {
   font-size: 12px;
-  color: #8e9297;
+  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.5px;
 }
 
@@ -1484,8 +1620,8 @@ export default {
   justify-content: space-between;
   margin-bottom: 16px;
   padding: 12px 0;
-  border-top: 1px solid #40444b;
-  border-bottom: 1px solid #40444b;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-item {
@@ -1493,21 +1629,29 @@ export default {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
 }
 
 .stat-item.status {
-  color: #b9bbbe;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
 }
 
 .status-dot.online {
-  background: #3ba55d;
+  background: #00ff88;
+  animation: glow 2s infinite;
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 6px #00ff88; }
+  50% { box-shadow: 0 0 12px #00ff88, 0 0 18px #00ff88; }
 }
 
 .status-dot.offline {
@@ -1521,24 +1665,32 @@ export default {
 .room-description p {
   margin: 0;
   font-size: 14px;
-  color: #b9bbbe;
-  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
 }
 
 .room-tags {
   margin-bottom: 20px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tag {
-  background: #40444b;
-  color: #b9bbbe;
-  padding: 4px 8px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px 12px;
+  border-radius: 16px;
   font-size: 11px;
   font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s;
+}
+
+.tag:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
 .room-actions {
@@ -1548,44 +1700,66 @@ export default {
 
 .join-btn {
   flex: 1;
-  background: #5865f2;
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
   color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
+  padding: 12px 20px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(196, 76, 216, 0.4);
+}
+
+.join-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.5s;
+}
+
+.join-btn:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .join-btn:hover:not(:disabled) {
-  background: #4752c4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(196, 76, 216, 0.6);
 }
 
 .join-btn:disabled,
 .join-btn.disabled {
-  background: #40444b;
-  color: #8e9297;
+  background: rgba(116, 127, 141, 0.3);
+  color: rgba(255, 255, 255, 0.5);
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* Modal Styles */
 .create-room-modal-body,
 .add-friend-modal-body {
-  background: #36393f;
+  background: linear-gradient(135deg, rgba(54, 57, 63, 0.95), rgba(47, 49, 54, 0.95));
+  backdrop-filter: blur(20px);
   color: #ffffff;
+  border-radius: 16px;
 }
 
 .create-room-form,
 .add-friend-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .form-group {
@@ -1597,32 +1771,38 @@ export default {
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #b9bbbe;
+  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-  background: #40444b;
-  border: 1px solid #40444b;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   color: #ffffff;
   font-size: 14px;
-  padding: 10px 12px;
+  padding: 12px 16px;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
-  border-color: #5865f2;
-  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+  border-color: #ff6b9d;
+  box-shadow: 0 0 20px rgba(255, 107, 157, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 .form-actions,
@@ -1635,33 +1815,39 @@ export default {
 
 .btn-primary,
 .btn-secondary {
-  padding: 10px 20px;
-  border-radius: 6px;
+  padding: 12px 24px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-primary {
-  background: #5865f2;
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
   color: white;
+  box-shadow: 0 4px 15px rgba(196, 76, 216, 0.4);
 }
 
 .btn-primary:hover {
-  background: #4752c4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(196, 76, 216, 0.6);
 }
 
 .btn-secondary {
-  background: transparent;
-  color: #b9bbbe;
-  border: 1px solid #40444b;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary:hover {
-  background: #40444b;
+  background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 /* Search Results */
@@ -1676,14 +1862,14 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: #8e9297;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid #40444b;
-  border-top: 2px solid #5865f2;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid #ff6b9d;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 12px;
@@ -1696,8 +1882,11 @@ export default {
 
 .empty-state i {
   font-size: 48px;
-  margin-bottom: 12px;
-  color: #40444b;
+  margin-bottom: 16px;
+  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .search-results {
@@ -1711,10 +1900,17 @@ export default {
 .user-result {
   display: flex;
   align-items: center;
-  padding: 12px;
-  background: #40444b;
-  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 197, 197, 0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
   gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-result:hover {
+  background: rgba(255, 85, 179, 0.1);
 }
 
 .user-info {
@@ -1724,61 +1920,123 @@ export default {
 
 .user-info h4 {
   margin: 0 0 4px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  color: #000000;
 }
 
 .user-info p {
   margin: 0;
-  font-size: 12px;
-  color: #8e9297;
+  font-size: 20px;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .friend-action-btn {
-  padding: 8px 12px;
-  border-radius: 4px;
+  padding: 10px 16px;
+  border-radius: 10px;
   border: none;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   white-space: nowrap;
+  backdrop-filter: blur(10px);
 }
 
 .friend-action-btn.primary {
-  background: #5865f2;
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
   color: white;
+  box-shadow: 0 4px 15px rgba(196, 76, 216, 0.4);
 }
 
 .friend-action-btn.primary:hover {
-  background: #4752c4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(196, 76, 216, 0.6);
 }
 
 .friend-action-btn.secondary {
-  background: #40444b;
-  color: #8e9297;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.friend-action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .friend-action-btn.success {
-  background: #3ba55d;
+  background: linear-gradient(135deg, #00ff88, #00cc6a);
   color: white;
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+}
+
+.friend-action-btn.success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.6);
 }
 
 .friend-action-btn.warning {
-  background: #faa61a;
+  background: linear-gradient(135deg, #ffa726, #ff9800);
   color: white;
+  box-shadow: 0 4px 15px rgba(255, 167, 38, 0.4);
+}
+
+.friend-action-btn.warning:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 167, 38, 0.6);
 }
 
 .friend-action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-/* Responsive */
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  border-radius: 4px;
+  border: 2px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #ff5a8a, #b33bc5);
+}
+
+/* Additional cute animations */
+.workspace-icon:hover {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+.room-icon:hover {
+  animation: heartbeat 0.6s ease-in-out;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 240px;
@@ -1797,6 +2055,15 @@ export default {
   .rooms-grid {
     grid-template-columns: 1fr;
   }
+
+  .filter-tabs {
+    gap: 8px;
+  }
+
+  .filter-tab {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1808,11 +2075,287 @@ export default {
     width: 100%;
     height: auto;
     border-right: none;
-    border-bottom: 1px solid #40444b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .main-content {
     height: calc(100vh - 200px);
+  }
+
+  .main-header {
+    padding: 16px 20px;
+  }
+
+  .header-left h1 {
+    font-size: 24px;
+  }
+
+  .rooms-container {
+    padding: 16px 20px;
+  }
+
+  .categories-filter {
+    padding: 12px 20px;
+  }
+}
+
+.room-card:nth-child(3n+1):hover {
+  animation: rainbow 2s infinite;
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.community-chat-app::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 107, 157, 0.4), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(196, 76, 216, 0.3), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(255, 107, 157, 0.2), transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: sparkle 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+@keyframes sparkle {
+  0% { transform: translateY(0px) translateX(0px); }
+  100% { transform: translateY(-200px) translateX(100px); }
+}
+
+.community-hero {
+  background: linear-gradient(135deg, #8B5DFF 0%, #6B46C1 50%, #9333EA 100%);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.community-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.community-content {
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+  margin-top: 15px !important;
+  margin-bottom: 15px !important;
+}
+
+.community-icon-large {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 193, 7, 0.9);
+  border-radius: 50%;
+  margin-bottom: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: float 3s ease-in-out infinite;
+}
+
+.community-icon-large i {
+  font-size: 24px;
+  color: white;
+}
+
+.community-title {
+  font-size: 40px;
+  font-weight: 600;
+  color: #FFC107;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+}
+
+.community-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.user-welcome-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  padding: 10px 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.user-welcome-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.user-avatar {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.welcome-text {
+  color: white;
+  font-size: 20px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.categories-filter {
+  margin-bottom: 20px;
+  /* margin: 2rem 0; */
+}
+
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+.filter-tab {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+}
+
+.filter-tab:hover {
+  background: rgba(255, 193, 7, 0.2);
+  border-color: rgba(255, 193, 7, 0.4);
+  transform: translateY(-2px);
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #FFC107, #FF8F00);
+  border-color: #FFC107;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.filter-tab i {
+  margin-right: 0.5rem;
+}
+
+.rooms-container {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 0 1rem;
+}
+
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.room-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+
+  .community-icon-large {
+    width: 60px;
+    height: 60px;
+  }
+
+  .community-icon-large i {
+    font-size: 28px;
+  }
+
+  .community-title {
+    font-size: 2rem;
+  }
+
+  .community-subtitle {
+    font-size: 1rem;
+  }
+
+  .user-welcome-card {
+    padding: 10px 16px;
+  }
+
+  .filter-tabs {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .filter-tab {
+    flex-shrink: 0;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .rooms-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .community-hero {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .community-title {
+    font-size: 1.75rem;
+  }
+
+  .community-subtitle {
+    font-size: 0.95rem;
   }
 }
 </style>

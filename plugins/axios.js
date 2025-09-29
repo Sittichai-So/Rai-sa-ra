@@ -1,18 +1,40 @@
-export default function ({ $axios, redirect, route, store, $swal, $loadEnd }) {
-  $axios.onError(async (error) => {
-    if (error.response?.data?.cause === 'expired token') {
-      $loadEnd()
-      await $swal({
-        icon: 'info',
-        title: 'session หมดอายุ',
-        text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง',
-        confirmButtonText: 'ปิด',
-        confirmButtonColor: 'rgba(0, 90, 170, 1)'
-      })
-      redirect('/')
-      return false
+export default function ({ $axios, redirect, $swal }) {
+  $axios.onRequest((config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+      // console.log('[Axios] Attached token:', token)
+    } else {
+      console.warn('[Axios] No token found in localStorage')
     }
-    $loadEnd()
+    return config
+  })
+  $axios.onError(async (error) => {
+    const status = error.response?.status
+    const cause = error.response?.data?.cause
+
+    if (status === 401) {
+      if (cause === 'expired token') {
+        await $swal({
+          icon: 'info',
+          title: 'Session หมดอายุ',
+          text: 'กรุณาเข้าสู่ระบบใหม่',
+          confirmButtonText: 'ปิด'
+        })
+      } else {
+        await $swal({
+          icon: 'error',
+          title: 'Unauthorized',
+          text: 'ไม่สามารถเข้าถึงข้อมูลได้'
+        })
+      }
+
+      localStorage.removeItem('token')
+      localStorage.removeItem('userData')
+      redirect('/')
+      return
+    }
+
     throw error
   })
 }

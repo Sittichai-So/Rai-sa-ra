@@ -11,7 +11,7 @@
         <b-collapse id="nav-collapse" is-nav class="w-100">
           <div class="d-flex justify-content-center flex-grow-1">
             <b-navbar-nav
-              style="border: 2px solid #fff; border-radius: 25px; padding: 5px 20px;"
+              style="border: 2px solid #fff; border-radius: 25px;"
             >
               <b-nav-item class="nav-item-custom" @click="scrollToSection('hero')">
                 <i class="fas fa-home mr-1" />หน้าแรก
@@ -241,72 +241,6 @@
       </b-container>
     </footer>
 
-    <!-- <b-modal
-      id="join-modal"
-      title="เข้าร่วมชุมชน RAI-SA-RA"
-      size="lg"
-      centered
-      hide-footer
-      modal-class="custom-modal"
-      header-class="custom-modal-header"
-      body-class="custom-modal-body"
-    >
-      <div>
-        <h4 class="highlight-title text-center">
-          🎉 ยินดีต้อนรับสู่ RAI-SA-RA
-        </h4>
-        <p class="subtitle text-center" style="font-size: 20px;">
-          กรอกข้อมูลเพื่อเข้าร่วมชุมชนที่เจ๋งที่สุด
-        </p>
-
-        <validation-observer ref="observer" v-slot="{ handleSubmit }">
-          <b-form @submit.stop.prevent="handleSubmit(onLogin)">
-            <validation-provider v-slot="validationContext" name="username" :rules="{ required: true }">
-              <b-form-group label="ชื่อผู้ใช้งาน" label-for="txtUser">
-                <b-form-input
-                  id="txtUser"
-                  v-model="form.username"
-                  :state="getValidationState(validationContext)"
-                  placeholder="กรอกชื่อผู้ใช้งาน"
-                />
-                <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
-              </b-form-group>
-            </validation-provider>
-
-            <validation-provider v-slot="validationContext" name="password" :rules="{ required: true }">
-              <b-form-group label="รหัสผ่าน" label-for="txtPass">
-                <b-form-input
-                  id="txtPass"
-                  v-model="form.password"
-                  type="password"
-                  :state="getValidationState(validationContext)"
-                  placeholder="••••••••"
-                />
-                <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
-              </b-form-group>
-            </validation-provider>
-
-            <b-button type="submit" block variant="light" size="lg" class="submit-btn mt-3">
-              เข้าสู่ระบบ
-            </b-button>
-          </b-form>
-        </validation-observer>
-
-        <div class="auth-footer text-center mt-4">
-          <p>
-            ยังไม่มีบัญชี? <b-link to="/register">
-              สมัครสมาชิก
-            </b-link>
-          </p>
-          <p>
-            <b-link to="/forgot-password">
-              ลืมรหัสผ่าน?
-            </b-link>
-          </p>
-        </div>
-      </div>
-    </b-modal> -->
-
     <b-modal
       id="info-modal"
       title="ข้อมูลเพิ่มเติม"
@@ -502,7 +436,6 @@ export default {
       return dirty || validated ? valid : null
     },
     joinCommunity () {
-      // this.$bvModal.show('join-modal')
       this.$router.push('/login')
     },
     goRegister () {

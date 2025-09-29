@@ -41,6 +41,7 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    { src: '~/plugins/axios.js' },
     { src: '~/plugins/socket.client.js', mode: 'client' },
     { src: '~/plugins/vee-validate.js' },
     { src: '~/plugins/loading.js' },
@@ -91,7 +92,22 @@ export default {
     API_GET_CHATLOG_ROOM_ID: environment[process.env.NODE_ENV].api + '/chatLog',
     API_DELETE_CHATLOG_ROOM_ID: environment[process.env.NODE_ENV].api + '/chatLog',
 
+    // count
     API_GET_COUNT_ALL_CHAT_MESSAGES: environment[process.env.NODE_ENV].api + '/chatLog/counts/all',
+
+    // friends
+    API_SEND_FRIEND: environment[process.env.NODE_ENV].api + '/friends/send',
+    API_POST_ACCEPT_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/accept/:friendshipId',
+    API_POST_REJECT_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/reject/:friendshipId',
+    API_DELETE_CANCEL_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/cancel/:friendshipId',
+    API_DELETE_REMOVE_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/:friendId',
+    API_GET_ALL_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/all',
+    API_ONLINE_FRIEND: environment[process.env.NODE_ENV].api + '/friends/online',
+    API_PENDING_FRIEND: environment[process.env.NODE_ENV].api + '/friends/pending',
+    API_SENT_FRIEND: environment[process.env.NODE_ENV].api + '/friends/sent',
+    API_SEARCH_FRIEND: environment[process.env.NODE_ENV].api + '/friends/search',
+    API_STATS_FRIEND: environment[process.env.NODE_ENV].api + '/friends/stats',
+    API_PROFILE_FRIEND_ID: environment[process.env.NODE_ENV].api + '/friends/profile/:friendId',
 
     // users
     API_PATCH_USER_STATUS: environment[process.env.NODE_ENV].api + '/users/:roomId/members',
