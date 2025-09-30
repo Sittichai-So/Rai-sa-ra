@@ -11,6 +11,7 @@
         <b-collapse id="nav-collapse" is-nav class="w-100">
           <div class="d-flex justify-content-center flex-grow-1">
             <b-navbar-nav
+              class="nav-center"
               style="border: 2px solid #fff; border-radius: 25px;"
             >
               <b-nav-item class="nav-item-custom" @click="scrollToSection('hero')">
@@ -525,6 +526,13 @@ export default {
 </script>
 
 <style>
+/* .nav-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+} */
+
 .submit-btn {
   border-radius: 12px;
   background: linear-gradient(135deg, #ff9a9e, #fad0c4);

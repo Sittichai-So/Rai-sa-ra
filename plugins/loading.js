@@ -4,11 +4,10 @@ const Notiflix = {
 
   Loading () {
     Loading.standard(
-      'กำลังโหลด กรุณารอสักครู่',
       {
-        svgSize: '200px',
+        svgSize: '100px',
         messageFontSize: '30px',
-        svgColor: '#FC6'
+        svgColor: 'rgba(210, 103, 252, 1)'
       }
     )
   },

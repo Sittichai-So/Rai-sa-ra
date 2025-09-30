@@ -13,7 +13,7 @@ export default function ({ $axios, redirect, $swal }) {
     const status = error.response?.status
     const cause = error.response?.data?.cause
 
-    if (status === 401) {
+    if (status === 402) {
       if (cause === 'expired token') {
         await $swal({
           icon: 'info',

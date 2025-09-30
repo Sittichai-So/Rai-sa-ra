@@ -133,7 +133,6 @@
           </div>
         </div>
         <div class="user-actions">
-          <SettingDialog />
           <button class="user-action-btn" @click="setting">
             <i class="fas fa-cog" />
           </button>
@@ -141,6 +140,7 @@
             <i class="fas fa-sign-out-alt" />
           </button>
         </div>
+        <SettingDialog ref="SettingDialog" />
       </div>
     </aside>
 
@@ -531,8 +531,7 @@ export default {
     },
 
     setting () {
-      this.$swal({ icon: 'warning', title: 'setting naaa', text: 'จะไป setting หรือจ้ะ ไม่ให้หรอก' })
-      this.$refs.DialogSettingLeaveType.open()
+      this.$refs.SettingDialog.open()
     },
 
     formatNumber (num) {

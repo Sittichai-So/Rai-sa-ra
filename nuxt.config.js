@@ -111,6 +111,9 @@ export default {
 
     // users
     API_PATCH_USER_STATUS: environment[process.env.NODE_ENV].api + '/users/:roomId/members',
+    API_GET_USER_BY_ID: environment[process.env.NODE_ENV].api + '/user/getByID',
+    API_EDIT_PROFILE_BY_ID: environment[process.env.NODE_ENV].api + '/user/editProfile',
+    API_EDIT_PASSWORD_BY_ID: environment[process.env.NODE_ENV].api + '/user/resetPassword',
 
     // socket
     SOCKET_URL: process.env.SOCKET_URL

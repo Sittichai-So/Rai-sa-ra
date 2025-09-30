@@ -79,7 +79,7 @@ export default {
         const login = await this.$axios.$post(process.env.API_LOGIN, this.form)
 
         if (login.status === 'success') {
-          this.$Notiflix.LoadingPic()
+          this.$Notiflix.Loading()
           setTimeout(() => {
             this.$Notiflix.Remove()
             const token = login.result.token
@@ -102,7 +102,8 @@ export default {
           })
         }
       } catch (error) {
-        const errorMessage = error.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+        const errorMessage = error.response?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+        console.log('errorMessage', this.errorMessage)
         await this.$swal({
           icon: 'error',
           title: 'เข้าสู่ระบบไม่สำเร็จ',
