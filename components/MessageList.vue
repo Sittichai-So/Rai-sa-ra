@@ -1,20 +1,12 @@
 <template>
   <div class="message-list-container">
-    <div
-      ref="messageList"
-      class="message-list"
-      @scroll="handleScroll"
-    >
+    <div ref="messageList" class="message-list" @scroll="handleScroll">
       <div v-if="loadingMore" class="text-center py-3">
         <b-spinner small class="mr-2" />
         <span class="text-muted">กำลังโหลดข้อความ...</span>
       </div>
 
-      <div
-        v-for="(group, date) in groupedMessages"
-        :key="date"
-        class="message-group"
-      >
+      <div v-for="(group, date) in groupedMessages" :key="date" class="message-group">
         <div class="date-separator text-center my-3">
           <small class="bg-light text-muted px-2 py-1 rounded">{{ formatDate(date) }}</small>
         </div>
@@ -22,10 +14,7 @@
         <div
           v-for="(message, index) in group"
           :key="message._id || (message.createdAt + '-' + index)"
-          :class="[
-            'message-wrapper',
-            { 'own-message': message.userId === currentUserId }
-          ]"
+          :class="['message-wrapper', { 'own-message': message.userId === currentUserId }]"
         >
           <div class="message-bubble-container d-flex align-items-start">
             <b-avatar
@@ -36,14 +25,19 @@
               class="message-avatar mr-2"
               variant="secondary"
             />
-
+            <div v-if="message.replyTo" class="reply-preview">
+              <div class="reply-indicator" />
+              <div class="reply-content">
+                <div class="reply-username">
+                  {{ message.replyTo.username }}
+                </div>
+                <div class="reply-text">
+                  {{ truncateText(message.replyTo.content, 50) }}
+                </div>
+              </div>
+            </div>
             <div class="message-main">
-              <div
-                :class="[
-                  'message-bubble',
-                  message.userId === currentUserId ? 'own' : 'other'
-                ]"
-              >
+              <div :class="['message-bubble', message.userId === currentUserId ? 'own' : 'other']">
                 <div v-if="message.userId !== currentUserId" class="sender-name">
                   {{ message.username }}
                 </div>
@@ -54,12 +48,7 @@
                   </div>
 
                   <div v-else-if="message.type === 'image'" class="message-image">
-                    <img
-                      :src="message.fileUrl"
-                      :alt="message.content"
-                      class="img-fluid rounded"
-                      @click="showImageModal(message.fileUrl)"
-                    >
+                    <img :src="message.fileUrl" :alt="message.content" class="img-fluid rounded" @click="showImageModal(message.fileUrl)">
                     <div v-if="message.content" class="image-caption mt-1">
                       {{ message.content }}
                     </div>
@@ -74,12 +63,7 @@
                         </div>
                         <small class="text-muted">{{ formatFileSize(message.fileSize) }}</small>
                       </div>
-                      <b-button
-                        size="sm"
-                        variant="outline-primary"
-                        class="ml-auto"
-                        @click="downloadFile(message.fileUrl, message.fileName)"
-                      >
+                      <b-button size="sm" variant="outline-primary" class="ml-auto" @click="downloadFile(message.fileUrl, message.fileName)">
                         <i class="fas fa-download" />
                       </b-button>
                     </div>
@@ -100,14 +84,9 @@
                 </div>
 
                 <div class="message-meta d-flex align-items-center justify-content-between">
-                  <small class="text-muted">
-                    {{ formatMessageTime(message.createdAt) }}
-                  </small>
+                  <small class="text-muted">{{ formatMessageTime(message.createdAt) }}</small>
                   <span v-if="message.userId === currentUserId" class="message-status ml-1">
-                    <i
-                      :class="getStatusIcon(message.status)"
-                      :title="getStatusTitle(message.status)"
-                    />
+                    <i :class="getStatusIcon(message.status)" :title="getStatusTitle(message.status)" />
                   </span>
                 </div>
               </div>
@@ -117,31 +96,27 @@
                   variant="link"
                   size="sm"
                   no-caret
-                  right
                   class="message-menu"
+                  dropdown-append-to-body
+                  right
+                  offset="0,8"
                 >
                   <template #button-content>
                     <i class="fas fa-ellipsis-v" />
                   </template>
-                  <b-dropdown-item @click="addReaction(message._id)">
-                    <i class="fas fa-smile mr-2" /> เพิ่มรีแอคชัน
+
+                  <b-dropdown-item style="font-size: 16px;" @click="showReactionPicker(message._id)">
+                    <i class="fas fa-smile" /> เพิ่มรีแอคชัน
                   </b-dropdown-item>
-                  <b-dropdown-item @click="replyToMessage(message)">
-                    <i class="fas fa-reply mr-2" /> ตอบกลับ
+                  <b-dropdown-item style="font-size: 16px;" @click="replyToMessage(message)">
+                    <i class="fas fa-reply" /> ตอบกลับ
                   </b-dropdown-item>
                   <b-dropdown-divider v-if="message.userId === currentUserId" />
-                  <b-dropdown-item
-                    v-if="message.userId === currentUserId"
-                    @click="editMessage(message)"
-                  >
-                    <i class="fas fa-edit mr-2" /> แก้ไข
+                  <b-dropdown-item v-if="message.userId === currentUserId" style="font-size: 16px;" @click="editMessage(message)">
+                    <i class="fas fa-edit" /> แก้ไข
                   </b-dropdown-item>
-                  <b-dropdown-item
-                    v-if="message.userId === currentUserId"
-                    variant="danger"
-                    @click="deleteMessage(message._id)"
-                  >
-                    <i class="fas fa-trash mr-2" /> ลบ
+                  <b-dropdown-item v-if="message.userId === currentUserId" variant="danger" style="font-size: 16px;" @click="deleteMessage(message._id)">
+                    <i class="fas fa-trash" /> ลบ
                   </b-dropdown-item>
                 </b-dropdown>
               </div>
@@ -153,9 +128,7 @@
       <div v-if="typingUsers.length" class="typing-container">
         <div class="typing-bubble">
           <div class="typing-dots">
-            <span />
-            <span />
-            <span />
+            <span /><span /><span />
           </div>
           <p class="typing-text">
             {{ getTypingText() }}
@@ -164,13 +137,7 @@
       </div>
     </div>
 
-    <b-button
-      v-if="!isAtBottom"
-      variant="warning"
-      size="sm"
-      class="scroll-bottom-btn"
-      @click="scrollToBottom"
-    >
+    <b-button v-if="!isAtBottom" variant="warning" size="sm" class="scroll-bottom-btn" @click="scrollToBottom">
       <i class="fas fa-arrow-down" />
       <b-badge v-if="newMessagesCount" variant="danger" class="ml-1">
         {{ newMessagesCount }}
@@ -185,12 +152,22 @@
       hide-footer
       body-class="p-0"
     >
-      <img
-        v-if="selectedImage"
-        :src="selectedImage"
-        alt="Image"
-        class="img-fluid w-100"
-      >
+      <img v-if="selectedImage" :src="selectedImage" alt="Image" class="img-fluid w-100">
+    </b-modal>
+
+    <b-modal
+      id="reaction-picker"
+      v-model="showReactionPickerModal"
+      title="เลือกรีแอคชัน"
+      centered
+      hide-footer
+      body-class="p-3"
+    >
+      <div class="reaction-picker-grid">
+        <button v-for="emoji in reactionEmojis" :key="emoji" class="reaction-emoji-btn" @click="addReactionEmoji(emoji)">
+          {{ emoji }}
+        </button>
+      </div>
     </b-modal>
   </div>
 </template>
@@ -202,60 +179,38 @@ import { th } from 'date-fns/locale'
 export default {
   name: 'MessageList',
   props: {
-    messages: {
-      type: Array,
-      default: () => []
-    },
-    currentUserId: {
-      type: String,
-      required: true
-    },
-    typingUsers: {
-      type: Array,
-      default: () => []
-    },
-    loadingMore: {
-      type: Boolean,
-      default: false
-    }
+    messages: { type: Array, default: () => [] },
+    currentUserId: { type: String, required: true },
+    typingUsers: { type: Array, default: () => [] },
+    loadingMore: { type: Boolean, default: false }
   },
   data () {
     return {
       isAtBottom: true,
       newMessagesCount: 0,
       showImageModalFlag: false,
-      selectedImage: null
+      selectedImage: null,
+      showReactionPickerModal: false,
+      selectedMessageId: null,
+      reactionEmojis: ['❤️', '👍', '😂', '😮', '😢', '😡', '🎉', '🔥', '👏', '💯', '✨', '💪']
     }
   },
   computed: {
     groupedMessages () {
-      if (!Array.isArray(this.messages)) {
-        return {}
-      }
-
+      if (!Array.isArray(this.messages)) { return {} }
       const grouped = {}
       this.messages.forEach((message) => {
         try {
-          let dateString = message.createdAt
-          if (!dateString) {
-            dateString = new Date().toISOString()
-          }
-
+          const dateString = message.createdAt || new Date().toISOString()
           let parsedDate
           try {
             parsedDate = parseISO(dateString)
-          } catch (parseError) {
+          } catch {
             parsedDate = new Date()
           }
-
-          if (isNaN(parsedDate.getTime())) {
-            parsedDate = new Date()
-          }
-
+          if (isNaN(parsedDate.getTime())) { parsedDate = new Date() }
           const date = format(parsedDate, 'yyyy-MM-dd')
-          if (!grouped[date]) {
-            grouped[date] = []
-          }
+          if (!grouped[date]) { grouped[date] = [] }
           grouped[date].push(message)
         } catch (error) {
           console.error('Error processing message date:', error, message)
@@ -280,19 +235,15 @@ export default {
   },
   mounted () {
     this.$nextTick(() => {
-      setTimeout(() => {
-        this.scrollToBottom()
-      }, 100)
+      setTimeout(() => this.scrollToBottom(), 100)
     })
   },
   methods: {
     handleScroll () {
       const element = this.$refs.messageList
       if (!element) { return }
-
       try {
         const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 100
-
         if (isAtBottom && !this.isAtBottom) {
           this.isAtBottom = true
           this.newMessagesCount = 0
@@ -306,7 +257,6 @@ export default {
         console.error('Error in handleScroll:', error)
       }
     },
-
     scrollToBottom () {
       this.$nextTick(() => {
         try {
@@ -321,81 +271,54 @@ export default {
         }
       })
     },
-
     formatDate (dateString) {
       try {
         const date = parseISO(dateString)
-        if (isNaN(date.getTime())) {
-          return 'วันนี้'
-        }
-
+        if (isNaN(date.getTime())) { return 'วันนี้' }
         if (isToday(date)) { return 'วันนี้' }
         if (isYesterday(date)) { return 'เมื่อวาน' }
         return format(date, 'dd MMMM yyyy', { locale: th })
-      } catch (error) {
-        console.error('Error formatting date:', error)
+      } catch {
         return 'วันนี้'
       }
     },
-
     formatMessageTime (dateString) {
       try {
         const date = parseISO(dateString)
-        if (isNaN(date.getTime())) {
-          return format(new Date(), 'HH:mm')
-        }
-        return format(date, 'HH:mm')
-      } catch (error) {
-        console.error('Error formatting time:', error)
+        return isNaN(date.getTime()) ? format(new Date(), 'HH:mm') : format(date, 'HH:mm')
+      } catch {
         return format(new Date(), 'HH:mm')
       }
     },
-
     getInitials (name) {
       return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'
     },
-
     getUniqueReactions (reactions) {
       if (!Array.isArray(reactions)) { return [] }
-
       const grouped = reactions.reduce((acc, reaction) => {
-        if (!acc[reaction.emoji]) {
-          acc[reaction.emoji] = { emoji: reaction.emoji, count: 0 }
-        }
+        if (!acc[reaction.emoji]) { acc[reaction.emoji] = { emoji: reaction.emoji, count: 0 } }
         acc[reaction.emoji].count++
         return acc
       }, {})
       return Object.values(grouped)
     },
-
     getStatusIcon (status) {
-      switch (status) {
-        case 'sent': return 'fas fa-check text-muted'
-        case 'delivered': return 'fas fa-check-double text-muted'
-        case 'read': return 'fas fa-check-double text-primary'
-        default: return 'fas fa-clock text-muted'
+      const icons = {
+        sent: 'fas fa-check text-muted',
+        delivered: 'fas fa-check-double text-muted',
+        read: 'fas fa-check-double text-primary'
       }
+      return icons[status] || 'fas fa-clock text-muted'
     },
-
     getStatusTitle (status) {
-      switch (status) {
-        case 'sent': return 'ส่งแล้ว'
-        case 'delivered': return 'ส่งถึงแล้ว'
-        case 'read': return 'อ่านแล้ว'
-        default: return 'กำลังส่ง'
-      }
+      const titles = { sent: 'ส่งแล้ว', delivered: 'ส่งถึงแล้ว', read: 'อ่านแล้ว' }
+      return titles[status] || 'กำลังส่ง'
     },
-
     getTypingText () {
-      if (this.typingUsers.length === 1) {
-        return `${this.typingUsers[0]} กำลังพิมพ์...`
-      } else if (this.typingUsers.length === 2) {
-        return `${this.typingUsers[0]} และ ${this.typingUsers[1]} กำลังพิมพ์...`
-      } else {
-        return 'หลายคนกำลังพิมพ์...'
-      }
+      if (this.typingUsers.length === 1) { return `${this.typingUsers[0]} กำลังพิมพ์...` }
+      if (this.typingUsers.length === 2) { return `${this.typingUsers[0]} และ ${this.typingUsers[1]} กำลังพิมพ์...` }
+      return 'หลายคนกำลังพิมพ์...'
     },
-
     formatFileSize (bytes) {
       if (!bytes || bytes === 0) { return '0 B' }
       const k = 1024
@@ -403,35 +326,40 @@ export default {
       const i = Math.floor(Math.log(bytes) / Math.log(k))
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     },
-
+    truncateText (text, maxLength) {
+      if (!text) { return '' }
+      return text.length <= maxLength ? text : text.substring(0, maxLength) + '...'
+    },
     showImageModal (imageUrl) {
       this.selectedImage = imageUrl
       this.showImageModalFlag = true
     },
-
     downloadFile (url, filename) {
       const link = document.createElement('a')
       link.href = url
       link.download = filename
       link.click()
     },
-
+    showReactionPicker (messageId) {
+      this.selectedMessageId = messageId
+      this.showReactionPickerModal = true
+    },
+    addReactionEmoji (emoji) {
+      if (this.selectedMessageId) {
+        this.$emit('toggle-reaction', { messageId: this.selectedMessageId, emoji })
+      }
+      this.showReactionPickerModal = false
+      this.selectedMessageId = null
+    },
     toggleReaction (messageId, emoji) {
       this.$emit('toggle-reaction', { messageId, emoji })
     },
-
-    addReaction (messageId) {
-      this.$emit('add-reaction', messageId)
-    },
-
     replyToMessage (message) {
       this.$emit('reply-to', message)
     },
-
     editMessage (message) {
       this.$emit('edit-message', message)
     },
-
     deleteMessage (messageId) {
       this.$emit('delete-message', messageId)
     }
@@ -440,6 +368,166 @@ export default {
 </script>
 
 <style scoped>
+
+.reply-preview {
+  background: rgba(255, 255, 255, 0.10);
+  border-left: 3px solid #667eea;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.reply-preview:hover {
+  background: rgba(0, 0, 0, 0.12);
+  transform: translateX(2px);
+}
+
+.message-bubble.own .reply-preview {
+  background: rgba(255, 255, 255, 0.2);
+  border-left-color: rgba(255, 255, 255, 0.6);
+}
+
+.message-bubble.own .reply-preview:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.reply-indicator {
+  width: 3px;
+  background: linear-gradient(180deg, #667eea 0%, transparent 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reply-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-username {
+  font-size: 11px;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.message-bubble.own .reply-username {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reply-text {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.7);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-bubble.own .reply-text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.message-content {
+  margin-bottom: 8px;
+}
+
+.message-text {
+  line-height: 1.5;
+  word-break: break-word;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.message-image img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.message-file {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.reaction-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.reaction-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reaction-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.reaction-emoji-btn {
+  font-size: 28px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reaction-emoji-btn:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.message-bubble.other .message-meta {
+  justify-content: flex-start;
+}
+
+.message-status {
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
+.own-message .message-actions {
+  order: -1;
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+@keyframes typing {
+  0%, 80%, 100% { transform: scale(0.3); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
 .message-list-container {
   display: flex;
   flex-direction: column;
@@ -496,10 +584,9 @@ export default {
 }
 
 .message-main {
-  display: flex;
-  align-items: flex-start;
-  max-width: calc(100% - 48px);
   position: relative;
+  display: inline-block;
+  max-width: calc(100% - 48px);
 }
 
 .message-bubble {
@@ -519,6 +606,16 @@ export default {
   overflow: hidden;
 }
 
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 9999;
+  min-width: 120px;
+}
 .message-bubble::before {
   content: '';
   position: absolute;
@@ -544,14 +641,33 @@ export default {
 }
 
 .message-actions {
+  position: absolute;
+  top: 50%;
+  right: -36px;
+  transform: translateY(-50%);
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.message-actions .btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
-  margin-left: 8px;
-  opacity: 0;
-  transition: all 0.3s ease;
-  transform: translateX(5px);
+  justify-content: center;
+  padding: 0;
+  color: #fff;
 }
 
+.message-actions .btn:hover {
+  background: rgba(255,255,255,0.35);
+}
+.message-main:hover .message-actions {
+  opacity: 1;
+}
 .message-wrapper:hover .message-actions {
   opacity: 1;
   transform: translateX(0);
@@ -576,7 +692,7 @@ export default {
   padding: 6px 16px;
   border-radius: 16px;
   font-weight: 500;
-  color: #6c757d;
+  color: #333333;
   font-size: 12px;
   letter-spacing: 0.5px;
 }
@@ -584,6 +700,7 @@ export default {
 .message-wrapper {
   margin-bottom: 12px;
   position: relative;
+  align-items: center;
 }
 
 .own-message .message-bubble-container {
@@ -607,8 +724,8 @@ export default {
 }
 
 .message-bubble.own {
-  background: linear-gradient(135deg, #667eea 0%, #e8d1ff 100%);
-  color: white;
+  background: linear-gradient(135deg, #cecece 0%, #b46efa 100%);
+  color: rgb(51, 51, 51);
   border-bottom-right-radius: 8px;
   margin-left: auto;
 }
@@ -633,17 +750,6 @@ export default {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.message-content {
-  margin-bottom: 8px;
-}
-
-.message-text {
-  line-height: 1.5;
-  word-break: break-word;
-  font-size: 14px;
-  font-weight: 400;
-}
-
 .message-image {
   position: relative;
 }
@@ -658,25 +764,11 @@ export default {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-.message-image img:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
 .image-caption {
   font-size: 13px;
   color: #6c757d;
   margin-top: 8px;
   font-style: italic;
-}
-
-.message-file {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
 }
 
 .message-file:hover {
@@ -700,22 +792,6 @@ export default {
   gap: 6px;
   margin: 12px 0 8px 0;
   flex-wrap: wrap;
-}
-
-.reaction-btn {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.reaction-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .message-meta {
@@ -899,11 +975,6 @@ export default {
   .message-bubble {
     max-width: 280px;
     padding: 10px 14px;
-  }
-
-  .message-image img {
-    max-width: 220px;
-    max-height: 180px;
   }
 
   .scroll-bottom-btn {

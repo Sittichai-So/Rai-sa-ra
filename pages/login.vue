@@ -102,8 +102,11 @@ export default {
           })
         }
       } catch (error) {
-        const errorMessage = error.response?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
-        console.log('errorMessage', this.errorMessage)
+        const resData = error.response?.data || {}
+        const errorMessage = resData.cause || resData.message || 'เกิดข้อผิดพลาด'
+
+        console.log('errorMessage', errorMessage)
+
         await this.$swal({
           icon: 'error',
           title: 'เข้าสู่ระบบไม่สำเร็จ',

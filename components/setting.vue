@@ -259,8 +259,8 @@
             </div>
 
             <div v-else class="password-edit">
-              <b-row>
-                <b-col cols="12" sm="6" md="4">
+              <b-row style="margin-top: -10px;">
+                <b-col cols="12" sm="6" md="6">
                   <b-form-group
                     label="รหัสผ่านปัจจุบัน"
                     label-for="input-currentPassword"
@@ -269,7 +269,7 @@
                     <b-input-group>
                       <b-input-group-prepend>
                         <b-input-group-text>
-                          <i class="fa-solid fa-display" />
+                          <i class="fas fa-lock" />
                         </b-input-group-text>
                       </b-input-group-prepend>
                       <b-form-input
@@ -283,19 +283,28 @@
                 </b-col>
               </b-row>
               <b-row>
-                <b-col cols="12" sm="6" md="4">
-                  <validation-provider v-slot="validationContext" name="newPassword" :rules="{ required: true, min: 8, regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/ }">
-                    <b-form-group label="newPassword" label-for="regPass">
+                <b-col cols="12" sm="6" md="6">
+                  <validation-provider v-slot="validationContext" name="newPassword" :rules="{ required: true, min: 8, regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/ }" vid="newPassword">
+                    <b-form-group label="รหัสผ่านใหม่" label-for="newPassword">
                       <b-input-group>
+                        <b-input-group-prepend>
+                          <b-input-group-text>
+                            <i class="fas fa-lock" />
+                          </b-input-group-text>
+                        </b-input-group-prepend>
                         <b-form-input
                           id="newPassword"
                           v-model="password.newPassword"
                           :type="showPassword ? 'text' : 'password'"
-                          :state="getValidationState(validationContext)"
+                          :state="getNewPasswordValidationState(validationContext)"
                           placeholder="••••••••"
                           @input="checkPasswordStrength"
                         />
                       </b-input-group>
+
+                      <div v-if="password.newPassword && password.currentPassword && password.newPassword === password.currentPassword" class="text-danger mt-2">
+                        <i class="fas fa-exclamation-triangle" /> รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม
+                      </div>
 
                       <div v-if="password.newPassword" class="password-strength mt-2">
                         <div class="strength-bar">
@@ -309,7 +318,6 @@
                           {{ passwordStrength.text }}
                         </small>
                       </div>
-
                       <small class="form-text text-muted">
                         รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร ประกอบด้วย A-Z, a-z, 0-9
                       </small>
@@ -320,14 +328,19 @@
               </b-row>
 
               <b-row>
-                <b-col cols="12" sm="6" md="4">
+                <b-col cols="12" sm="6" md="6">
                   <validation-provider
                     v-slot="validationContext"
                     name="confirmPassword"
-                    :rules="{ required: true, confirmed: 'password' }"
+                    :rules="{ required: true, confirmed: 'newPassword' }"
                   >
-                    <b-form-group label="Confirm Password" label-for="PassConfirm">
+                    <b-form-group label="ยืนยันรหัสผ่านใหม่" label-for="PassConfirm">
                       <b-input-group>
+                        <b-input-group-prepend>
+                          <b-input-group-text>
+                            <i class="fas fa-lock" />
+                          </b-input-group-text>
+                        </b-input-group-prepend>
                         <b-form-input
                           id="PassConfirm"
                           v-model="password.passwordConfirm"
@@ -351,7 +364,11 @@
               </b-row>
 
               <div class="action-buttons">
-                <b-button class="btn-success" @click="savePassword">
+                <b-button
+                  class="btn-success"
+                  :disabled="!isPasswordValid"
+                  @click="savePassword"
+                >
                   <i class="fas fa-check" />
                   อัปเดตรหัสผ่าน
                 </b-button>
@@ -405,12 +422,42 @@ export default {
       }
     }
   },
+  computed: {
+    isPasswordValid () {
+      const { currentPassword, newPassword, passwordConfirm } = this.password
+      if (!currentPassword || !newPassword || !passwordConfirm) {
+        return false
+      }
+      if (currentPassword === newPassword) {
+        return false
+      }
+
+      if (newPassword !== passwordConfirm) {
+        return false
+      }
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+      if (!passwordRegex.test(newPassword)) {
+        return false
+      }
+
+      return true
+    }
+  },
   async mounted () {
     await this.getProfile()
   },
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
+    },
+    getNewPasswordValidationState (validationContext) {
+      const { currentPassword, newPassword } = this.password
+
+      if (newPassword && currentPassword && newPassword === currentPassword) {
+        return false
+      }
+
+      return this.getValidationState(validationContext)
     },
     open () {
       this.showSetting = true
@@ -953,7 +1000,7 @@ export default {
 .action-buttons {
   display: flex;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 12px;
 }
 
 .action-buttons button {

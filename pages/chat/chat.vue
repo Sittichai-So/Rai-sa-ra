@@ -8,7 +8,7 @@
           </div>
           <div class="workspace-details">
             <h4>Community</h4>
-            <span class="workspace-members">{{ userName }}</span>
+            <span class="workspace-members">{{ profile.firstName }} {{ profile.lastName }}</span>
           </div>
         </div>
       </div>
@@ -128,7 +128,7 @@
             <div class="status-indicator online" />
           </div>
           <div class="user-details">
-            <span class="user-name">{{ userName }}</span>
+            <span class="user-name">{{ profile.displayName }}</span>
             <span class="user-status">ออนไลน์</span>
           </div>
         </div>
@@ -434,7 +434,7 @@ export default {
       },
       categories: [],
       rooms: [],
-
+      profile: [],
       friendRequests: [],
       friends: [],
       onlineFriends: [],
@@ -490,6 +490,7 @@ export default {
     this.initialize()
     this.startSessionTimeout()
     await this.getCategories()
+    await this.getProfile()
     await this.getRoom()
 
     await this.loadFriends()
@@ -528,6 +529,17 @@ export default {
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
+    },
+    async getProfile () {
+      try {
+        const res = await this.$axios.$get(process.env.API_GET_USER_BY_ID)
+        if (res.status === 'success') {
+          this.profile = res.result
+        }
+      } catch (err) {
+        console.error(err)
+        this.isLoading = false
+      }
     },
 
     setting () {

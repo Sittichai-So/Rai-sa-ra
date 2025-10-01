@@ -1,14 +1,18 @@
+<!-- MessageInput.vue -->
 <template>
   <div class="message-input-container">
     <div v-if="replyTo" class="reply-preview">
       <div class="reply-content">
         <div class="reply-header d-flex justify-content-between align-items-center">
-          <span>ตอบกลับ {{ replyTo.username }}</span>
+          <div class="reply-info">
+            <i class="fas fa-reply mr-2 text-primary" />
+            <span class="font-weight-bold">ตอบกลับ {{ replyTo.username }}</span>
+          </div>
           <button class="reply-close btn btn-sm btn-light" @click="cancelReply">
             <i class="fas fa-times" />
           </button>
         </div>
-        <div class="reply-message">
+        <div class="reply-message text-muted">
           {{ replyTo.content }}
         </div>
       </div>
@@ -21,8 +25,11 @@
             ref="textarea"
             v-model="messageText"
             class="form-control message-input"
+            :placeholder="replyTo ? `ตอบกลับ ${replyTo.username}...` : 'พิมพ์ข้อความ...'"
             rows="1"
-            @keydown.enter.prevent="onEnter"
+            @keydown.enter.exact.prevent="onEnter"
+            @keydown.shift.enter.exact="addNewLine"
+            @input="handleInput"
           />
 
           <button class="action-btn emoji-btn position-absolute" style="right:5px;" @click="toggleEmojiPicker">
@@ -47,10 +54,14 @@
 
 <script>
 import EmojiPicker from '~/components/EmojiPicker.vue'
+
 export default {
   components: { EmojiPicker },
   props: {
-    replyTo: Object
+    replyTo: {
+      type: Object,
+      default: null
+    }
   },
   data () {
     return {
@@ -65,37 +76,63 @@ export default {
     }
   },
   methods: {
+    handleInput (event) {
+      const textarea = event.target
+      textarea.style.height = 'auto'
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+    },
+
+    addNewLine () {
+      this.messageText += '\n'
+    },
+
     onEnter () {
-      if (!this.canSend) { return }
+      if (!this.canSend || this.sending) { return }
+
       this.sending = true
+
       this.$emit('send-message', {
-        content: this.messageText,
+        content: this.messageText.trim(),
         files: [],
         replyTo: this.replyTo
       })
+
       this.messageText = ''
-      this.sending = false
+      this.$refs.textarea.style.height = 'auto'
+
+      setTimeout(() => {
+        this.sending = false
+      }, 500)
     },
+
     toggleEmojiPicker () {
       this.showEmojiPicker = !this.showEmojiPicker
     },
+
     addEmoji (emoji) {
-      console.log('👉 MessagesInput received:', emoji)
       const textarea = this.$refs.textarea
       if (!textarea) { return }
+
       const cursorPos = textarea.selectionStart
       const textBefore = this.messageText.substring(0, cursorPos)
       const textAfter = this.messageText.substring(cursorPos)
       const val = typeof emoji === 'string' ? emoji : (emoji.native || '')
+
       this.messageText = textBefore + val + textAfter
+
       this.$nextTick(() => {
-        textarea.setSelectionRange(cursorPos + val.length, cursorPos + val.length)
+        const newPos = cursorPos + val.length
+        textarea.setSelectionRange(newPos, newPos)
         textarea.focus()
       })
+
+      this.showEmojiPicker = false
     },
+
     focusInput () {
-      this.$refs.textarea.focus()
+      this.$refs.textarea?.focus()
     },
+
     cancelReply () {
       this.$emit('cancel-reply')
     }

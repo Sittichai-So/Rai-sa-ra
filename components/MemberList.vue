@@ -215,7 +215,6 @@ export default {
 
 <style scoped>
 .discord-member-list {
-  width: 260px;
   background: linear-gradient(180deg, #2f3136 0%, #232428 100%);
   display: flex;
   flex-direction: column;
