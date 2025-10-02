@@ -25,6 +25,7 @@
               class="message-avatar mr-2"
               variant="secondary"
             />
+
             <div v-if="message.replyTo" class="reply-preview">
               <div class="reply-indicator" />
               <div class="reply-content">
@@ -97,25 +98,25 @@
                   size="sm"
                   no-caret
                   class="message-menu"
-                  dropdown-append-to-body
                   right
-                  offset="0,8"
+                  boundary="viewport"
+                  :popper-opts="{ strategy: 'fixed', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] }"
                 >
                   <template #button-content>
                     <i class="fas fa-ellipsis-v" />
                   </template>
 
-                  <b-dropdown-item style="font-size: 16px;" @click="showReactionPicker(message._id)">
+                  <b-dropdown-item @click="showReactionPicker(message._id)">
                     <i class="fas fa-smile" /> เพิ่มรีแอคชัน
                   </b-dropdown-item>
-                  <b-dropdown-item style="font-size: 16px;" @click="replyToMessage(message)">
+                  <b-dropdown-item @click="replyToMessage(message)">
                     <i class="fas fa-reply" /> ตอบกลับ
                   </b-dropdown-item>
                   <b-dropdown-divider v-if="message.userId === currentUserId" />
-                  <b-dropdown-item v-if="message.userId === currentUserId" style="font-size: 16px;" @click="editMessage(message)">
+                  <b-dropdown-item v-if="message.userId === currentUserId" @click="editMessage(message)">
                     <i class="fas fa-edit" /> แก้ไข
                   </b-dropdown-item>
-                  <b-dropdown-item v-if="message.userId === currentUserId" variant="danger" style="font-size: 16px;" @click="deleteMessage(message._id)">
+                  <b-dropdown-item v-if="message.userId === currentUserId" variant="danger" @click="deleteMessage(message._id)">
                     <i class="fas fa-trash" /> ลบ
                   </b-dropdown-item>
                 </b-dropdown>
@@ -158,13 +159,20 @@
     <b-modal
       id="reaction-picker"
       v-model="showReactionPickerModal"
-      title="เลือกรีแอคชัน"
-      centered
+      hide-header
       hide-footer
-      body-class="p-3"
+      centered
+      modal-class="reaction-picker-modal"
+      body-class="reaction-picker-body"
+      size="sm"
     >
-      <div class="reaction-picker-grid">
-        <button v-for="emoji in reactionEmojis" :key="emoji" class="reaction-emoji-btn" @click="addReactionEmoji(emoji)">
+      <div class="reaction-picker-container">
+        <button
+          v-for="emoji in reactionEmojis"
+          :key="emoji"
+          class="reaction-emoji-btn"
+          @click="addReactionEmoji(emoji)"
+        >
           {{ emoji }}
         </button>
       </div>
@@ -368,166 +376,6 @@ export default {
 </script>
 
 <style scoped>
-
-.reply-preview {
-  background: rgba(255, 255, 255, 0.10);
-  border-left: 3px solid #667eea;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-bottom: 10px;
-  display: flex;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.reply-preview:hover {
-  background: rgba(0, 0, 0, 0.12);
-  transform: translateX(2px);
-}
-
-.message-bubble.own .reply-preview {
-  background: rgba(255, 255, 255, 0.2);
-  border-left-color: rgba(255, 255, 255, 0.6);
-}
-
-.message-bubble.own .reply-preview:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.reply-indicator {
-  width: 3px;
-  background: linear-gradient(180deg, #667eea 0%, transparent 100%);
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.reply-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.reply-username {
-  font-size: 11px;
-  font-weight: 600;
-  color: #667eea;
-  margin-bottom: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.message-bubble.own .reply-username {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.reply-text {
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.7);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.message-bubble.own .reply-text {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.message-content {
-  margin-bottom: 8px;
-}
-
-.message-text {
-  line-height: 1.5;
-  word-break: break-word;
-  font-size: 14px;
-  font-weight: 400;
-}
-
-.message-image img:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-.message-file {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
-}
-
-.reaction-btn {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.reaction-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.reaction-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-}
-
-.reaction-emoji-btn {
-  font-size: 28px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(102, 126, 234, 0.2);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.reaction-emoji-btn:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.message-meta {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  font-size: 11px;
-  margin-top: 4px;
-  opacity: 0.8;
-  font-weight: 500;
-}
-
-.message-bubble.other .message-meta {
-  justify-content: flex-start;
-}
-
-.message-status {
-  opacity: 0.8;
-  margin-left: 4px;
-}
-
-.own-message .message-actions {
-  order: -1;
-  margin-right: 8px;
-  margin-left: 0;
-}
-
-@keyframes typing {
-  0%, 80%, 100% { transform: scale(0.3); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
-}
 .message-list-container {
   display: flex;
   flex-direction: column;
@@ -603,19 +451,9 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  z-index: 9999;
-  min-width: 120px;
-}
 .message-bubble::before {
   content: '';
   position: absolute;
@@ -626,6 +464,7 @@ export default {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   pointer-events: none;
   z-index: 0;
+  border-radius: 18px;
 }
 
 .message-bubble > * {
@@ -645,32 +484,86 @@ export default {
   top: 50%;
   right: -36px;
   transform: translateY(-50%);
-  z-index: 10;
+  z-index: 1000;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-.message-actions .btn {
+
+.message-actions ::v-deep .btn {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: #fff;
+  color: #667eea;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.message-actions .btn:hover {
-  background: rgba(255,255,255,0.35);
+.message-actions ::v-deep .btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
 }
+
 .message-main:hover .message-actions {
   opacity: 1;
 }
+
 .message-wrapper:hover .message-actions {
   opacity: 1;
-  transform: translateX(0);
+}
+
+/* Dropdown Menu Styles */
+.message-menu ::v-deep .dropdown-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 200px;
+  z-index: 99999 !important;
+  animation: dropdownSlideIn 0.2s ease-out;
+  position: fixed !important;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-menu ::v-deep .dropdown-item {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 4px;
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+
+.message-menu ::v-deep .dropdown-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  transform: translateX(4px);
+}
+
+.message-menu ::v-deep .dropdown-item i {
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+}
+
+.message-menu ::v-deep .dropdown-divider {
+  margin: 8px 0;
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .message-group {
@@ -711,6 +604,11 @@ export default {
   flex-direction: row-reverse;
 }
 
+.own-message .message-actions {
+  right: auto;
+  left: -36px;
+}
+
 .message-avatar {
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -724,8 +622,8 @@ export default {
 }
 
 .message-bubble.own {
-  background: linear-gradient(135deg, #cecece 0%, #b46efa 100%);
-  color: rgb(51, 51, 51);
+  background: linear-gradient(180deg, #667eea 0%, #e9d4ff 100%);
+  color: white;
   border-bottom-right-radius: 8px;
   margin-left: auto;
 }
@@ -750,6 +648,81 @@ export default {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.reply-preview {
+  background: rgba(156, 156, 156, 0.55);
+  border-left: 3px solid #667eea;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reply-preview:hover {
+  background: rgba(0, 0, 0, 0.12);
+  transform: translateX(2px);
+}
+
+.message-bubble.own .reply-preview {
+  background: rgba(255, 255, 255, 0.2);
+  border-left-color: rgba(255, 255, 255, 0.6);
+}
+
+.message-bubble.own .reply-preview:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.reply-indicator {
+  width: 3px;
+  background: linear-gradient(180deg, #667eea 0%, transparent 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reply-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-username {
+  font-size: 11px;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.message-bubble.own .reply-username {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reply-text {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.7);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-bubble.own .reply-text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.message-content {
+  margin-bottom: 8px;
+}
+
+.message-text {
+  line-height: 1.5;
+  word-break: break-word;
+  font-size: 14px;
+  font-weight: 400;
+}
+
 .message-image {
   position: relative;
 }
@@ -764,11 +737,25 @@ export default {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
+.message-image img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
 .image-caption {
   font-size: 13px;
   color: #6c757d;
   margin-top: 8px;
   font-style: italic;
+}
+
+.message-file {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
 }
 
 .message-file:hover {
@@ -794,6 +781,97 @@ export default {
   flex-wrap: wrap;
 }
 
+.reaction-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.reaction-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Reaction Picker Modal Styles */
+.reaction-picker-modal ::v-deep .modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: modalBounceIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes modalBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.reaction-picker-body {
+  padding: 20px !important;
+}
+
+.reaction-picker-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.reaction-emoji-btn {
+  font-size: 32px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(102, 126, 234, 0.15);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.reaction-emoji-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.reaction-emoji-btn:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+  transform: scale(1.2);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.reaction-emoji-btn:hover::before {
+  opacity: 1;
+}
+
+.reaction-emoji-btn:active {
+  transform: scale(0.95);
+}
+
 .message-meta {
   display: flex;
   align-items: center;
@@ -812,22 +890,6 @@ export default {
   opacity: 0.8;
   margin-left: 4px;
   transition: opacity 0.2s ease;
-}
-
-.own-message .message-actions {
-  order: -1;
-  margin-right: 8px;
-  margin-left: 0;
-}
-
-.message-menu {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(15px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .typing-container {
@@ -877,6 +939,14 @@ export default {
   }
 }
 
+.typing-text {
+  color: #667eea;
+  font-style: italic;
+  font-size: 12px;
+  margin: 0;
+  font-weight: 500;
+}
+
 .scroll-bottom-btn {
   position: absolute;
   bottom: 24px;
@@ -907,14 +977,6 @@ export default {
 
 .scroll-bottom-btn:active {
   transform: translateY(0) scale(1);
-}
-
-.typing-text {
-  color: #667eea;
-  font-style: italic;
-  font-size: 12px;
-  margin: 0;
-  font-weight: 500;
 }
 
 .message-list::-webkit-scrollbar {
@@ -993,6 +1055,10 @@ export default {
 
   .message-list {
     padding: 12px 8px;
+  }
+
+  .reaction-picker-container {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

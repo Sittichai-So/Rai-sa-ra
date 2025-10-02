@@ -77,23 +77,40 @@
               v-for="friend in onlineFriends"
               :key="friend.friendId"
               class="friend-item online"
-              @click="openDirectMessage(friend)"
             >
-              <div class="user-avatar">
+              <div class="user-avatar" @click="openDirectMessage(friend)">
                 <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.displayName">
                 <div v-else class="avatar-placeholder">
                   {{ getInitials(friend.displayName) }}
                 </div>
                 <div class="status-indicator online" />
               </div>
-              <div class="friend-info">
+              <div class="friend-info" @click="openDirectMessage(friend)">
                 <span class="friend-name">{{ friend.displayName }}</span>
                 <span v-if="friend.lastMessage" class="last-message">{{ friend.lastMessage }}</span>
               </div>
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
               </div>
+
+              <div class="friend-actions">
+                <b-dropdown right variant="link" toggle-class="p-0">
+                  <template #button-content>
+                    <i class="fas fa-ellipsis-v" />
+                  </template>
+                  <b-dropdown-item style="font-size: 18px;" @click="viewFriendProfile(friend)">
+                    <i class="fas fa-user" /> ดูโปรไฟล์
+                  </b-dropdown-item>
+                  <b-dropdown-item style="font-size: 18px;" @click="openDirectMessage(friend)">
+                    <i class="fas fa-comments" /> ส่งข้อความ
+                  </b-dropdown-item>
+                  <b-dropdown-item style="font-size: 18px;" class="text-danger" @click="removeFriend(friend._id)">
+                    <i class="fas fa-trash" /> ลบเพื่อน
+                  </b-dropdown-item>
+                </b-dropdown>
+              </div>
             </div>
+
             <div
               v-for="friend in offlineFriends"
               :key="friend.friendId"
@@ -112,6 +129,23 @@
               </div>
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
+              </div>
+
+              <div class="friend-actions" style="font-size: 18px;">
+                <b-dropdown right variant="link" toggle-class="p-0" style="font-size: 18px;">
+                  <template #button-content>
+                    <i class="fas fa-ellipsis-v" />
+                  </template>
+                  <b-dropdown-item style="font-size: 18px;" @click="viewFriendProfile(friend)">
+                    <i class="fas fa-user" /> ดูโปรไฟล์
+                  </b-dropdown-item>
+                  <b-dropdown-item style="font-size: 18px;" @click="openDirectMessage(friend)">
+                    <i class="fas fa-comments" /> ส่งข้อความ
+                  </b-dropdown-item>
+                  <b-dropdown-item class="text-danger" style="font-size: 18px;" @click="removeFriend(friend.friendId)">
+                    <i class="fas fa-trash" /> ลบเพื่อน
+                  </b-dropdown-item>
+                </b-dropdown>
               </div>
             </div>
           </div>
@@ -566,7 +600,7 @@ export default {
         if (res.status === 'success') {
           this.rooms = res.result
           await this.getCountMessages()
-          console.log('Rooms loaded:', this.rooms)
+          // console.log('Rooms loaded:', this.rooms)
         }
       } catch (err) {
         console.error('Error getting rooms:', err)
@@ -598,7 +632,7 @@ export default {
         path: '/chat/room',
         query: {
           id: roomId,
-          name: roomData.name || '',
+          name: roomData.name,
           category: roomData.category || '',
           description: roomData.description || '',
           memberCount: roomData.memberCount || 0,
@@ -637,23 +671,34 @@ export default {
           this.$set(this.rooms, roomIndex, { ...this.rooms[roomIndex] })
         }
 
+        console.log('result joinRoom', this.currentRoom)
+
         if (result.status === 'success') {
           this.$router.push({
             path: '/chat/room',
+            params: { name: currentRoom.name },
             query: {
               id: roomId,
-              name: result.name,
-              category: result.category || '',
-              description: result.description || '',
-              memberCount: result.memberCount || 1,
-              tags: result.tags ? JSON.stringify(result.tags) : '[]',
-              status: result.status || 'online',
+              name: currentRoom.name,
+              category: currentRoom.category || '',
+              description: currentRoom.description || '',
+              memberCount: currentRoom.memberCount || 1,
+              tags: currentRoom.tags ? JSON.stringify(currentRoom.tags) : '[]',
+              status: currentRoom.status || 'online',
               justJoined: 'true'
             }
           })
         }
 
-        await this.$swal({ icon: 'success', title: 'สำเร็จ', text: `เข้าร่วมห้อง ${result.name} สำเร็จ!`, timer: 2000, showConfirmButton: false })
+        await this.$swal(
+          {
+            icon: 'success',
+            title: 'สำเร็จ',
+            text: `เข้าร่วมห้อง ${currentRoom.name} สำเร็จ!`,
+            timer: 2000,
+            showConfirmButton: false
+          }
+        )
         await this.getRoom()
       } catch (err) {
         console.error('error joinRoom', err)
@@ -748,8 +793,6 @@ export default {
 
         this.onlineFriends = this.friends.filter(f => f.isOnline)
         this.offlineFriends = this.friends.filter(f => !f.isOnline)
-
-        console.log('All friends loaded:', this.friends)
       } catch (err) {
         console.error('Error loading friends:', err)
         this.$swal({
@@ -774,7 +817,7 @@ export default {
           }
         })
 
-        console.log('Pending friend requests:', this.friendRequests)
+        // console.log('Pending friend requests:', this.friendRequests)
       } catch (err) {
         console.error('Error loading pending requests:', err)
         this.$swal({
@@ -908,13 +951,30 @@ export default {
 
     async rejectFriend (requestId) {
       try {
-        await this.$axios.post(process.env.API_POST_REJECT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
-        this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
-        this.$swal({
-          icon: 'info',
-          title: 'แจ้งเตือน',
-          text: 'ปฏิเสธคำขอเป็นเพื่อนแล้ว'
+        const confirmResult = await this.$swal({
+          title: 'ยืนยันการลบเพื่อน',
+          text: 'ยืนยันลบเพื่อนของคุณออกใช่หรือไม่',
+          icon: 'question',
+          cancelButtonText: 'ยกเลิก',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'ยืนยัน',
+          showCancelButton: true,
+          confirmButtonColor: '#28a745'
         })
+
+        if (confirmResult.isConfirmed) {
+          const response = await this.$axios.post(process.env.API_POST_REJECT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
+          this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
+
+          if (response.status === 'success') {
+            await this.$swal({
+              title: 'สำเร็จ!',
+              text: 'คุณได้ทำการลบเพื่อนของคุณเรียบร้อย',
+              icon: 'success'
+            })
+            window.location.reload()
+          }
+        }
       } catch (err) {
         console.error(err)
         this.$swal({
@@ -966,6 +1026,16 @@ export default {
 <style scoped>
 * {
   box-sizing: border-box;
+}
+
+.friend-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+}
+.friend-actions .dropdown-toggle::after {
+  display: none;
 }
 
 .community-chat-app {

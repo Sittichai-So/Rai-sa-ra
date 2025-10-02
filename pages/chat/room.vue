@@ -2,7 +2,6 @@
 <template>
   <div class="chat-room-page d-flex" style="height: 100vh;">
     <div class="d-flex flex-column flex-grow-1">
-      <!-- Header -->
       <header class="bg-dark text-white p-2 d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
           ห้องแชท {{ currentRoom.name || roomId }}
@@ -73,7 +72,7 @@ export default {
     return {
       roomId: this.$route.params.id || this.$route.query.id,
       currentRoom: {
-        name: this.$route.query?.name || '',
+        name: this.$route.query?.name || this.$route.params.name || '',
         category: this.$route.query?.category || '',
         description: this.$route.query?.description || '',
         memberCount: parseInt(this.$route.query?.memberCount) || 1,
@@ -339,7 +338,6 @@ aside {
   overflow-y: auto;
 }
 
-/* Reaction Picker Modal */
 .reaction-picker-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
