@@ -79,6 +79,7 @@ export default {
     // room
     API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom',
     API_JOIN_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/joinRoom',
+    API_CREATE_ROOM: environment[process.env.NODE_ENV].api + '/room/createRoom',
 
     // chat
     API_GET_ROOMID_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/messages',

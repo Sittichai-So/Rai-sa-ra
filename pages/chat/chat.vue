@@ -38,6 +38,7 @@
           </div>
         </div>
 
+        <!-- Friends -->
         <div class="section">
           <div class="section-header">
             <h6>เพื่อนของฉัน</h6>
@@ -92,7 +93,6 @@
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
               </div>
-
               <div class="friend-actions">
                 <b-dropdown right variant="link" toggle-class="p-0">
                   <template #button-content>
@@ -104,7 +104,7 @@
                   <b-dropdown-item style="font-size: 18px;" @click="openDirectMessage(friend)">
                     <i class="fas fa-comments" /> ส่งข้อความ
                   </b-dropdown-item>
-                  <b-dropdown-item style="font-size: 18px;" class="text-danger" @click="removeFriend(friend._id)">
+                  <b-dropdown-item style="font-size: 18px;" class="text-danger" @click="removeFriend(friend.friendId)">
                     <i class="fas fa-trash" /> ลบเพื่อน
                   </b-dropdown-item>
                 </b-dropdown>
@@ -130,7 +130,6 @@
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
               </div>
-
               <div class="friend-actions" style="font-size: 18px;">
                 <b-dropdown right variant="link" toggle-class="p-0" style="font-size: 18px;">
                   <template #button-content>
@@ -287,8 +286,8 @@
                 @click="joinRoom(room._id)"
               >
                 <i v-if="joiningRoom === room._id" class="fas fa-spinner fa-spin" />
-                <i v-else class="fas fa-sign-in-alt" />
-                {{ joiningRoom === room._id ? 'กำลังเข้าร่วม...' : 'เข้าร่วม' }}
+                <i v-else :class="room.type === 'private' ? 'fas fa-lock' : 'fas fa-sign-in-alt'" />
+                {{ joiningRoom === room._id ? 'กำลังเข้าร่วม...' : (room.type === 'private' ? 'เข้าร่วม (Private)' : 'เข้าร่วม') }}
               </button>
               <button v-else class="join-btn disabled" disabled>
                 <i class="fas fa-lock" />
@@ -302,12 +301,30 @@
 
     <b-modal
       v-model="showCreateRoom"
-      title="สร้างช่องทางใหม่"
-      centered
       hide-footer
-      body-class="create-room-modal-body"
     >
-      <b-form class="create-room-form" @submit.stop.prevent="createRoom">
+      <template #modal-header>
+        <div
+          class="d-flex align-items-center w-100"
+          style="
+            background: linear-gradient(90deg, #ff6b9d, #c44cd8);
+            border-radius: 8px 8px 0 0;
+            padding: 12px 16px;
+            color: white;
+          "
+        >
+          <i class="fas fa-plus-circle mr-2" style="font-size: 20px;" />
+          <h5 class="mb-0">
+            สร้างห้องแชทใหม่
+          </h5>
+        </div>
+      </template>
+
+      <b-form
+        class="create-room-form"
+        style="font-size: 18px;"
+        @submit.stop.prevent="createRoom"
+      >
         <b-form-group label="ชื่อช่องทาง" label-for="roomName">
           <b-form-input
             id="roomName"
@@ -323,9 +340,46 @@
             id="roomCategory"
             v-model="newRoom.category"
             :options="categoryOptions"
+            style="font-size: 16px;"
             required
           />
         </b-form-group>
+
+        <b-form-group label="ประเภทห้อง" label-for="roomType">
+          <b-form-radio-group
+            id="roomType"
+            v-model="newRoom.type"
+            :options="[
+              { text: 'สาธารณะ (Public)', value: 'public' },
+              { text: 'ส่วนตัว (Private)', value: 'private' }
+            ]"
+          />
+        </b-form-group>
+
+        <b-form-group
+          v-if="newRoom.type === 'private'"
+          label="รหัสผ่านห้อง"
+          label-for="roomPassword"
+        >
+          <b-form-input
+            id="roomPassword"
+            v-model="newRoom.password"
+            type="password"
+            placeholder="กรอกรหัสผ่านสำหรับห้อง"
+            required
+          />
+        </b-form-group>
+
+        <div class="mb-3">
+          <label for="tags-limit">เพิ่ม Tags</label>
+          <b-form-tags
+            v-model="newRoom.tags"
+            input-id="tags-limit"
+            :limit="limit"
+            remove-on-delete
+            placeholder="เพิ่ม tags"
+          />
+        </div>
 
         <b-form-group label="คำอธิบาย" label-for="roomDescription">
           <b-form-textarea
@@ -336,8 +390,11 @@
           />
         </b-form-group>
 
-        <div class="form-actions">
-          <b-button variant="secondary" @click="showCreateRoom = false">
+        <div class="d-flex justify-content-end" style="gap: 15px;">
+          <b-button
+            style="background-color: #f5f5f5; color: #333; border: 1px solid #ccc;"
+            @click="showCreateRoom = false"
+          >
             ยกเลิก
           </b-button>
           <b-button type="submit" variant="primary">
@@ -434,6 +491,33 @@
         </div>
       </div>
     </b-modal>
+
+    <b-modal
+      v-model="showJoinPasswordModal"
+      title="เข้าร่วมห้องส่วนตัว"
+      centered
+      hide-footer
+    >
+      <b-form @submit.stop.prevent="confirmJoinPrivateRoom">
+        <b-form-group label="กรุณากรอกรหัสผ่าน" label-for="joinPassword">
+          <b-form-input
+            id="joinPassword"
+            v-model="joinPassword"
+            type="password"
+            placeholder="รหัสผ่านห้อง"
+            required
+          />
+        </b-form-group>
+        <div class="form-actions">
+          <b-button variant="secondary" @click="showJoinPasswordModal = false">
+            ยกเลิก
+          </b-button>
+          <b-button type="submit" variant="primary">
+            เข้าร่วมห้อง
+          </b-button>
+        </div>
+      </b-form>
+    </b-modal>
   </div>
 </template>
 
@@ -461,11 +545,6 @@ export default {
       showCreateRoom: false,
       showAddFriend: false,
       searchUser: '',
-      newRoom: {
-        name: '',
-        category: 'gaming',
-        description: ''
-      },
       categories: [],
       rooms: [],
       profile: [],
@@ -476,7 +555,12 @@ export default {
       userSearchQuery: '',
       searchResults: [],
       isSearching: false,
-      sendingRequest: null
+      sendingRequest: null,
+      showJoinPasswordModal: false,
+      limit: 5,
+      newRoom: { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [] },
+      joinPassword: '',
+      joinRoomIdPending: null
     }
   },
   computed: {
@@ -643,66 +727,51 @@ export default {
     },
 
     async joinRoom (roomId) {
-      if (!this.user) {
-        return this.$swal({ icon: 'warning', title: 'ยังไม่ได้ล็อกอิน', text: 'กรุณาเข้าสู่ระบบก่อนเข้าร่วมห้อง' })
-      }
-
-      const token = localStorage.getItem('token')
-      if (!token) { return }
-
       const currentRoom = this.rooms.find(r => r._id === roomId)
-      if (currentRoom?.members?.some(m => m.userId === this.user._id)) {
-        return this.$swal({ icon: 'info', title: 'แจ้งเตือน', text: 'คุณได้เข้าร่วมห้องนี้แล้ว' })
+      if (!currentRoom) { return }
+
+      if (currentRoom.type === 'private') {
+        this.joinRoomIdPending = roomId
+        this.showJoinPasswordModal = true
+        return
       }
 
-      this.joiningRoom = roomId
+      await this.joinRoomRequest(roomId)
+    },
 
+    async confirmJoinPrivateRoom () {
+      if (!this.joinPassword.trim()) {
+        return this.$swal({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกรหัสผ่านก่อนเข้าห้อง' })
+      }
+      await this.joinRoomRequest(this.joinRoomIdPending, this.joinPassword)
+      this.showJoinPasswordModal = false
+      this.joinPassword = ''
+    },
+
+    async joinRoomRequest (roomId, password = null) {
+      const token = localStorage.getItem('token')
       try {
-        const payload = { roomId, userId: this.user._id, fullname: this.user.fullname, avatar: this.user.avatar || '' }
+        this.joiningRoom = roomId
+        const payload = {
+          roomId,
+          userId: this.user._id,
+          fullname: this.user.fullname,
+          avatar: this.user.avatar || '',
+          password
+        }
         const result = await this.$axios.$post(process.env.API_JOIN_ROOM_USERS, payload, {
           headers: { Authorization: `Bearer ${token}` }
         })
 
-        this.currentRoom = result
-        const roomIndex = this.rooms.findIndex(r => r._id === roomId)
-        if (roomIndex !== -1) {
-          this.rooms[roomIndex].memberCount = result.memberCount
-          this.rooms[roomIndex].members = result.members || []
-          this.$set(this.rooms, roomIndex, { ...this.rooms[roomIndex] })
-        }
-
-        console.log('result joinRoom', this.currentRoom)
-
         if (result.status === 'success') {
-          this.$router.push({
-            path: '/chat/room',
-            params: { name: currentRoom.name },
-            query: {
-              id: roomId,
-              name: currentRoom.name,
-              category: currentRoom.category || '',
-              description: currentRoom.description || '',
-              memberCount: currentRoom.memberCount || 1,
-              tags: currentRoom.tags ? JSON.stringify(currentRoom.tags) : '[]',
-              status: currentRoom.status || 'online',
-              justJoined: 'true'
-            }
-          })
+          await this.$swal({ icon: 'success', title: 'สำเร็จ', text: 'เข้าร่วมห้องสำเร็จ!' })
+          await this.getRoom()
+        } else {
+          await this.$swal({ icon: 'error', title: 'ผิดพลาด', text: result.message })
         }
-
-        await this.$swal(
-          {
-            icon: 'success',
-            title: 'สำเร็จ',
-            text: `เข้าร่วมห้อง ${currentRoom.name} สำเร็จ!`,
-            timer: 2000,
-            showConfirmButton: false
-          }
-        )
-        await this.getRoom()
       } catch (err) {
-        console.error('error joinRoom', err)
-        await this.$swal({ icon: 'error', title: 'ข้อผิดพลาด', text: err.response?.data?.message || 'เข้าร่วมไม่สำเร็จ กรุณาลองใหม่' })
+        console.error(err)
+        await this.$swal({ icon: 'error', title: 'ผิดพลาด', text: err.response?.data?.message || 'เข้าร่วมไม่สำเร็จ' })
       } finally {
         this.joiningRoom = null
       }
@@ -713,34 +782,43 @@ export default {
       return !!room?.members?.some(m => m.userId === this.user._id)
     },
 
-    createRoom () {
+    async createRoom () {
       if (!this.newRoom.name.trim()) {
-        return this.$bvToast.toast('กรุณาระบุชื่อห้อง', { title: 'ข้อผิดพลาด', variant: 'danger', solid: true })
+        return this.$swal({
+          icon: 'error',
+          title: 'ข้อผิดพลาด',
+          text: 'กรุณาระบุชื่อห้อง'
+        })
       }
 
-      const categoryObj = this.categories.find(c => c.key === this.newRoom.category) || {}
-      const newRoomData = {
-        id: `room-${Date.now()}`,
-        name: this.newRoom.name,
-        category: this.newRoom.category,
-        categoryName: categoryObj.name || '',
-        description: this.newRoom.description || 'ห้องแชทใหม่',
-        members: 1,
-        messages: 0,
-        status: 'ออนไลน์',
-        tags: ['ใหม่'],
-        icon: categoryObj.icon || 'chat',
-        iconGradient: 'linear-gradient(135deg, #ffc107, #fd7e14)',
-        online: true,
-        featured: false,
-        badge: '',
-        isFavorite: false
-      }
+      try {
+        const token = localStorage.getItem('token')
+        const payload = { ...this.newRoom }
+        const response = await this.$axios.$post(process.env.API_CREATE_ROOM, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
 
-      this.rooms.unshift(newRoomData)
-      this.newRoom = { name: '', category: 'gaming', description: '' }
-      this.$bvModal.hide('create-room-modal')
-      this.$bvToast.toast(`สร้างห้อง "${newRoomData.name}" สำเร็จ!`, { title: '🎉 สำเร็จ', variant: 'success', solid: true, autoHideDelay: 3000 })
+        console.log('payload name', this.payload)
+
+        if (response.status === 'success') {
+          await this.$swal({
+            icon: 'success',
+            title: '🎉 สำเร็จ',
+            text: `สร้างห้อง "${payload.name}" สำเร็จ!`
+          })
+        }
+        await this.getRoom()
+      } catch (err) {
+        console.error(err)
+        this.$swal({
+          icon: 'error',
+          title: 'ผิดพลาด',
+          text: err.response?.data?.message || 'สร้างห้องไม่สำเร็จ'
+        })
+      } finally {
+        this.showCreateRoom = false
+        this.newRoom = { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [] }
+      }
     },
 
     initialize () {
@@ -952,8 +1030,8 @@ export default {
     async rejectFriend (requestId) {
       try {
         const confirmResult = await this.$swal({
-          title: 'ยืนยันการลบเพื่อน',
-          text: 'ยืนยันลบเพื่อนของคุณออกใช่หรือไม่',
+          title: 'ยืนยันการปฏิเสธคำขอ',
+          text: 'ยืนยันปฏิเสธคำขอใช่หรือไม่',
           icon: 'question',
           cancelButtonText: 'ยกเลิก',
           cancelButtonColor: '#d33',
@@ -969,7 +1047,7 @@ export default {
           if (response.status === 'success') {
             await this.$swal({
               title: 'สำเร็จ!',
-              text: 'คุณได้ทำการลบเพื่อนของคุณเรียบร้อย',
+              text: 'คุณได้ทำการปฏิเสธคำขอเรียบร้อย',
               icon: 'success'
             })
             window.location.reload()
@@ -987,14 +1065,29 @@ export default {
 
     async removeFriend (friendId) {
       try {
-        await this.$axios.delete(process.env.API_DELETE_REMOVE_FRIENDSHIP_ID.replace(':friendId', friendId))
-        this.onlineFriends = this.onlineFriends.filter(f => f._id !== friendId)
-        this.offlineFriends = this.offlineFriends.filter(f => f._id !== friendId)
-        this.$swal({
-          icon: 'success',
-          title: 'สำเร็จ',
-          text: 'ลบเพื่อนสำเร็จ'
+        const confirmResult = await this.$swal({
+          title: 'ยืนยันการลบเพื่อน',
+          text: 'ยืนยันลบเพื่อนของคุณออกใช่หรือไม่',
+          icon: 'question',
+          cancelButtonText: 'ยกเลิก',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'ยืนยัน',
+          showCancelButton: true,
+          confirmButtonColor: '#28a745'
         })
+        if (confirmResult.isConfirmed) {
+          const response = await this.$axios.delete(process.env.API_DELETE_REMOVE_FRIENDSHIP_ID.replace(':friendId', friendId))
+          this.onlineFriends = this.onlineFriends.filter(f => f._id !== friendId)
+          this.offlineFriends = this.offlineFriends.filter(f => f._id !== friendId)
+          if (response.status === 'success') {
+            await this.$swal({
+              title: 'สำเร็จ!',
+              text: 'คุณได้ทำการลบเพื่อนของคุณเรียบร้อย',
+              icon: 'success'
+            })
+            window.location.reload()
+          }
+        }
       } catch (err) {
         console.error(err)
         this.$swal({
@@ -1844,7 +1937,6 @@ export default {
 .add-friend-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
 .form-group {
