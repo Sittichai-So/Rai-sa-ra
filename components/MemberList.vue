@@ -8,7 +8,6 @@
     </div>
 
     <div class="members-container">
-      <!-- Activity Members -->
       <div v-if="filteredActivityMembers.length">
         <div class="category-header">
           กิจกรรม — {{ filteredActivityMembers.length }}
@@ -42,7 +41,6 @@
         </div>
       </div>
 
-      <!-- Online Members -->
       <div v-if="filteredOnlineMembers.length">
         <div class="category-header">
           ออนไลน์ — {{ filteredOnlineMembers.length }}
@@ -58,7 +56,7 @@
           >
             <div class="member-avatar">
               <img v-if="member.avatar" :src="member.avatar">
-              <div class="avatar-placeholder">
+              <div v-else class="avatar-placeholder">
                 {{ getInitials(member) }}
               </div>
               <div class="status-indicator" :class="member.status" />
@@ -76,7 +74,6 @@
         </div>
       </div>
 
-      <!-- Offline Members -->
       <div v-if="filteredOfflineMembers.length">
         <div class="category-header">
           ออฟไลน์ — {{ filteredOfflineMembers.length }}
@@ -92,7 +89,7 @@
           >
             <div class="member-avatar">
               <img v-if="member.avatar" :src="member.avatar">
-              <div class="avatar-placeholder offline">
+              <div v-else class="avatar-placeholder offline">
                 {{ getInitials(member) }}
               </div>
               <div class="status-indicator offline" />
@@ -128,86 +125,242 @@ export default {
   data () {
     return {
       members: [],
-      searchQuery: ''
+      searchQuery: '',
+      socketListenersSetup: false
     }
   },
   computed: {
-    activityMembers () { return this.members.filter(m => this.isOnline(m) && (m.activity || m.gameName)) },
-    onlineMembers () { return this.members.filter(m => this.isOnline(m) && !m.activity && !m.gameName) },
-    offlineMembers () { return this.members.filter(m => !this.isOnline(m)) },
-    filteredActivityMembers () { return this.filterMembers(this.activityMembers) },
-    filteredOnlineMembers () { return this.filterMembers(this.onlineMembers) },
-    filteredOfflineMembers () { return this.filterMembers(this.offlineMembers) },
-    filteredMembers () { return [...this.filteredActivityMembers, ...this.filteredOnlineMembers, ...this.filteredOfflineMembers] }
+    activityMembers () {
+      return this.members.filter(m => this.isOnline(m) && (m.activity || m.gameName))
+    },
+    onlineMembers () {
+      return this.members.filter(m => this.isOnline(m) && !m.activity && !m.gameName)
+    },
+    offlineMembers () {
+      return this.members.filter(m => !this.isOnline(m))
+    },
+    filteredActivityMembers () {
+      return this.filterMembers(this.activityMembers)
+    },
+    filteredOnlineMembers () {
+      return this.filterMembers(this.onlineMembers)
+    },
+    filteredOfflineMembers () {
+      return this.filterMembers(this.offlineMembers)
+    },
+    filteredMembers () {
+      return [...this.filteredActivityMembers, ...this.filteredOnlineMembers, ...this.filteredOfflineMembers]
+    }
   },
   watch: {
-    roomId: { immediate: true, handler () { this.init() } }
+    roomId: {
+      immediate: true,
+      async handler (newVal, oldVal) {
+        // ถ้า roomId เปลี่ยน ให้ cleanup socket listeners เก่า
+        if (oldVal && oldVal !== newVal) {
+          this.cleanupSocket()
+        }
+        if (newVal) {
+          await this.init()
+        }
+      }
+    }
+  },
+  beforeDestroy () {
+    this.cleanupSocket()
+    // ลบ beforeunload listener
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+    }
   },
   methods: {
     async init () {
       await this.fetchMembers()
       this.setupSocket()
     },
+
     async fetchMembers () {
-      const res = await this.$axios.$get(process.env.API_GET_ROOM_MEMBER.replace(':roomId', this.roomId))
-      this.members = res.result.map(m => ({
+      try {
+        const res = await this.$axios.$get(
+          process.env.API_GET_ROOM_MEMBER.replace(':roomId', this.roomId)
+        )
+        this.members = (res.result || []).map(m => ({
+          _id: m._id,
+          fullname: m.fullname || m.displayName || m.username,
+          avatar: m.avatar,
+          status: m.status || 'offline',
+          lastSeen: m.lastSeen || null,
+          activity: m.activity || null,
+          gameName: m.gameName || null
+        }))
+      } catch (err) {
+        console.error('Error fetching members:', err)
+        this.members = []
+      }
+    },
+
+    setupSocket () {
+      if (!this.roomId || !this.$socket || this.socketListenersSetup) {
+        return
+      }
+
+      // ลบ listeners เก่าก่อน (ถ้ามี)
+      this.cleanupSocket()
+
+      // ไม่ต้อง emit joinRoom ที่นี่ เพราะ room.vue จัดการแล้ว
+      // เพียงแค่รอรับ event จาก server
+
+      // ตั้งค่า socket listeners
+      this.$socket.on('roomMembers', this.handleRoomMembers)
+      this.$socket.on('statusChanged', this.handleStatusChanged)
+      this.$socket.on('memberJoined', this.handleMemberJoined)
+      this.$socket.on('memberLeft', this.handleMemberLeft)
+
+      this.socketListenersSetup = true
+
+      // จัดการ beforeunload
+      this.beforeUnloadHandler = () => {
+        if (this.$socket && this.currentUserId) {
+          this.$socket.emit('statusChanged', {
+            userId: this.currentUserId,
+            status: 'offline',
+            roomId: this.roomId
+          })
+        }
+      }
+      window.addEventListener('beforeunload', this.beforeUnloadHandler)
+    },
+
+    cleanupSocket () {
+      if (!this.$socket) { return }
+
+      // ลบ listeners ทั้งหมด
+      this.$socket.off('roomMembers', this.handleRoomMembers)
+      this.$socket.off('statusChanged', this.handleStatusChanged)
+      this.$socket.off('memberJoined', this.handleMemberJoined)
+      this.$socket.off('memberLeft', this.handleMemberLeft)
+
+      this.socketListenersSetup = false
+    },
+
+    // Socket event handlers (แยกออกมาเป็น methods เพื่อง่ายต่อการ cleanup)
+    handleRoomMembers (members) {
+      if (!Array.isArray(members)) { return }
+
+      this.members = members.map(m => ({
         _id: m._id,
-        fullname: m.fullname,
+        fullname: m.fullname || m.displayName || m.username,
         avatar: m.avatar,
         status: m.status || 'offline',
-        lastSeen: m.lastSeen || null
+        lastSeen: m.lastSeen || null,
+        activity: m.activity || null,
+        gameName: m.gameName || null
       }))
     },
-    setupSocket () {
-      if (!this.roomId) { return }
 
-      this.$socket.emit('joinRoom', { roomId: this.roomId, user: { _id: this.currentUserId } })
-
-      this.$socket.on('roomMembers', (members) => {
-        this.members = members
-      })
-
-      this.$socket.on('statusChanged', ({ userId, status }) => {
-        const member = this.members.find(m => m._id === userId)
-        if (member) { member.status = status }
-      })
-      window.addEventListener('beforeunload', () => {
-        if (this.$socket && this.currentUserId) {
-          this.$socket.emit('statusChanged', { userId: this.currentUserId, status: 'offline' })
+    handleStatusChanged ({ userId, status, activity, gameName }) {
+      const member = this.members.find(m => m._id === userId)
+      if (member) {
+        member.status = status
+        if (activity !== undefined) { member.activity = activity }
+        if (gameName !== undefined) { member.gameName = gameName }
+        if (status === 'offline') {
+          member.lastSeen = new Date()
         }
-      })
+        // Force update
+        this.$forceUpdate()
+      }
     },
+
+    handleMemberJoined (member) {
+      const exists = this.members.find(m => m._id === member._id)
+      if (!exists) {
+        this.members.push({
+          _id: member._id,
+          fullname: member.fullname || member.displayName || member.username,
+          avatar: member.avatar,
+          status: member.status || 'online',
+          lastSeen: member.lastSeen || null,
+          activity: member.activity || null,
+          gameName: member.gameName || null
+        })
+      }
+    },
+
+    handleMemberLeft ({ userId }) {
+      const index = this.members.findIndex(m => m._id === userId)
+      if (index !== -1) {
+        this.members[index].status = 'offline'
+        this.members[index].lastSeen = new Date()
+        this.$forceUpdate()
+      }
+    },
+
     isCurrentUser (member) {
       return String(member._id) === String(this.currentUserId)
     },
+
     isOnline (member) {
+      if (!member) { return false }
+
+      // ถ้าเป็นตัวเอง ให้ดูจาก status ที่เก็บไว้
       if (this.isCurrentUser(member)) {
-        const me = this.members.find(m => m._id === this.currentUserId)
-        return me?.status === 'online'
+        return member.status === 'online'
       }
-      return member.status === 'online' ||
-        (!member.status && member.lastSeen && ((new Date() - new Date(member.lastSeen)) / 1000 / 60 <= 5))
+
+      // ถ้ามี status เป็น online
+      if (member.status === 'online') {
+        return true
+      }
+
+      // ถ้าไม่มี status แต่มี lastSeen ภายใน 5 นาที
+      if (!member.status && member.lastSeen) {
+        const diff = (new Date() - new Date(member.lastSeen)) / 1000 / 60
+        return diff <= 5
+      }
+
+      return false
     },
+
     filterMembers (list) {
       if (!this.searchQuery.trim()) { return list }
       const q = this.searchQuery.toLowerCase()
-      return list.filter(m => (m.fullname || m.displayName || m.username || '').toLowerCase().includes(q))
+      return list.filter((m) => {
+        const name = (m.fullname || m.displayName || m.username || '').toLowerCase()
+        return name.includes(q)
+      })
     },
-    getMemberName (member) { return member.fullname || member.displayName || member.username || 'Unknown User' },
+
+    getMemberName (member) {
+      return member.fullname || member.displayName || member.username || 'Unknown User'
+    },
+
     getInitials (member) {
       const name = member.fullname || member.displayName || member.username || ''
       if (!name) { return '?' }
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+      const parts = name.split(' ').filter(p => p.length > 0)
+      if (parts.length === 0) { return '?' }
+      if (parts.length === 1) { return parts[0][0].toUpperCase() }
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
     },
+
     formatLastSeen (lastSeen) {
+      if (!lastSeen) { return '' }
+
       const diff = Math.floor((new Date() - new Date(lastSeen)) / 1000 / 60)
       if (diff < 1) { return 'เมื่อสักครู่' }
       if (diff < 60) { return `${diff} นาทีที่แล้ว` }
+
       const hours = Math.floor(diff / 60)
       if (hours < 24) { return `${hours} ชั่วโมงที่แล้ว` }
+
       const days = Math.floor(hours / 24)
       if (days < 7) { return `${days} วันที่แล้ว` }
-      return new Date(lastSeen).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+
+      return new Date(lastSeen).toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short'
+      })
     }
   }
 }

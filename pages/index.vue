@@ -525,7 +525,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 /* .nav-center {
   position: absolute;
   top: 50%;

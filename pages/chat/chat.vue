@@ -1,6 +1,12 @@
 <template>
   <div class="community-chat-app">
-    <aside class="sidebar">
+    <button class="mobile-menu-toggle" :class="{ open: sidebarOpen }" @click="toggleSidebar">
+      <i :class="sidebarOpen ? 'fas fa-times' : 'fas fa-bars'" />
+    </button>
+
+    <div class="sidebar-overlay" :class="{ active: sidebarOpen }" @click="closeSidebar" />
+
+    <aside class="sidebar" :class="{ open: sidebarOpen }">
       <div class="sidebar-header">
         <div class="workspace-info">
           <div class="workspace-icon">
@@ -38,7 +44,6 @@
           </div>
         </div>
 
-        <!-- Friends -->
         <div class="section">
           <div class="section-header">
             <h6>เพื่อนของฉัน</h6>
@@ -302,6 +307,7 @@
     <b-modal
       v-model="showCreateRoom"
       hide-footer
+      size="lg"
     >
       <template #modal-header>
         <div
@@ -390,6 +396,28 @@
           />
         </b-form-group>
 
+        <b-form-group label="สีไอคอน">
+          <div class="d-flex flex-wrap" style="gap: 10px;">
+            <div
+              v-for="(gradient, index) in gradients"
+              :key="index"
+              :style="{
+                background: gradient,
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                border: newRoom.iconGradient === gradient ? '3px solid #007bff' : '2px solid #ccc',
+                transition: '0.2s ease'
+              }"
+              @click="newRoom.iconGradient = gradient"
+            />
+          </div>
+          <small class="text-muted">
+            เลือกสีพื้นหลังของไอคอน หรือปล่อยว่างให้ระบบกำหนดอัตโนมัติ
+          </small>
+        </b-form-group>
+
         <div class="d-flex justify-content-end" style="gap: 15px;">
           <b-button
             style="background-color: #f5f5f5; color: #333; border: 1px solid #ccc;"
@@ -404,6 +432,7 @@
       </b-form>
     </b-modal>
 
+    <!-- Add Friend Modal -->
     <b-modal
       v-model="showAddFriend"
       title="เพิ่มเพื่อน"
@@ -558,8 +587,17 @@ export default {
       sendingRequest: null,
       showJoinPasswordModal: false,
       limit: 5,
-      newRoom: { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [] },
+      newRoom: { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [], iconGradient: '' },
+      gradients: [
+        'linear-gradient(135deg, #ff6b6b, #f06595)',
+        'linear-gradient(135deg, #00b4d8, #0077b6)',
+        'linear-gradient(135deg, #f78fb3, #f8a5c2)',
+        'linear-gradient(135deg, #6f42c1, #007bff)',
+        'linear-gradient(135deg, #74b9ff, #a29bfe)',
+        'linear-gradient(135deg, #6c757d, #adb5bd)'
+      ],
       joinPassword: '',
+      sidebarOpen: false,
       joinRoomIdPending: null
     }
   },
@@ -613,6 +651,12 @@ export default {
 
     await this.loadFriends()
 
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768 && this.sidebarOpen) {
+        this.closeSidebar()
+      }
+    })
+
     this.$socket.on('friendStatusUpdate', ({ friendId, status, lastSeen }) => {
       const friend = this.friends.find(f => f.friendId === friendId)
       if (friend) {
@@ -643,10 +687,24 @@ export default {
     if (this.messageInterval) {
       clearInterval(this.messageInterval)
     }
+    document.body.style.overflow = ''
   },
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
+    },
+    toggleSidebar () {
+      this.sidebarOpen = !this.sidebarOpen
+      if (this.sidebarOpen) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = ''
+      }
+    },
+
+    closeSidebar () {
+      this.sidebarOpen = false
+      document.body.style.overflow = ''
     },
     async getProfile () {
       try {
@@ -710,6 +768,9 @@ export default {
 
     goToRoom (roomId) {
       this.activeRoomId = roomId
+      if (window.innerWidth <= 768) {
+        this.closeSidebar()
+      }
       const roomData = this.rooms.find(r => r._id === roomId)
       if (!roomData) { return }
       this.$router.push({
@@ -756,8 +817,11 @@ export default {
           roomId,
           userId: this.user._id,
           fullname: this.user.fullname,
-          avatar: this.user.avatar || '',
-          password
+          avatar: this.user.avatar || ''
+        }
+
+        if (password) {
+          payload.password = password
         }
         const result = await this.$axios.$post(process.env.API_JOIN_ROOM_USERS, payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -793,12 +857,13 @@ export default {
 
       try {
         const token = localStorage.getItem('token')
-        const payload = { ...this.newRoom }
+
+        const selectedCategory = this.categories.find(cat => cat.key === this.newRoom.category)
+        const categoryName = selectedCategory ? selectedCategory.name : ''
+        const payload = { ...this.newRoom, categoryName }
         const response = await this.$axios.$post(process.env.API_CREATE_ROOM, payload, {
           headers: { Authorization: `Bearer ${token}` }
         })
-
-        console.log('payload name', this.payload)
 
         if (response.status === 'success') {
           await this.$swal({
@@ -817,7 +882,7 @@ export default {
         })
       } finally {
         this.showCreateRoom = false
-        this.newRoom = { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [] }
+        this.newRoom = { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [], iconGradient: '' }
       }
     },
 
@@ -1098,6 +1163,9 @@ export default {
       }
     },
     openDirectMessage (friend) {
+      if (window.innerWidth <= 768) {
+        this.closeSidebar()
+      }
       this.$router.push({ path: '/chat/direct', query: { friendId: friend._id, friendName: friend.fullname, isOnline: friend.isOnline } })
     },
 
@@ -1121,6 +1189,64 @@ export default {
   box-sizing: border-box;
 }
 
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 101;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border: none;
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+  transition: all 0.3s;
+}
+
+.mobile-menu-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.6);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+.mobile-menu-toggle i {
+  transition: transform 0.3s;
+}
+
+.mobile-menu-toggle.open i {
+  transform: rotate(90deg);
+}
+
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .friend-actions {
   margin-left: auto;
   display: flex;
@@ -1134,7 +1260,7 @@ export default {
 .community-chat-app {
   display: flex;
   height: 100vh;
-  background-image: radial-gradient(circle farthest-corner at 10% 20%, rgba(117,86,204,1) 0%, rgba(213,105,167,1) 90%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
@@ -1149,40 +1275,38 @@ export default {
   width: 200%;
   height: 200%;
   background:
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 60% 10%, rgba(255, 255, 255, 0.05) 0%, transparent 30%);
-  animation: float 20s ease-in-out infinite;
+    radial-gradient(circle at 20% 30%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.08) 0%, transparent 60%);
+  animation: gradientShift 15s ease infinite;
   pointer-events: none;
   z-index: 0;
 }
 
-@keyframes float {
+@keyframes gradientShift {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-10px, -15px) rotate(1deg); }
-  50% { transform: translate(15px, -10px) rotate(-1deg); }
-  75% { transform: translate(-5px, 10px) rotate(0.5deg); }
+  50% { transform: translate(5%, 5%) rotate(5deg); }
 }
 
 .sidebar {
   width: 280px;
-  background: rgba(47, 49, 54, 0.95);
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(168, 85, 247, 0.15);
   position: relative;
   z-index: 1;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 4px 0 30px rgba(168, 85, 247, 0.1);
 }
 
 .sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(114, 137, 218, 0.1));
+  background: rgba(51, 65, 85, 0.5);
 }
 
 .workspace-info {
@@ -1191,71 +1315,59 @@ export default {
 }
 
 .workspace-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8, #5865f2);
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 12px;
   color: white;
-  font-size: 18px;
-  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
-  position: relative;
-  overflow: hidden;
+  font-size: 20px;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+  animation: pulse 3s ease-in-out infinite;
 }
 
-.workspace-icon::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: shine 3s infinite;
-}
-
-@keyframes shine {
-  0% { left: -100%; }
-  100% { left: 100%; }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: 0 4px 30px rgba(168, 85, 247, 0.6); }
 }
 
 .workspace-details h4 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: 17px;
+  font-weight: 700;
+  color: #f1f5f9;
 }
 
 .workspace-members {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #94a3b8;
 }
 
 .sidebar-toggle {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(148, 163, 184, 0.1);
   border: none;
-  color: #ffffff;
+  color: #cbd5e1;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   border-radius: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  transition: all 0.3s;
 }
 
 .sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
+  background: rgba(168, 85, 247, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
 }
 
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 12px 0;
   position: relative;
+  background: rgba(30, 41, 59, 0.5);
 }
 
 .section {
@@ -1266,8 +1378,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  margin-bottom: 4px;
+  padding: 10px 18px;
+  margin-bottom: 6px;
 }
 
 .section-header h6 {
@@ -1275,74 +1387,67 @@ export default {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #94a3b8;
   letter-spacing: 0.5px;
 }
 
 .add-channel-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: #94a3b8;
   cursor: pointer;
   padding: 6px;
   border-radius: 6px;
-  font-size: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
 .add-channel-btn:hover {
-  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
-  color: #ffffff;
-  transform: scale(1.1) rotate(90deg);
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+  transform: rotate(90deg);
 }
 
 .channels-list,
 .friends-list {
-  padding: 0 8px;
+  padding: 0 10px;
 }
 
 .channel-item,
 .friend-item {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 12px;
   margin-bottom: 4px;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  backdrop-filter: blur(10px);
+  transition: all 0.2s;
 }
 
 .channel-item:hover,
 .friend-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(148, 163, 184, 0.1);
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .channel-item.active {
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  background: rgba(168, 85, 247, 0.2);
   color: #ffffff;
-  box-shadow: 0 6px 20px rgba(196, 76, 216, 0.4);
 }
 
 .channel-prefix {
-  color: rgba(255, 255, 255, 0.6);
+  color: #94a3b8;
   font-weight: 500;
-  margin-right: 8px;
+  margin-right: 10px;
   font-size: 16px;
 }
 
 .channel-name,
 .friend-name {
-  font-size: 14px;
+  font-size: 15px;
   flex: 1;
   font-weight: 500;
+  color: #e2e8f0;
 }
 
 .user-avatar {
@@ -1352,22 +1457,21 @@ export default {
 
 .user-avatar img,
 .avatar-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(168, 85, 247, 0.3);
 }
 
 .avatar-placeholder {
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8, #5865f2);
+  background: linear-gradient(135deg, #a855f7, #ec4899);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .status-indicator {
@@ -1377,22 +1481,15 @@ export default {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid rgba(47, 49, 54, 0.95);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+  border: 2px solid #1e293b;
 }
 
 .status-indicator.online {
-  background: linear-gradient(135deg, #00ff88, #00cc6a);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
+  background: #10b981;
 }
 
 .status-indicator.offline {
-  background: #747f8d;
+  background: #6b7280;
 }
 
 .friend-info {
@@ -1403,22 +1500,22 @@ export default {
 .friend-name {
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: #e2e8f0;
   display: block;
 }
 
 .last-message {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
   display: block;
 }
 
 .friend-item.offline {
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .unread-badge {
-  background: linear-gradient(135deg, #ff4757, #ff3742);
+  background: #ef4444;
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -1426,18 +1523,10 @@ export default {
   border-radius: 12px;
   min-width: 20px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
-  animation: bounce 0.5s ease-out;
-}
-
-@keyframes bounce {
-  0% { transform: scale(0.8); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
 }
 
 .friend-requests {
-  padding: 0 8px;
+  padding: 0 10px;
   margin-bottom: 16px;
 }
 
@@ -1445,17 +1534,10 @@ export default {
   display: flex;
   align-items: center;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
-  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
   margin-bottom: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .request-info {
@@ -1472,55 +1554,38 @@ export default {
 
 .btn-accept,
 .btn-reject {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border: none;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  transition: all 0.2s;
 }
 
 .btn-accept {
-  color: #00ff88;
+  color: #10b981;
 }
 
 .btn-accept:hover {
-  background: linear-gradient(135deg, #00ff88, #00cc6a);
-  color: white;
-  transform: scale(1.1);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .btn-reject {
-  color: #ff4757;
+  color: #ef4444;
 }
 
 .btn-reject:hover {
-  background: linear-gradient(135deg, #ff4757, #ff3742);
-  color: white;
-  transform: scale(1.1);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .user-profile {
-  padding: 12px;
-  background: rgba(41, 43, 47, 0.9);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.9);
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
-}
-
-.user-profile::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #ff6b9d, #c44cd8, transparent);
 }
 
 .user-info {
@@ -1538,14 +1603,14 @@ export default {
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: #f1f5f9;
   display: block;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .user-status {
   font-size: 12px;
-  color: #00ff88;
+  color: #10b981;
+  font-weight: 500;
 }
 
 .user-actions {
@@ -1554,69 +1619,51 @@ export default {
 }
 
 .user-action-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: #94a3b8;
   cursor: pointer;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  transition: all 0.2s;
 }
 
 .user-action-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  transform: scale(1.1) rotate(5deg);
+  background: rgba(148, 163, 184, 0.1);
+  color: #e2e8f0;
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(54, 57, 63, 0.9);
-  backdrop-filter: blur(20px);
+  background: #0f172a;
   position: relative;
   z-index: 1;
 }
 
 .main-header {
   padding: 24px 32px;
-  background: rgba(54, 57, 63, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgb(58 30 59 / 80%);;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: relative;
-}
-
-.main-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #ff6b9d, #c44cd8, transparent);
 }
 
 .header-left h1 {
   margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffffff, #ff6b9d, #c44cd8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  color: #f1f5f9;
 }
 
 .header-left p {
   margin: 0;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #94a3b8;
 }
 
 .search-container {
@@ -1632,122 +1679,119 @@ export default {
 .search-icon {
   position: absolute;
   left: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
   font-size: 14px;
   z-index: 2;
 }
 
 .search-input {
   width: 100%;
-  padding: 14px 16px 14px 44px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  color: #ffffff;
+  padding: 12px 16px 12px 44px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 24px;
+  color: #e2e8f0;
   font-size: 14px;
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
 }
 
 .search-input:focus {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid #ff6b9d;
-  box-shadow: 0 0 20px rgba(255, 107, 157, 0.3);
-  transform: translateY(-1px);
+  background: rgba(51, 65, 85, 0.7);
+  border-color: #a855f7;
 }
 
 .categories-filter {
-  padding: 20px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(54, 57, 63, 0.5);
+  padding: 16px 32px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  background: #3f244a;
+  margin-bottom: 0;
 }
 
 .filter-tabs {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .filter-tab {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 10px 18px;
-  border-radius: 25px;
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  padding: 10px 20px;
+  border-radius: 24px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .filter-tab:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(51, 65, 85, 0.8);
+  border-color: #a855f7;
   color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .filter-tab.active {
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  background: linear-gradient(135deg, #a855f7, #ec4899);
   color: #ffffff;
-  border-color: transparent;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(196, 76, 216, 0.4);
+  border-color: #a855f7;
 }
 
 .rooms-container {
   flex: 1;
   overflow-y: auto;
+  background: linear-gradient(135deg, #650072  0%, #334155 100%);
   padding: 24px 32px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .room-card {
-  background: rgba(47, 49, 54, 0.9);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 16px;
   padding: 24px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
 }
 
 .room-card::before {
-  content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: all 0.5s;
-}
-
-.room-card:hover::before {
-  left: 100%;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(210, 161, 255, 0.178) 0%, transparent 70%);
+  opacity: 0;
+  color: white !important;
+  transition: opacity 0.3s;
 }
 
 .room-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border-color: #ff6b9d;
-  background: rgba(47, 49, 54, 0.95);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.9) 100%);
+  border-color: #a855f7;
+  box-shadow: 0 20px 40px rgba(168, 85, 247, 0.3), 0 0 0 1px rgba(168, 85, 247, 0.2);
 }
 
 .room-card-header {
@@ -1761,33 +1805,27 @@ export default {
 }
 
 .room-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 22px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  position: relative;
-  overflow: hidden;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .room-title {
   margin: 0 0 6px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #ffd900;
 }
 
 .room-category {
   font-size: 12px;
-  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #a78bfa;
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -1798,8 +1836,8 @@ export default {
   justify-content: space-between;
   margin-bottom: 16px;
   padding: 12px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .stat-item {
@@ -1807,33 +1845,22 @@ export default {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #94a3b8;
   font-weight: 500;
-}
-
-.stat-item.status {
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  box-shadow: 0 0 6px currentColor;
 }
 
 .status-dot.online {
-  background: #00ff88;
-  animation: glow 2s infinite;
-}
-
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 6px #00ff88; }
-  50% { box-shadow: 0 0 12px #00ff88, 0 0 18px #00ff88; }
+  background: #10b981;
 }
 
 .status-dot.offline {
-  background: #747f8d;
+  background: #6b7280;
 }
 
 .room-description {
@@ -1843,7 +1870,7 @@ export default {
 .room-description p {
   margin: 0;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #969494;
   line-height: 1.5;
 }
 
@@ -1855,20 +1882,19 @@ export default {
 }
 
 .tag {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(168, 85, 247, 0.1);
+  color: #a78bfa;
   padding: 6px 12px;
-  border-radius: 16px;
+  border-radius: 24px;
   font-size: 11px;
   font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  transition: all 0.2s;
 }
 
 .tag:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
 }
 
 .room-actions {
@@ -1878,59 +1904,40 @@ export default {
 
 .join-btn {
   flex: 1;
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  background: #FFC107;
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 24px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(196, 76, 216, 0.4);
-}
-
-.join-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: all 0.5s;
-}
-
-.join-btn:hover:not(:disabled)::before {
-  left: 100%;
 }
 
 .join-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea, #FFC107);
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(196, 76, 216, 0.6);
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
 }
 
 .join-btn:disabled,
 .join-btn.disabled {
-  background: rgba(116, 127, 141, 0.3);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(107, 114, 128, 0.3);
+  color: #6b7280;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* Modal Styles */
 .create-room-modal-body,
 .add-friend-modal-body {
-  background: linear-gradient(135deg, rgba(54, 57, 63, 0.95), rgba(47, 49, 54, 0.95));
+  background: rgba(30, 41, 59, 0.95);
   backdrop-filter: blur(20px);
   color: #ffffff;
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 .create-room-form,
@@ -1948,38 +1955,32 @@ export default {
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f1f5f9;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  color: #ffffff;
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
   font-size: 14px;
   padding: 12px 16px;
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
 }
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
-  border-color: #ff6b9d;
-  box-shadow: 0 0 20px rgba(255, 107, 157, 0.3);
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
+  border-color: #a855f7;
+  background: rgba(51, 65, 85, 0.7);
 }
 
 .form-actions,
@@ -1993,41 +1994,33 @@ export default {
 .btn-primary,
 .btn-secondary {
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   border: none;
-  position: relative;
-  overflow: hidden;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  background: linear-gradient(135deg, #a855f7, #ec4899);
   color: white;
-  box-shadow: 0 4px 15px rgba(196, 76, 216, 0.4);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(196, 76, 216, 0.6);
+  background: linear-gradient(135deg, #9333ea, #db2777);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  transform: translateY(-1px);
+  background: rgba(148, 163, 184, 0.2);
 }
 
-/* Search Results */
 .search-user-section {
   margin-bottom: 20px;
 }
@@ -2039,14 +2032,14 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #94a3b8;
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top: 2px solid #ff6b9d;
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  border-top: 2px solid #a855f7;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 12px;
@@ -2060,10 +2053,7 @@ export default {
 .empty-state i {
   font-size: 48px;
   margin-bottom: 16px;
-  background: linear-gradient(45deg, #ff6b9d, #c44cd8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #64748b;
 }
 
 .search-results {
@@ -2078,242 +2068,109 @@ export default {
   display: flex;
   align-items: center;
   padding: 16px;
-  background: rgba(255, 197, 197, 0.1);
-  backdrop-filter: blur(15px);
-  border-radius: 16px;
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 8px;
   gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  transition: all 0.2s;
 }
 
 .user-result:hover {
-  background: rgba(255, 85, 179, 0.1);
-}
-
-.user-info {
-  flex: 1;
-  min-width: 0;
+  background: rgba(51, 65, 85, 0.8);
+  border-color: #a855f7;
 }
 
 .user-info h4 {
   margin: 0 0 4px 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #000000;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f1f5f9;
 }
 
 .user-info p {
   margin: 0;
-  font-size: 20px;
-  color: rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+  color: #94a3b8;
 }
 
 .friend-action-btn {
   padding: 10px 16px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: none;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  backdrop-filter: blur(10px);
 }
 
 .friend-action-btn.primary {
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  background: linear-gradient(135deg, #a855f7, #ec4899);
   color: white;
-  box-shadow: 0 4px 15px rgba(196, 76, 216, 0.4);
 }
 
 .friend-action-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(196, 76, 216, 0.6);
+  background: linear-gradient(135deg, #9333ea, #db2777);
 }
 
 .friend-action-btn.secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .friend-action-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .friend-action-btn.success {
-  background: linear-gradient(135deg, #00ff88, #00cc6a);
+  background: #10b981;
   color: white;
-  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
 }
 
 .friend-action-btn.success:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.6);
+  background: #059669;
 }
 
 .friend-action-btn.warning {
-  background: linear-gradient(135deg, #ffa726, #ff9800);
+  background: #f59e0b;
   color: white;
-  box-shadow: 0 4px 15px rgba(255, 167, 38, 0.4);
 }
 
 .friend-action-btn.warning:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 167, 38, 0.6);
+  background: #d97706;
 }
 
 .friend-action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
 }
 
-/* Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  background: rgba(51, 65, 85, 0.3);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #ff6b9d, #c44cd8);
+  background: rgba(168, 85, 247, 0.5);
   border-radius: 4px;
-  border: 2px solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #ff5a8a, #b33bc5);
-}
-
-/* Additional cute animations */
-.workspace-icon:hover {
-  animation: wiggle 0.5s ease-in-out;
-}
-
-@keyframes wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-3deg); }
-  75% { transform: rotate(3deg); }
-}
-
-.room-icon:hover {
-  animation: heartbeat 0.6s ease-in-out;
-}
-
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    width: 240px;
-  }
-
-  .main-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .search-container {
-    width: 100%;
-  }
-
-  .rooms-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .filter-tabs {
-    gap: 8px;
-  }
-
-  .filter-tab {
-    padding: 8px 14px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 640px) {
-  .community-chat-app {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .main-content {
-    height: calc(100vh - 200px);
-  }
-
-  .main-header {
-    padding: 16px 20px;
-  }
-
-  .header-left h1 {
-    font-size: 24px;
-  }
-
-  .rooms-container {
-    padding: 16px 20px;
-  }
-
-  .categories-filter {
-    padding: 12px 20px;
-  }
-}
-
-.room-card:nth-child(3n+1):hover {
-  animation: rainbow 2s infinite;
-}
-
-@keyframes rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-.community-chat-app::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(255, 107, 157, 0.4), transparent),
-    radial-gradient(1px 1px at 90px 40px, rgba(196, 76, 216, 0.3), transparent),
-    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.2), transparent),
-    radial-gradient(2px 2px at 160px 30px, rgba(255, 107, 157, 0.2), transparent);
-  background-repeat: repeat;
-  background-size: 200px 200px;
-  animation: sparkle 20s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.6;
-}
-
-@keyframes sparkle {
-  0% { transform: translateY(0px) translateX(0px); }
-  100% { transform: translateY(-200px) translateX(100px); }
+  background: rgba(168, 85, 247, 0.7);
 }
 
 .community-hero {
-  background: linear-gradient(135deg, #8B5DFF 0%, #6B46C1 50%, #9333EA 100%);
+  background: linear-gradient(135deg, #e944ff  0%, #334155 100%);
   text-align: center;
+  padding: 14px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -2325,31 +2182,25 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background:
-    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .community-content {
   position: relative;
   z-index: 2;
-  margin: 0 auto;
-  margin-top: 15px !important;
-  margin-bottom: 15px !important;
 }
 
 .community-icon-large {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 193, 7, 0.9);
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
   border-radius: 50%;
-  margin-bottom: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  animation: float 3s ease-in-out infinite;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.3);
 }
 
 .community-icon-large i {
@@ -2358,181 +2209,327 @@ export default {
 }
 
 .community-title {
-  font-size: 40px;
-  font-weight: 600;
-  color: #FFC107;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  letter-spacing: 1px;
+  font-size: 36px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 12px;
 }
 
 .community-subtitle {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  color: #cbd5e1;
   line-height: 1.6;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .user-welcome-card {
   display: inline-flex;
   align-items: center;
-  gap: 0px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 30px;
+  gap: 12px;
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 24px;
   padding: 10px 20px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  cursor: default;
+  margin-top: 16px;
+  transition: all 0.2s;
 }
 
 .user-welcome-card:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-}
-
-.user-avatar {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  background: rgba(51, 65, 85, 0.8);
+  border-color: #a855f7;
 }
 
 .welcome-text {
-  color: white;
-  font-size: 20px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.categories-filter {
-  margin-bottom: 20px;
-  /* margin: 2rem 0; */
-}
-
-.filter-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  padding: 0 1rem;
-}
-
-.filter-tab {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
+  color: #e2e8f0;
+  font-size: 16px;
   font-weight: 500;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  backdrop-filter: blur(5px);
 }
 
-.filter-tab:hover {
-  background: rgba(255, 193, 7, 0.2);
-  border-color: rgba(255, 193, 7, 0.4);
-  transform: translateY(-2px);
-}
-
-.filter-tab.active {
-  background: linear-gradient(135deg, #FFC107, #FF8F00);
-  border-color: #FFC107;
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 101;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border: none;
   color: white;
-  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+  transition: all 0.3s;
 }
 
-.filter-tab i {
-  margin-right: 0.5rem;
+.mobile-menu-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.6);
 }
 
-.rooms-container {
-  margin-top: 20px;
-  margin-bottom: 20px;
-  padding: 0 1rem;
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
 }
 
-.rooms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.room-card {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+.sidebar-overlay.active {
+  opacity: 1;
 }
 
-.room-card:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 260px;
+  }
+
+  .rooms-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .main-header {
+    padding: 20px 24px;
+  }
+
+  .rooms-container {
+    padding: 20px 24px;
+  }
 }
 
 @media (max-width: 768px) {
-
-  .community-icon-large {
-    width: 60px;
-    height: 60px;
+  .mobile-menu-toggle {
+    display: flex;
   }
 
-  .community-icon-large i {
-    font-size: 28px;
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 100;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  .main-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    padding: 16px 20px;
+    padding-top: 72px;
+  }
+
+  .header-left h1 {
+    font-size: 24px;
+  }
+
+  .header-left p {
+    font-size: 14px;
+  }
+
+  .search-container {
+    width: 100%;
+  }
+
+  .rooms-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .rooms-container {
+    padding: 16px 20px;
+  }
+
+  .community-hero {
+    padding: 20px 16px;
   }
 
   .community-title {
-    font-size: 2rem;
+    font-size: 28px;
   }
 
   .community-subtitle {
-    font-size: 1rem;
+    font-size: 14px;
+  }
+
+  .filter-tabs {
+    gap: 8px;
+  }
+
+  .filter-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .categories-filter {
+    padding: 12px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .workspace-details h4 {
+    font-size: 15px;
+  }
+
+  .main-header {
+    padding: 12px 16px;
+  }
+
+  .header-left h1 {
+    font-size: 20px;
+  }
+
+  .rooms-container {
+    padding: 12px 16px;
+  }
+
+  .room-card {
+    padding: 20px;
+  }
+
+  .room-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .room-title {
+    font-size: 16px;
+  }
+
+  .community-hero {
+    padding: 16px 12px;
+    border-radius: 0;
+  }
+
+  .community-title {
+    font-size: 24px;
+  }
+
+  .community-icon-large {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+  }
+
+  .community-icon-large i {
+    font-size: 20px;
   }
 
   .user-welcome-card {
-    padding: 10px 16px;
+    padding: 8px 16px;
+    font-size: 14px;
   }
 
   .filter-tabs {
     justify-content: flex-start;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
   }
 
   .filter-tab {
+    white-space: nowrap;
     flex-shrink: 0;
-    padding: 0.6rem 1.2rem;
   }
 
-  .rooms-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .categories-filter {
+    padding: 12px 16px;
   }
 }
 
 @media (max-width: 480px) {
-  .community-hero {
-    padding: 1.5rem 0.75rem;
+  .room-card-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .community-title {
-    font-size: 1.75rem;
+  .room-icon-wrapper {
+    margin-right: 0;
+    margin-bottom: 12px;
   }
 
-  .community-subtitle {
-    font-size: 0.95rem;
+  .room-stats {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .room-actions {
+    flex-direction: column;
+  }
+
+  .join-btn {
+    width: 100%;
+  }
+
+  .user-profile {
+    padding: 12px;
+  }
+
+  .user-avatar img,
+  .avatar-placeholder {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .user-status {
+    font-size: 11px;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+  }
+
+  .section-header {
+    padding: 8px 16px;
+  }
+
+  .channels-list,
+  .friends-list {
+    padding: 0 8px;
+  }
+
+  .friend-requests {
+    padding: 0 8px;
   }
 }
 </style>
