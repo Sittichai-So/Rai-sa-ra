@@ -782,7 +782,8 @@ export default {
           description: roomData.description || '',
           memberCount: roomData.memberCount || 0,
           tags: roomData.tags ? JSON.stringify(roomData.tags) : '[]',
-          status: roomData.status || 'online'
+          status: roomData.status || 'online',
+          type: roomData.type || ''
         }
       })
     },
@@ -813,16 +814,20 @@ export default {
       const token = localStorage.getItem('token')
       try {
         this.joiningRoom = roomId
+        const roomData = this.rooms.find(r => r._id === roomId)
+
         const payload = {
           roomId,
           userId: this.user._id,
           fullname: this.user.fullname,
-          avatar: this.user.avatar || ''
+          avatar: this.user.avatar || '',
+          type: roomData?.type || ''
         }
 
         if (password) {
           payload.password = password
         }
+
         const result = await this.$axios.$post(process.env.API_JOIN_ROOM_USERS, payload, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -1226,7 +1231,6 @@ export default {
   transform: rotate(90deg);
 }
 
-/* Sidebar Overlay for Mobile */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -1367,7 +1371,7 @@ export default {
   overflow-y: auto;
   padding: 12px 0;
   position: relative;
-  background: rgba(30, 41, 59, 0.5);
+  background: rgb(255, 255, 255);
 }
 
 .section {
@@ -1444,10 +1448,10 @@ export default {
 
 .channel-name,
 .friend-name {
-  font-size: 15px;
+  font-size: 16px;
   flex: 1;
   font-weight: 500;
-  color: #e2e8f0;
+  color: #343a40;
 }
 
 .user-avatar {
@@ -1498,9 +1502,9 @@ export default {
 }
 
 .friend-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  color: #e2e8f0;
+  color: #212529f0;
   display: block;
 }
 
