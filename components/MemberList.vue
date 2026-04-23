@@ -1,5 +1,6 @@
+// components/MemberList.vue
 <template>
-  <div class="discord-member-list">
+  <div class="discord-member-list" :data-theme="chatTheme">
     <div class="search-container">
       <div class="search-box">
         <i class="fas fa-search" />
@@ -120,7 +121,8 @@ export default {
   name: 'DiscordMemberList',
   props: {
     roomId: { type: String, required: true },
-    currentUserId: { type: String, required: true }
+    currentUserId: { type: String, required: true },
+    chatTheme: { type: String, default: 'default' }
   },
   data () {
     return {
@@ -593,6 +595,81 @@ export default {
   font-size: 48px;
   margin-bottom: 12px;
   opacity: 0.5;
+}
+
+/* Minimal Theme */
+[data-theme="minimal"] .discord-member-list {
+  background: #ffffff;
+  color: #1e293b;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="minimal"] .search-container {
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+[data-theme="minimal"] .search-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="minimal"] .search-box:focus-within {
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="minimal"] .search-box i {
+  color: #64748b;
+}
+
+[data-theme="minimal"] .search-box input {
+  color: #1e293b;
+}
+
+[data-theme="minimal"] .search-box input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="minimal"] .category-header {
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+[data-theme="minimal"] .category-header:hover {
+  color: #2563eb;
+}
+
+[data-theme="minimal"] .member-item:hover {
+  background: #f1f5f9;
+  transform: translateX(2px);
+}
+
+[data-theme="minimal"] .member-item.current-user {
+  background: #dbeafe;
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+[data-theme="minimal"] .member-name {
+  color: #1e293b;
+}
+
+[data-theme="minimal"] .member-status-text {
+  color: #64748b;
+}
+
+[data-theme="minimal"] .member-status-text.online {
+  color: #10b981;
+}
+
+[data-theme="minimal"] .member-status-text.offline {
+  color: #94a3b8;
+}
+
+[data-theme="minimal"] .empty-state {
+  color: #94a3b8;
 }
 
 @media (max-width: 768px) {

@@ -1,4 +1,4 @@
-<!-- MessageList.vue - Updated with theme support -->
+// components/MessageList.vue
 <template>
   <div class="message-list-container" :data-theme="chatTheme">
     <div ref="messageList" class="message-list" @scroll="handleScroll">
@@ -246,6 +246,17 @@ export default {
           } else {
             this.newMessagesCount++
           }
+          // Animate new messages
+          const newMessages = document.querySelectorAll('.message-wrapper:not(.animated)')
+          this.$anime({
+            targets: newMessages,
+            opacity: [0, 1],
+            translateX: [20, 0],
+            duration: 300,
+            easing: 'easeOutQuad',
+            delay: this.$anime.stagger(50)
+          })
+          newMessages.forEach(el => el.classList.add('animated'))
         })
       },
       deep: true
@@ -254,6 +265,14 @@ export default {
   mounted () {
     this.$nextTick(() => {
       setTimeout(() => this.scrollToBottom(), 100)
+      // Animate message list entrance
+      this.$anime({
+        targets: '.message-list',
+        opacity: [0, 1],
+        translateY: [20, 0],
+        duration: 500,
+        easing: 'easeOutQuad'
+      })
     })
     document.addEventListener('click', this.hideContextMenu)
   },
@@ -276,7 +295,6 @@ export default {
           this.$emit('load-more')
         }
       } catch (error) {
-        console.error('Error in handleScroll:', error)
       }
     },
     scrollToBottom () {
@@ -289,7 +307,6 @@ export default {
             this.newMessagesCount = 0
           }
         } catch (error) {
-          console.error('Error in scrollToBottom:', error)
         }
       })
     },
@@ -498,28 +515,32 @@ export default {
 
 /* Default Theme */
 .message-bubble.own {
-  background: #0084ff;
-  color: white;
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #e0e0e0;
   border-bottom-right-radius: 4px;
   margin-left: auto;
 }
 
 .message-bubble.other {
-  background: #f0f0f0;
-  color: #000000;
+  background: #f8f9fa;
+  color: #333333;
+  border: 1px solid #e0e0e0;
   border-bottom-left-radius: 4px;
   margin-right: auto;
 }
 
 /* Purple Theme */
 [data-theme="purple"] .message-bubble.own {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #f3e5f5;
+  color: #4a148c;
+  border: 1px solid #ba68c8;
 }
 
 [data-theme="purple"] .message-bubble.other {
   background: #f3e5f5;
   color: #4a148c;
+  border: 1px solid #ba68c8;
 }
 
 [data-theme="purple"] .reply-line {
@@ -540,13 +561,15 @@ export default {
 
 /* Pink Theme */
 [data-theme="pink"] .message-bubble.own {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background: #fce4ec;
+  color: #880e4f;
+  border: 1px solid #f06292;
 }
 
 [data-theme="pink"] .message-bubble.other {
   background: #fce4ec;
   color: #880e4f;
+  border: 1px solid #f06292;
 }
 
 [data-theme="pink"] .reply-line {
@@ -567,13 +590,15 @@ export default {
 
 /* Green Theme */
 [data-theme="green"] .message-bubble.own {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #4caf50;
 }
 
 [data-theme="green"] .message-bubble.other {
   background: #e8f5e9;
   color: #1b5e20;
+  border: 1px solid #4caf50;
 }
 
 [data-theme="green"] .reply-line {
@@ -594,13 +619,15 @@ export default {
 
 /* Orange Theme */
 [data-theme="orange"] .message-bubble.own {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  color: white;
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ff9800;
 }
 
 [data-theme="orange"] .message-bubble.other {
   background: #fff3e0;
   color: #e65100;
+  border: 1px solid #ff9800;
 }
 
 [data-theme="orange"] .reply-line {
@@ -681,6 +708,74 @@ export default {
   color: #b0b0b0;
 }
 
+/* Minimal Theme */
+[data-theme="minimal"] .message-bubble.own {
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #e0e0e0;
+  box-shadow: none;
+}
+
+[data-theme="minimal"] .message-bubble.other {
+  background: #f8f9fa;
+  color: #333333;
+  border: 1px solid #e0e0e0;
+  box-shadow: none;
+}
+
+[data-theme="minimal"] .message-list-container {
+  background: #ffffff;
+}
+
+[data-theme="minimal"] .message-list {
+  background: #ffffff;
+}
+
+[data-theme="minimal"] .reply-line {
+  background: #cccccc;
+}
+
+[data-theme="minimal"] .reply-username-outside {
+  color: #666666;
+}
+
+[data-theme="minimal"] .reply-preview-outside {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+}
+
+[data-theme="minimal"] .own-message .reply-preview-outside {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+[data-theme="minimal"] .quick-action-btn {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #666666;
+}
+
+[data-theme="minimal"] .quick-action-btn:hover {
+  background: #f8f9fa;
+  color: #333333;
+}
+
+[data-theme="minimal"] .scroll-bottom-btn {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #666666;
+}
+
+[data-theme="minimal"] .date-separator small {
+  background: #f8f9fa;
+  border-color: #e0e0e0;
+  color: #666666;
+}
+
+[data-theme="minimal"] .sender-name {
+  color: #666666;
+}
+
 .sender-name {
   font-size: 11px;
   font-weight: 600;
@@ -754,6 +849,7 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-break: break-word;
@@ -1576,6 +1672,71 @@ export default {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* Minimal Theme */
+[data-theme="minimal"] .message-bubble.own {
+  background: #2563eb;
+  color: white;
+  border-radius: 16px 16px 4px 16px;
+}
+
+[data-theme="minimal"] .message-bubble.other {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-radius: 16px 16px 16px 4px;
+}
+
+[data-theme="minimal"] .message-list-container {
+  background: #ffffff;
+}
+
+[data-theme="minimal"] .message-list {
+  background: #ffffff;
+}
+
+[data-theme="minimal"] .reply-line {
+  background: linear-gradient(180deg, #2563eb 0%, rgba(37, 99, 235, 0.5) 100%);
+}
+
+[data-theme="minimal"] .reply-username-outside {
+  color: #2563eb;
+}
+
+[data-theme="minimal"] .reply-preview-outside {
+  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="minimal"] .own-message .reply-preview-outside {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+[data-theme="minimal"] .quick-action-btn {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme="minimal"] .quick-action-btn:hover {
+  background: #f8fafc;
+  color: #2563eb;
+}
+
+[data-theme="minimal"] .scroll-bottom-btn {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #2563eb;
+}
+
+[data-theme="minimal"] .date-separator small {
+  background: rgba(248, 250, 252, 0.95);
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+[data-theme="minimal"] .sender-name {
+  color: #2563eb;
 }
 
 .text-center .b-spinner {

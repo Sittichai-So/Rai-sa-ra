@@ -28,13 +28,15 @@ export default {
       { name: 'format-detection', content: 'telephone=no' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/3.png' }
+      { rel: 'icon', type: 'image/x-icon', href: '/3.png' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' }
     ]
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
     '@/assets/css/fonts.css',
+    '@/assets/css/main.css',
     '@mdi/font/css/materialdesignicons.css',
     '@fortawesome/fontawesome-free/css/all.css'
   ],
@@ -45,7 +47,8 @@ export default {
     { src: '~/plugins/socket.client.js', mode: 'client' },
     { src: '~/plugins/vee-validate.js' },
     { src: '~/plugins/loading.js' },
-    { src: '~/plugins/initAuth.js', mode: 'client' }
+    { src: '~/plugins/initAuth.js', mode: 'client' },
+    { src: '~/plugins/anime.js', mode: 'client' }
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components

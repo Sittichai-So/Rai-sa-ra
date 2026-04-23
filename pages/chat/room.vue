@@ -1,6 +1,8 @@
+// pages/chat/room.vue
 <template>
   <div
     class="chat-room-page d-flex"
+    :data-theme="chatTheme"
     :style="{
       height: '100vh',
       background: chatBackground.startsWith('http')
@@ -55,7 +57,7 @@
 
     <!-- Member List -->
     <aside style="width: 250px;">
-      <DiscordMemberList :room-id="roomId" :current-user-id="currentUserId" />
+      <DiscordMemberList :room-id="roomId" :current-user-id="currentUserId" :chat-theme="chatTheme" />
     </aside>
 
     <!-- Reaction Picker -->
@@ -128,8 +130,8 @@ export default {
       hasMore: true,
 
       showSettingsModal: false,
-      chatTheme: 'default',
-      chatBackground: '',
+      chatTheme: 'minimal',
+      chatBackground: '#0f0f23',
 
       availableThemes: [
         {
@@ -173,6 +175,13 @@ export default {
           description: 'สีเข้มสไตล์โมเดิร์น',
           ownBubble: 'linear-gradient(135deg, #434343 0%, #000000 100%)',
           otherBubble: '#37474f'
+        },
+        {
+          id: 'minimal',
+          name: 'ธีมมินิมอล',
+          description: 'สีเรียบง่าย สไตล์มินิมอล',
+          ownBubble: '#ffffff',
+          otherBubble: '#f8f9fa'
         }
       ]
     }
@@ -195,6 +204,33 @@ export default {
     this.loadRoomSettings()
 
     if (!this.roomId) { return }
+
+    // Animate page entrance
+    this.$anime({
+      targets: '.chat-room-page',
+      opacity: [0, 1],
+      translateY: [30, 0],
+      duration: 600,
+      easing: 'easeOutQuad'
+    })
+
+    this.$anime({
+      targets: 'header',
+      opacity: [0, 1],
+      translateY: [-20, 0],
+      duration: 400,
+      delay: 200,
+      easing: 'easeOutQuad'
+    })
+
+    this.$anime({
+      targets: 'aside',
+      opacity: [0, 1],
+      translateX: [20, 0],
+      duration: 400,
+      delay: 400,
+      easing: 'easeOutQuad'
+    })
 
     await this.fetchMessages()
     this.setupSocketListeners()
@@ -223,8 +259,11 @@ export default {
         const settings = localStorage.getItem(`room_settings_${this.roomId}`)
         if (settings) {
           const parsed = JSON.parse(settings)
-          this.chatTheme = parsed.theme || 'default'
-          this.chatBackground = parsed.background || ''
+          this.chatTheme = parsed.theme || 'minimal'
+          this.chatBackground = parsed.background || '#ffffff'
+        } else {
+          this.chatTheme = 'minimal'
+          this.chatBackground = '#ffffff'
         }
       }
     },
@@ -417,55 +456,125 @@ export default {
 <style scoped>
 .chat-room-page {
   overflow: hidden;
+  transition: background 0.4s ease, transform 0.4s ease;
+  position: relative;
 }
+
+.chat-room-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.14), transparent 20%),
+              radial-gradient(circle at 80% 30%, rgba(59, 130, 246, 0.1), transparent 18%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.chat-room-page > div,
+.chat-room-page aside,
+.chat-room-page .b-modal {
+  position: relative;
+  z-index: 1;
+}
+
 header {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  background: rgba(15, 23, 42, 0.96);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  color: #e2e8f0;
 }
+
+header h5 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+header .btn {
+  border-radius: 999px;
+}
+
+header .btn-warning {
+  background: #f59e0b;
+  border-color: #d97706;
+}
+
+header .btn-warning:hover {
+  background: #d97706;
+}
+
 aside {
-  border-left: 1px solid #dee2e6;
-  background: white;
+  width: 280px;
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.93);
   overflow-y: auto;
+  min-height: 100%;
 }
+
+aside::-webkit-scrollbar,
+.chat-room-page .b-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+aside::-webkit-scrollbar-track,
+.chat-room-page .b-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+aside::-webkit-scrollbar-thumb,
+.chat-room-page .b-modal::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 999px;
+}
+
 .reaction-picker-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  padding: 10px;
+  grid-template-columns: repeat(6, minmax(40px, 1fr));
+  gap: 10px;
+  padding: 14px;
 }
+
 .emoji-btn {
-  font-size: 28px;
-  padding: 12px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
+  font-size: 24px;
+  padding: 14px;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f8fafc;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
+
 .emoji-btn:hover {
-  transform: scale(1.2);
-  border-color: #007bff;
-  background: #f8f9fa;
-}
-.emoji-btn:active {
   transform: scale(1.1);
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.18);
 }
-.gap-2 {
-  gap: 0.5rem;
+
+@media (max-width: 992px) {
+  .chat-room-page {
+    flex-direction: column;
+  }
+
+  aside {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+  }
 }
-@media (max-width: 768px) {
-  .chat-room-page aside {
-    display: none;
+
+@media (max-width: 640px) {
+  header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
-  .reaction-picker-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+
   header h5 {
     font-size: 1rem;
   }
-  header .btn {
-    font-size: 0.875rem;
-    padding: 0.375rem 0.75rem;
+
+  .reaction-picker-grid {
+    grid-template-columns: repeat(4, minmax(40px, 1fr));
   }
 }
 </style>
