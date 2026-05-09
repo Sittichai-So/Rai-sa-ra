@@ -32,14 +32,35 @@
               v-for="room in joinedRooms"
               :key="room._id"
               class="channel-item"
-              :class="{ 'active': activeRoomId === room._id }"
-              @click="goToRoom(room._id)"
+              :class="{ active: activeRoomId === room._id }"
             >
-              <span class="channel-prefix">#</span>
-              <span class="channel-name">{{ room.name }}</span>
-              <div v-if="room.unreadCount" class="unread-badge">
-                {{ room.unreadCount }}
+              <!-- ส่วนกดเข้าห้อง -->
+              <div
+                class="channel-main"
+                @click="goToRoom(room._id)"
+              >
+                <span class="channel-prefix">#</span>
+
+                <span class="channel-name">
+                  {{ room.name }}
+                </span>
+
+                <div
+                  v-if="room.unreadCount"
+                  class="unread-badge"
+                >
+                  {{ room.unreadCount }}
+                </div>
               </div>
+
+              <b-btn
+                variant="danger"
+                size="sm"
+                class="leave-channel-btn"
+                @click="removeJoinRoom(room._id)"
+              >
+                <i class="fas fa-sign-out-alt" />
+              </b-btn>
             </div>
           </div>
         </div>
@@ -781,6 +802,48 @@ export default {
         this.isLoading = false
       }
     },
+    async removeJoinRoom (roomId) {
+      try {
+        const token = localStorage.getItem('token')
+
+        await this.$axios.$post(
+          process.env.API_LEAVE_ROOM_USERS,
+          {
+            roomId,
+            userId: this.user._id
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        )
+
+        await this.getRoom()
+
+        if (this.activeRoomId === roomId) {
+          this.activeRoomId = null
+        }
+
+        await this.$swal({
+          icon: 'success',
+          title: 'สำเร็จ',
+          text: 'ออกจากห้องเรียบร้อย'
+        })
+      } catch (err) {
+        console.error(err)
+
+        await this.$swal({
+          icon: 'error',
+          title: 'ผิดพลาด',
+          text:
+        err.response?.data?.message ||
+        'ไม่สามารถออกจากห้องได้'
+        })
+      } finally {
+        this.joiningRoom = null
+      }
+    },
 
     goToRoom (roomId) {
       this.activeRoomId = roomId
@@ -1210,7 +1273,7 @@ export default {
 
 .community-chat-app {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background: radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.18), transparent 24%),
               radial-gradient(circle at 90% 20%, rgba(59, 130, 246, 0.14), transparent 24%),
               linear-gradient(180deg, #04070f 0%, #0f172a 55%, #111827 100%);
@@ -1231,9 +1294,11 @@ export default {
 
 .sidebar {
   width: 300px;
+  height: 100vh;
   background: rgba(15, 23, 42, 0.94);
   backdrop-filter: blur(22px);
   display: flex;
+  overflow: hidden;
   flex-direction: column;
   border-right: 1px solid rgba(148, 163, 184, 0.12);
   position: relative;
@@ -1282,6 +1347,7 @@ export default {
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
   padding: 18px 0;
 }
 
@@ -1321,6 +1387,73 @@ export default {
   color: #ffffff;
 }
 
+.channels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.channel-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.channel-item.active {
+  background: rgba(88, 101, 242, 0.18);
+}
+
+.channel-main {
+  display: flex;
+  align-items: center;
+  flex: 1;
+
+  gap: 8px;
+  cursor: pointer;
+}
+
+.channel-prefix {
+  color: #888;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.channel-name {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.unread-badge {
+  margin-left: auto;
+
+  min-width: 20px;
+  height: 20px;
+
+  padding: 0 6px;
+
+  border-radius: 999px;
+
+  background: #ff4757;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.leave-channel-btn {
+  opacity: 0;
+  transition: all 0.2s ease;
+
+  margin-left: 8px;
+}
+
+.channel-item:hover .leave-channel-btn {
+  opacity: 1;
+}
+
 .channels-list,
 .friends-list {
   padding: 0 12px;
@@ -1330,7 +1463,8 @@ export default {
 .friend-item {
   display: flex;
   align-items: center;
-  padding: 12px 14px;
+  justify-content: space-between;
+  padding: 8px 14px;
   margin-bottom: 10px;
   border-radius: 18px;
   cursor: pointer;
@@ -1549,6 +1683,8 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
+  height: 100vh;
+  overflow-y: auto;
   z-index: 1;
 }
 
@@ -2289,5 +2425,76 @@ export default {
 .game-btn-arrow {
   color: rgba(0, 255, 80, 0.4);
   font-size: 12px;
+}
+
+.friend-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ปุ่ม toggle ให้ดูเรียบ ไม่มี default style */
+.friend-actions .btn-link {
+  color: #94a3b8;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.friend-actions .btn-link:hover,
+.friend-actions .btn-link:focus {
+  color: #ffffff;
+  background: rgba(168, 85, 247, 0.2);
+  box-shadow: none;
+  outline: none;
+}
+
+/* dropdown menu */
+.friend-actions .dropdown-menu {
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 14px;
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* แต่ละ item */
+.friend-actions .dropdown-item {
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.friend-actions .dropdown-item:hover {
+  background: rgba(168, 85, 247, 0.15);
+  color: #ffffff;
+}
+
+.friend-actions .dropdown-item i {
+  width: 16px;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* item ลบเพื่อน */
+.friend-actions .dropdown-item.text-danger {
+  color: #f87171 !important;
+}
+
+.friend-actions .dropdown-item.text-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5 !important;
 }
 </style>
