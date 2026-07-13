@@ -5,7 +5,11 @@ export const state = () => ({
   typingUsers: [],
   onlineUsers: [],
   isConnected: false,
-  memberList: []
+  memberList: [],
+  // Direct Messages
+  directMessages: [],
+  currentDM: null,
+  dmConversations: []
 })
 
 export const mutations = {
@@ -27,6 +31,26 @@ export const mutations = {
   },
   REMOVE_MESSAGE (state, messageId) {
     state.messages = state.messages.filter(m => m._id !== messageId)
+  },
+  // Direct Message mutations
+  SET_CURRENT_DM (state, dm) {
+    state.currentDM = dm
+  },
+  SET_DM_CONVERSATIONS (state, conversations) {
+    state.dmConversations = conversations
+  },
+  SET_DIRECT_MESSAGES (state, messages) {
+    state.directMessages = messages
+  },
+  ADD_DIRECT_MESSAGE (state, message) {
+    state.directMessages.push(message)
+  },
+  UPDATE_DIRECT_MESSAGE (state, message) {
+    const index = state.directMessages.findIndex(m => m._id === message._id)
+    if (index !== -1) { state.directMessages.splice(index, 1, message) }
+  },
+  REMOVE_DIRECT_MESSAGE (state, messageId) {
+    state.directMessages = state.directMessages.filter(m => m._id !== messageId)
   },
   SET_MEMBER_LIST (state, members) {
     state.memberList = members
@@ -67,6 +91,26 @@ export const actions = {
     commit('REMOVE_TYPING_USER', userId)
   },
 
+  // Direct Message actions
+  setCurrentDM ({ commit }, dm) {
+    commit('SET_CURRENT_DM', dm)
+  },
+  setDMConversations ({ commit }, conversations) {
+    commit('SET_DM_CONVERSATIONS', conversations)
+  },
+  setDirectMessages ({ commit }, messages) {
+    commit('SET_DIRECT_MESSAGES', messages)
+  },
+  addDirectMessage ({ commit }, message) {
+    commit('ADD_DIRECT_MESSAGE', message)
+  },
+  updateDirectMessage ({ commit }, message) {
+    commit('UPDATE_DIRECT_MESSAGE', message)
+  },
+  removeDirectMessage ({ commit }, messageId) {
+    commit('REMOVE_DIRECT_MESSAGE', messageId)
+  },
+
   async fetchRooms ({ commit }) {
     try {
       const rooms = await this.$axios.$get(`${process.env.API_BASE}/room/getRoom`)
@@ -102,6 +146,10 @@ export const getters = {
   typingUsers: state => state.typingUsers,
   onlineUsers: state => state.onlineUsers,
   memberList: state => state.memberList,
+  // Direct Message getters
+  currentDM: state => state.currentDM,
+  dmConversations: state => state.dmConversations,
+  directMessages: state => state.directMessages,
   messagesByDate: (state) => {
     const grouped = {}
     state.messages.forEach((msg) => {

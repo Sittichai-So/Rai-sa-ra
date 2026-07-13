@@ -176,6 +176,41 @@
           </div>
         </div>
 
+        <!-- Direct Messages Section -->
+        <div class="section">
+          <div class="section-header">
+            <h6>ข้อความส่วนตัว</h6>
+          </div>
+          <div class="dm-list">
+            <!-- TODO: Show active DM conversations here -->
+            <div v-if="activeDMs.length === 0" class="empty-dm">
+              <i class="fas fa-comments"></i>
+              <span>ยังไม่มีข้อความส่วนตัว</span>
+            </div>
+            <div
+              v-for="dm in activeDMs"
+              :key="dm.friendId"
+              class="dm-item"
+              :class="{ active: selectedFriend && selectedFriend.friendId === dm.friendId }"
+              @click="openDirectMessage(dm)"
+            >
+              <div class="dm-avatar">
+                <img v-if="dm.avatar" :src="dm.avatar" :alt="dm.displayName">
+                <div v-else class="avatar-placeholder">
+                  {{ getInitials(dm.displayName) }}
+                </div>
+                <div v-if="dm.unreadCount" class="dm-unread-badge">
+                  {{ dm.unreadCount }}
+                </div>
+              </div>
+              <div class="dm-info">
+                <span class="dm-name">{{ dm.displayName }}</span>
+                <span class="dm-last-message">{{ dm.lastMessage || 'เริ่มการสนทนา...' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="section">
           <div class="section-header">
             <h6>มินิเกม</h6>
@@ -584,15 +619,23 @@
         </div>
       </b-form>
     </b-modal>
+
+    <!-- Direct Message Modal -->
+    <DirectMessageModal
+      ref="dmModal"
+      :friend="selectedFriend"
+      :current-user-id="user?._id"
+    />
   </div>
 </template>
 
 <script>
 import SettingDialog from '~/components/setting.vue'
+import DirectMessageModal from '~/components/DirectMessageModal.vue'
 
 export default {
   name: 'CommunityChat',
-  components: { SettingDialog },
+  components: { SettingDialog, DirectMessageModal },
   middleware: 'middlewareAuth',
   data () {
     const storedUser = localStorage.getItem('userData')
@@ -635,7 +678,8 @@ export default {
       ],
       joinPassword: '',
       sidebarOpen: false,
-      joinRoomIdPending: null
+      joinRoomIdPending: null,
+      selectedFriend: null
     }
   },
   computed: {
@@ -677,6 +721,10 @@ export default {
         }
         return true
       })
+    },
+    activeDMs () {
+      // TODO: Get from store or API - for now return friends who have conversations
+      return this.friends.filter(friend => friend.hasConversation).slice(0, 5) // Limit to 5 for UI
     }
   },
   async mounted () {
@@ -742,6 +790,21 @@ export default {
     closeSidebar () {
       this.sidebarOpen = false
       document.body.style.overflow = ''
+    },
+    openDirectMessage (friend) {
+      this.selectedFriend = friend
+      this.$nextTick(() => {
+        if (this.$refs.dmModal) {
+          this.$refs.dmModal.open()
+        }
+      })
+    },
+    getInitials (name) {
+      return name
+        .split(' ')
+        .map(n => n.charAt(0))
+        .join('')
+        .toUpperCase()
     },
     async getProfile () {
       try {
@@ -998,11 +1061,6 @@ export default {
       }, 30 * 60 * 1000)
     },
 
-    getInitials (username) {
-      if (!username) { return '?' }
-      return username.substring(0, 2).toUpperCase()
-    },
-
     async loadFriends () {
       try {
         const res = await this.$axios.get(process.env.API_GET_ALL_FRIENDSHIP_ID)
@@ -1245,12 +1303,6 @@ export default {
           text: 'ไม่สามารถลบเพื่อนได้'
         })
       }
-    },
-    openDirectMessage (friend) {
-      if (window.innerWidth <= 768) {
-        this.closeSidebar()
-      }
-      this.$router.push({ path: '/chat/direct', query: { friendId: friend._id, friendName: friend.fullname, isOnline: friend.isOnline } })
     },
 
     setupNotifications () {
@@ -2496,5 +2548,100 @@ export default {
 .friend-actions .dropdown-item.text-danger:hover {
   background: rgba(239, 68, 68, 0.15);
   color: #fca5a5 !important;
+}
+
+/* Direct Messages Styles */
+.dm-list {
+  padding: 0 12px;
+}
+
+.empty-dm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.empty-dm i {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.dm-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 2px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dm-item:hover {
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.dm-item.active {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.dm-avatar {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+
+.dm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dm-unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  text-align: center;
+}
+
+.dm-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dm-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dm-last-message {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }
 </style>
