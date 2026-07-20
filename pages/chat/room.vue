@@ -103,13 +103,12 @@
 
     <RoomSettings
       v-if="showSettingsModal"
+      v-model="roomSettings"
       :show="showSettingsModal"
-      :value="{ theme: chatTheme, background: chatBackground }"
       :available-themes="availableThemes"
       :room="currentRoom"
       :chat-theme="chatTheme"
       @save="handleSettingsSave"
-      @save-settings="handleSettingsSave"
       @close="showSettingsModal = false"
     />
   </div>
@@ -155,6 +154,7 @@ export default {
       showSettingsModal: false,
       chatTheme: 'minimal',
       chatBackground: '#0f0f23',
+      roomSettings: { theme: 'minimal', background: '#0f0f23' },
 
       availableThemes: [
         {
@@ -220,6 +220,16 @@ export default {
         const el = this.$refs.chatContainer?.$refs.messageList
         if (el) { el.scrollTop = el.scrollHeight }
       })
+    },
+    'roomSettings.theme' (newVal) {
+      if (newVal) {
+        this.chatTheme = newVal
+      }
+    },
+    'roomSettings.background' (newVal) {
+      if (newVal) {
+        this.chatBackground = newVal
+      }
     }
   },
   async mounted () {
@@ -283,9 +293,11 @@ export default {
           const parsed = JSON.parse(settings)
           this.chatTheme = parsed.theme || 'minimal'
           this.chatBackground = parsed.background || '#ffffff'
+          this.roomSettings = { theme: this.chatTheme, background: this.chatBackground }
         } else {
           this.chatTheme = 'minimal'
           this.chatBackground = '#ffffff'
+          this.roomSettings = { theme: 'minimal', background: '#ffffff' }
         }
       }
     },
@@ -305,22 +317,8 @@ export default {
     },
 
     handleSettingsSave (settings) {
-      if (settings.theme) {
-        this.chatTheme = settings.theme
-      }
-      if (settings.background) {
-        this.chatBackground = settings.background
-      }
-      if (settings.name) {
-        this.currentRoom.name = settings.name
-      }
-      if (settings.description) {
-        this.currentRoom.description = settings.description
-      }
-      if (settings.avatar) {
-        this.currentRoom.avatar = settings.avatar
-      }
-
+      // ค่าจาก v-model จะถูก sync ผ่าน watcher แล้ว
+      // บันทึก settings ลง localStorage
       this.saveRoomSettings()
       this.showSettingsModal = false
     },
@@ -586,6 +584,35 @@ export default {
   border-bottom: var(--line) solid var(--ink);
   padding: 18px 24px;
   flex-shrink: 0;
+}
+
+/* Theme colors for header */
+.chat-room-page[data-theme="pink"] .chat-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.chat-room-page[data-theme="purple"] .chat-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.chat-room-page[data-theme="green"] .chat-header {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.chat-room-page[data-theme="orange"] .chat-header {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.chat-room-page[data-theme="dark"] .chat-header {
+  background: linear-gradient(135deg, #434343 0%, #000000 100%);
+}
+
+.chat-room-page[data-theme="minimal"] .chat-header {
+  background: #f0f0f0;
+}
+
+.chat-room-page[data-theme="default"] .chat-header {
+  background: #0084ff;
 }
 
 .header-content {
@@ -870,6 +897,36 @@ export default {
 }
 
 .message-bubble.other { background: var(--white) !important; }
+
+/* Theme colors for own messages in room.vue */
+.chat-room-page[data-theme="pink"] .message-bubble.own-message {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+}
+
+.chat-room-page[data-theme="purple"] .message-bubble.own-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.chat-room-page[data-theme="green"] .message-bubble.own-message {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+}
+
+.chat-room-page[data-theme="orange"] .message-bubble.own-message {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%) !important;
+}
+
+.chat-room-page[data-theme="dark"] .message-bubble.own-message {
+  background: linear-gradient(135deg, #434343 0%, #000000 100%) !important;
+}
+
+.chat-room-page[data-theme="minimal"] .message-bubble.own-message {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+.chat-room-page[data-theme="default"] .message-bubble.own-message {
+  background: #0084ff !important;
+}
 
 .member-item {
   background: var(--white);

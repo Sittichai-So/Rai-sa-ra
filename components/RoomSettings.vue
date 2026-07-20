@@ -17,8 +17,8 @@
         <div
           v-for="theme in availableThemes"
           :key="theme.id"
-          :class="['theme-option', { active: localSettings.theme === theme.id }]"
-          @click="localSettings.theme = theme.id"
+          :class="['theme-option', { active: selectedTheme === theme.id }]"
+          @click="selectedTheme = theme.id"
         >
           <div class="theme-preview">
             <div class="preview-bubble preview-own" :style="{ background: theme.ownBubble }" />
@@ -32,7 +32,7 @@
               {{ theme.description }}
             </div>
           </div>
-          <i v-if="localSettings.theme === theme.id" class="fas fa-check-circle theme-check" />
+          <i v-if="selectedTheme === theme.id" class="fas fa-check-circle theme-check" />
         </div>
       </div>
 
@@ -41,7 +41,7 @@
       </h6>
       <div class="background-input">
         <input
-          v-model="localSettings.background"
+          v-model="selectedBackground"
           type="text"
           class="bg-text-input"
           placeholder="เช่น URL รูป หรือ #hex สีพื้นหลัง"
@@ -71,20 +71,33 @@ export default {
     value: { type: Object, default: () => ({ theme: 'default', background: '' }) },
     availableThemes: { type: Array, required: true }
   },
-  data () {
-    return {
-      localSettings: { ...this.value }
-    }
-  },
-  watch: {
-    value (val) {
-      this.localSettings = { ...val }
+  computed: {
+    selectedTheme: {
+      get () {
+        return this.value?.theme || 'default'
+      },
+      set (val) {
+        const newValue = { ...(this.value || {}), theme: val }
+        this.$emit('input', newValue)
+      }
+    },
+    selectedBackground: {
+      get () {
+        return this.value?.background || ''
+      },
+      set (val) {
+        const newValue = { ...(this.value || {}), background: val }
+        this.$emit('input', newValue)
+      }
     }
   },
   methods: {
     saveSettings () {
-      this.$emit('input', this.localSettings)
-      this.$emit('save', this.localSettings)
+      const settingsToSave = {
+        theme: this.selectedTheme,
+        background: this.selectedBackground
+      }
+      this.$emit('save', settingsToSave)
       this.$bvToast.toast('บันทึกการตั้งค่าเรียบร้อยแล้ว', {
         variant: 'success',
         solid: true,

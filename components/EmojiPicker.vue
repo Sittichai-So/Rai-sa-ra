@@ -1,6 +1,12 @@
 // components/EmojiPicker.vue
 <template>
   <div class="modern-emoji-picker" :data-theme="chatTheme">
+    <div class="picker-header">
+      <span class="picker-title">เลือกอิโมจิ</span>
+      <button class="close-picker" @click="$emit('close')">
+        <i class="fas fa-times" />
+      </button>
+    </div>
     <div class="emoji-categories">
       <button
         v-for="(category, index) in categories"
@@ -34,7 +40,7 @@
             v-for="emoji in filteredEmojis"
             :key="emoji"
             class="emoji-item"
-            @click="$emit('select', emoji)"
+            @click="handleEmojiClick(emoji)"
           >
             {{ emoji }}
           </button>
@@ -59,7 +65,7 @@
               v-for="emoji in category.emojis"
               :key="emoji"
               class="emoji-item"
-              @click="$emit('select', emoji)"
+              @click="handleEmojiClick(emoji)"
             >
               {{ emoji }}
             </button>
@@ -78,7 +84,7 @@
           v-for="emoji in recentEmojis"
           :key="emoji"
           class="emoji-item recent"
-          @click="$emit('select', emoji)"
+          @click="handleEmojiClick(emoji)"
         >
           {{ emoji }}
         </button>
@@ -178,6 +184,10 @@ export default {
     }
   },
   methods: {
+    handleEmojiClick (emoji) {
+      console.log('🎯 Emoji clicked:', emoji)
+      this.$emit('emoji-selected', emoji)
+    },
     addRecent (emoji) {
       if (!this.recentEmojis.includes(emoji)) {
         this.recentEmojis.unshift(emoji)
@@ -226,6 +236,41 @@ export default {
 @keyframes pop-in {
   from { opacity: 0; transform: translateY(10px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--violet);
+  border-bottom: var(--line-sm) solid var(--ink);
+  flex-shrink: 0;
+}
+
+.picker-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.close-picker {
+  background: var(--coral);
+  border: var(--line-sm) solid var(--ink);
+  color: var(--white);
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.close-picker:hover {
+  transform: rotate(90deg);
 }
 
 .emoji-categories {

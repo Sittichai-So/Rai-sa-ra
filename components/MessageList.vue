@@ -555,6 +555,42 @@ export default {
   border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
 }
 
+/* Theme: Pink */
+.message-list-container[data-theme="pink"] .message-bubble.own {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Theme: Purple */
+.message-list-container[data-theme="purple"] .message-bubble.own {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Theme: Green */
+.message-list-container[data-theme="green"] .message-bubble.own {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Theme: Orange */
+.message-list-container[data-theme="orange"] .message-bubble.own {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Theme: Dark */
+.message-list-container[data-theme="dark"] .message-bubble.own {
+  background: linear-gradient(135deg, #434343 0%, #000000 100%);
+}
+
+/* Theme: Minimal */
+.message-list-container[data-theme="minimal"] .message-bubble.own {
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+/* Theme: Default */
+.message-list-container[data-theme="default"] .message-bubble.own {
+  background: #0084ff;
+}
+
 .message-bubble {
   width: fit-content;
   max-width: 100%;

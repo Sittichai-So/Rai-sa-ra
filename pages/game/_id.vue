@@ -1,6 +1,5 @@
 <template>
   <div ref="gamePage" class="game-page" tabindex="0" @keydown="onKeyDown" @keyup="onKeyUp">
-    <!-- HUD -->
     <div class="hud">
       <div class="hud-left">
         <div class="hp-bar-wrap">
@@ -19,11 +18,18 @@
         <div v-if="waveCountdown > 0" class="wave-countdown">
           คลื่นถัดไปใน {{ waveCountdown }}s
         </div>
+        <div v-else-if="waveActive" class="timer-display" :class="{ 'timer-warning': waveTimer <= 30 }">
+          <i class="fas fa-clock" /> {{ timerDisplay }} / {{ timeLimitDisplay }}
+        </div>
       </div>
       <div class="hud-right">
         <div class="score-display">
           <span class="hud-label">SCORE</span>
           <span class="score-num">{{ myPlayer ? myPlayer.score : 0 }}</span>
+        </div>
+        <div v-if="combo > 1" class="combo-display" :class="comboClass">
+          <span class="combo-label">COMBO</span>
+          <span class="combo-num">x{{ combo }}</span>
         </div>
         <button class="escape-btn" @click="confirmLeave">
           <i class="fas fa-door-open" />
@@ -31,17 +37,14 @@
       </div>
     </div>
 
-    <!-- Scoreboard (mini) -->
     <div class="mini-scoreboard">
-      <div v-for="p in sortedPlayers" :key="p.id" class="sb-row" :class="{ 'sb-dead': !p.alive, 'sb-me': p.id === myId }">
-        <span class="sb-dot" :style="{ background: p.color }" />
-        <span class="sb-name">{{ p.username }}</span>
-        <span class="sb-score">{{ p.score }}</span>
-        <span class="sb-kills">☠ {{ p.kills }}</span>
+      <div v-for="score in leaderboard" :key="score.playerId" class="sb-row" :class="{ 'sb-me': score.playerId === myId }">
+        <span class="sb-name">{{ getPlayerName(score.playerId) }}</span>
+        <span class="sb-score">{{ score.score }}</span>
+        <span class="sb-kills">☠ {{ score.kills }}</span>
       </div>
     </div>
 
-    <!-- Canvas -->
     <canvas
       ref="canvas"
       class="game-canvas"
@@ -50,7 +53,6 @@
       @contextmenu.prevent
     />
 
-    <!-- Wave announcement -->
     <transition name="wave-fade">
       <div v-if="waveAnnounce" class="wave-announce">
         <div class="wave-announce-inner">
@@ -61,7 +63,6 @@
       </div>
     </transition>
 
-    <!-- Dead overlay -->
     <transition name="fade">
       <div v-if="isDead && !gameOver" class="dead-overlay">
         <div class="dead-box">
@@ -74,7 +75,6 @@
       </div>
     </transition>
 
-    <!-- Game Over -->
     <transition name="fade">
       <div v-if="gameOver" class="gameover-overlay">
         <div class="gameover-box">
@@ -127,7 +127,13 @@ export default {
       waveAnnounce: false,
       waveCountdown: 0,
       announceCount: 0,
-      //   isDead: false,
+      waveTimer: 0,
+      waveTimeLimit: 120,
+      combo: 0,
+      maxCombo: 0,
+      scoreMultiplier: 1,
+      lastKillTime: 0,
+      comboTimeWindow: 3000,
       gameOver: false,
       leaderboard: [],
       keys: {},
@@ -143,6 +149,7 @@ export default {
       rafId: null,
       inputInterval: null,
       countdownInterval: null,
+      timerInterval: null,
       user: null
     }
   },
@@ -161,10 +168,34 @@ export default {
       return '#ff4040'
     },
     sortedPlayers () {
-      return [...this.players].sort((a, b) => b.score - a.score)
+      return this.leaderboard.map((score) => {
+        const player = this.players.find(p => p.id === score.playerId)
+        return {
+          ...player,
+          score: score.score,
+          kills: score.kills,
+          deaths: score.deaths
+        }
+      }).sort((a, b) => b.score - a.score)
     },
     isDead () {
       return this.myPlayer ? !this.myPlayer.alive : false
+    },
+    timerDisplay () {
+      const mins = Math.floor(this.waveTimer / 60)
+      const secs = this.waveTimer % 60
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    },
+    timeLimitDisplay () {
+      const mins = Math.floor(this.waveTimeLimit / 60)
+      const secs = this.waveTimeLimit % 60
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    },
+    comboClass () {
+      if (this.combo >= 10) { return 'combo-x2' }
+      if (this.combo >= 5) { return 'combo-x1.5' }
+      if (this.combo >= 3) { return 'combo-x1.2' }
+      return ''
     }
   },
   mounted () {
@@ -177,16 +208,15 @@ export default {
     this.setupSocketListeners()
     this.setupRenderer()
 
-    // Join game
     this.$socket.emit('gameJoin', {
       roomId: this.roomId,
       user: this.user
     })
 
-    // Input loop: send movement 20x/sec
     this.inputInterval = setInterval(() => this.sendInput(), 50)
 
-    // RAF render loop
+    this.timerInterval = setInterval(() => this.updateGameTimer(), 1000)
+
     this.renderLoop()
 
     window.addEventListener('resize', this.setupCanvas)
@@ -197,10 +227,10 @@ export default {
     cancelAnimationFrame(this.rafId)
     clearInterval(this.inputInterval)
     clearInterval(this.countdownInterval)
+    clearInterval(this.timerInterval)
     window.removeEventListener('resize', this.setupCanvas)
   },
   methods: {
-    // ─── canvas setup ───────────────────────────────────────────
     setupCanvas () {
       const canvas = this.$refs.canvas
       if (!canvas) { return }
@@ -236,15 +266,12 @@ export default {
       if (!p) { return }
       const targetX = p.x - this.canvasW / 2
       const targetY = p.y - this.canvasH / 2
-      // Smooth camera
       this.camX += (targetX - this.camX) * 0.12
       this.camY += (targetY - this.camY) * 0.12
-      // Clamp to map
       this.camX = Math.max(0, Math.min(this.mapW - this.canvasW, this.camX))
       this.camY = Math.max(0, Math.min(this.mapH - this.canvasH, this.camY))
     },
 
-    // ─── input ──────────────────────────────────────────────────
     onKeyDown (e) {
       this.keys[e.key.toLowerCase()] = true
       if (e.key === 'Escape') { this.confirmLeave() }
@@ -255,7 +282,7 @@ export default {
     },
     onMouseMove (e) {
       this.mouseX = e.clientX
-      this.mouseY = e.clientY - 60 // offset HUD
+      this.mouseY = e.clientY - 60
     },
     onMouseDown (e) {
       if (e.button !== 0) { return }
@@ -281,7 +308,6 @@ export default {
       return Math.atan2(this.mouseY - py, this.mouseX - px)
     },
 
-    // ─── socket listeners ────────────────────────────────────────
     setupSocketListeners () {
       this.$socket.on('gameJoined', ({ playerId, mapSize }) => {
         this.myId = playerId
@@ -294,18 +320,51 @@ export default {
         this.bullets = state.bullets || []
         this.wave = state.wave || 0
         this.waveActive = state.waveActive || false
+
+        if (state.scores && state.scores.length > 0) {
+          this.leaderboard = state.scores
+        }
       })
 
-      this.$socket.on('waveStart', ({ wave, count }) => {
+      this.$socket.on('waveCountdown', ({ countdown }) => {
+        this.waveCountdown = countdown
+
+        if (countdown === 0) {
+          this.waveCountdown = 0
+        }
+      })
+
+      this.$socket.on('waveStart', ({ wave, count, timeLimit }) => {
         this.wave = wave
         this.announceCount = count
         this.waveAnnounce = true
+        this.waveTimeLimit = timeLimit || 120
+        this.waveTimer = this.waveTimeLimit
         setTimeout(() => { this.waveAnnounce = false }, 2500)
         this._startCountdown()
       })
 
       this.$socket.on('playerDied', ({ playerId }) => {
         if (playerId === this.myId) { this.isDead = true }
+      })
+
+      this.$socket.on('zombieKilled', ({ playerId, zombieId, score, kills, isCombo, comboCount }) => {
+        if (playerId === this.myId) {
+          const now = Date.now()
+          if (isCombo || (now - this.lastKillTime < this.comboTimeWindow)) {
+            this.combo = (this.combo || 0) + 1
+            this.maxCombo = Math.max(this.maxCombo, this.combo)
+          } else {
+            this.combo = 1
+          }
+          this.lastKillTime = now
+
+          const player = this.players.find(p => p.id === playerId)
+          if (player) {
+            player.score = score
+            player.kills = kills
+          }
+        }
       })
 
       this.$socket.on('gameOver', ({ wave, leaderboard }) => {
@@ -336,7 +395,27 @@ export default {
       this.waveCountdown = 0
     },
 
-    // ─── actions ────────────────────────────────────────────────
+    updateGameTimer () {
+      if (!this.waveActive || this.gameOver) { return }
+
+      if (this.waveTimer > 0) {
+        this.waveTimer--
+
+        if (this.waveTimer === 30) {
+          console.log('⚠️ เวลาเหลือ 30 วินาที!')
+        }
+
+        if (this.waveTimer <= 0) {
+          this.$socket.emit('waveTimeUp', { roomId: this.roomId, wave: this.wave })
+        }
+      }
+    },
+
+    resetCombo () {
+      this.combo = 0
+      this.lastKillTime = 0
+    },
+
     async confirmLeave () {
       const ok = await this.$bvModal.msgBoxConfirm('ออกจากเกมหรือไม่?', {
         title: 'ยืนยัน',
@@ -355,6 +434,11 @@ export default {
 
     restart () {
       this.$socket.emit('gameRestart', { roomId: this.roomId })
+    },
+
+    getPlayerName (playerId) {
+      const player = this.players.find(p => p.id === playerId)
+      return player ? player.username : 'Unknown'
     }
   }
 }
@@ -419,8 +503,77 @@ export default {
 .wave-num { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: #00ff50; line-height: 1; }
 .wave-countdown { font-size: 11px; color: rgba(224,240,224,0.4); font-family: 'Share Tech Mono', monospace; }
 
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #00ff50;
+  padding: 4px 12px;
+  background: rgba(0,255,80,0.1);
+  border: 1px solid rgba(0,255,80,0.3);
+  margin-top: 4px;
+}
+.timer-display.timer-warning {
+  color: #ff4040;
+  background: rgba(255,64,64,0.1);
+  border-color: rgba(255,64,64,0.4);
+  animation: pulse-warning 1s infinite;
+}
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .score-display { display: flex; flex-direction: column; align-items: flex-end; }
 .score-num { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: #fff; }
+
+.combo-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 16px;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid rgba(0,255,80,0.3);
+  margin-left: 12px;
+  animation: combo-pop 0.3s ease-out;
+}
+@keyframes combo-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.combo-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: rgba(0,255,80,0.6);
+}
+.combo-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  color: #00ff50;
+  text-shadow: 0 0 10px rgba(0,255,80,0.5);
+}
+.combo-display.combo-x1\.2 {
+  border-color: rgba(0,200,255,0.5);
+  .combo-num { color: #00c8ff; text-shadow: 0 0 10px rgba(0,200,255,0.6); }
+}
+.combo-display.combo-x1\.5 {
+  border-color: rgba(255,180,0,0.5);
+  .combo-num { color: #ffb400; text-shadow: 0 0 12px rgba(255,180,0,0.7); }
+}
+.combo-display.combo-x2 {
+  border-color: rgba(255,0,100,0.6);
+  .combo-num { color: #ff0064; text-shadow: 0 0 15px rgba(255,0,100,0.8); animation: combo-shake 0.5s ease-in-out; }
+}
+@keyframes combo-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
 
 .escape-btn {
   background: transparent;
@@ -610,7 +763,6 @@ export default {
 .go-leave { background: transparent; border: 1px solid rgba(255,80,80,0.3); color: rgba(255,80,80,0.7); }
 .go-leave:hover { background: rgba(255,80,80,0.1); border-color: #ff5050; color: #ff5050; }
 
-/* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.4s; }
 .fade-enter, .fade-leave-to { opacity: 0; }
 .wave-fade-enter-active, .wave-fade-leave-active { transition: opacity 0.5s; }

@@ -46,6 +46,7 @@
 
     <EmojiPicker
       v-if="showEmojiPicker"
+      :chat-theme="chatTheme"
       @emoji-selected="addEmoji"
       @close="showEmojiPicker = false"
     />
@@ -61,6 +62,10 @@ export default {
     replyTo: {
       type: Object,
       default: null
+    },
+    chatTheme: {
+      type: String,
+      default: 'default'
     }
   },
   data () {
@@ -111,9 +116,13 @@ export default {
 
     addEmoji (emoji) {
       const textarea = this.$refs.textarea
-      if (!textarea) { return }
+      if (!textarea) {
+        console.error('❌ Textarea ref not found')
+        return
+      }
 
-      const cursorPos = textarea.selectionStart
+      console.log('✅ Emoji received:', emoji)
+      const cursorPos = textarea.selectionStart || 0
       const textBefore = this.messageText.substring(0, cursorPos)
       const textAfter = this.messageText.substring(cursorPos)
       const val = typeof emoji === 'string' ? emoji : (emoji.native || '')
@@ -124,6 +133,7 @@ export default {
         const newPos = cursorPos + val.length
         textarea.setSelectionRange(newPos, newPos)
         textarea.focus()
+        console.log('✅ Emoji added at position:', newPos)
       })
 
       this.showEmojiPicker = false
@@ -246,14 +256,14 @@ export default {
   border: none;
   background: transparent;
   resize: none;
-  padding: 10px 40px 10px 0;
+  padding: 10px 50px 10px 0;
   font-size: 0.95rem;
   line-height: 1.5;
   max-height: 120px;
   overflow-y: auto;
   flex: 1;
   color: var(--ink);
-  font-family: inherit;
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
   box-shadow: none !important;
 }
 

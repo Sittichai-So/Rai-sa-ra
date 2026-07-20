@@ -52,7 +52,7 @@
         <div class="members-grid">
           <div
             v-for="member in onlineMembers"
-            :key="member._id || member.id"
+            :key="member._id"
             :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
             @click="$emit('select-member', member)"
           >
@@ -91,7 +91,7 @@
         <div class="members-grid">
           <div
             v-for="member in offlineMembers"
-            :key="member._id || member.id"
+            :key="member._id"
             :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
             @click="$emit('select-member', member)"
           >
@@ -108,7 +108,7 @@
               </div>
               <div class="member-status-text">
                 <span class="status-dot offline" />
-                <span>ออฟไลน์</span>
+                <span>{{ member.lastSeen ? formatLastSeen(member.lastSeen) : 'ออฟไลน์' }}</span>
               </div>
             </div>
           </div>
@@ -140,7 +140,8 @@ export default {
       searchQuery: '',
       loading: false,
       error: false,
-      socketListenersSetup: false
+      socketListenersSetup: false,
+      beforeUnloadHandler: null
     }
   },
   computed: {
@@ -150,14 +151,13 @@ export default {
 
     sortedMembers () {
       return [...this.members].sort((a, b) => {
-        // Sort by online status first
-        if (a.online && !b.online) {
-          return -1
+        // ตัวเองขึ้นก่อนเสมอ ตามด้วยสถานะออนไลน์ ตามด้วยชื่อ
+        if (a.isYou !== b.isYou) {
+          return a.isYou ? -1 : 1
         }
-        if (!a.online && b.online) {
-          return 1
+        if (a.online !== b.online) {
+          return a.online ? -1 : 1
         }
-
         return (a.username || '').localeCompare(b.username || '')
       })
     },
@@ -183,16 +183,43 @@ export default {
     }
   },
   watch: {
-    // Re-fetch if the user switches rooms while this sidebar stays mounted —
-    // previously roomId changes were ignored after the initial mount.
+    // Re-fetch if the user switches rooms while this sidebar stays mounted
     roomId () {
+      this.cleanupSocket()
       this.fetchMembers()
+      this.setupSocket()
     }
   },
   mounted () {
     this.fetchMembers()
+    this.setupSocket()
+  },
+  beforeDestroy () {
+    this.cleanupSocket()
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+    }
   },
   methods: {
+    // ---------------------------------------------------------------
+    // จุดสำคัญ: ทุก path ที่เติมข้อมูลเข้า this.members (fetch, socket
+    // roomMembers, memberJoined) ต้องแปลงผ่าน helper ตัวเดียวกันนี้
+    // เพื่อให้ shape ตรงกันเสมอ (username / online / avatar / _id)
+    // ไม่งั้น template และ computed (onlineMembers/offlineMembers)
+    // จะอ่านค่าไม่ตรงกันระหว่างข้อมูลที่มาจาก HTTP กับจาก socket
+    // ---------------------------------------------------------------
+    normalizeMember (m) {
+      const id = m._id || m.id
+      return {
+        _id: id,
+        username: m.username || m.fullname || m.displayName || m.name || 'Unknown',
+        avatar: m.avatar || null,
+        online: m.online === true || m.status === 'online' || m.isOnline === true,
+        lastSeen: m.lastSeen || null,
+        isYou: String(id) === String(this.currentUserId)
+      }
+    },
+
     getInitials (username) {
       if (!username) {
         return '?'
@@ -208,6 +235,7 @@ export default {
     clearSearch () {
       this.searchQuery = ''
     },
+
     async fetchMembers () {
       this.loading = true
       this.error = false
@@ -224,12 +252,17 @@ export default {
           throw new TypeError(`Unexpected members response shape: ${typeof data}`)
         }
 
-        this.members = data.map(member => ({
-          ...member,
-          username: member.username || member.fullname || member.name || 'Unknown',
-          online: member.online === true || member.status === 'online' || member.isOnline === true,
-          isYou: member._id === this.currentUserId || member.id === this.currentUserId
-        }))
+        this.members = data.map(member => this.normalizeMember(member))
+
+        // แก้ปัญหาหลัก: ตอน refresh หน้า component จะถูกสร้างใหม่และยิง
+        // fetch ทันที ซึ่งบางครั้ง backend อาจยังไม่ทันอัปเดตว่า
+        // connection/socket ใหม่ของเรา online แล้ว (race condition)
+        // เราจึงรู้ดีอยู่แล้วว่าตอนนี้หน้าจอ render ได้ = เราออนไลน์อยู่จริง
+        // เลย force สถานะของตัวเองเป็น online เสมอหลัง fetch เสร็จ
+        const me = this.members.find(m => m.isYou)
+        if (me) {
+          me.online = true
+        }
       } catch (err) {
         console.error('Failed to fetch members:', err)
         this.members = []
@@ -244,13 +277,10 @@ export default {
         return
       }
 
-      // ลบ listeners เก่าก่อน (ถ้ามี)
       this.cleanupSocket()
 
       // ไม่ต้อง emit joinRoom ที่นี่ เพราะ room.vue จัดการแล้ว
       // เพียงแค่รอรับ event จาก server
-
-      // ตั้งค่า socket listeners
       this.$socket.on('roomMembers', this.handleRoomMembers)
       this.$socket.on('statusChanged', this.handleStatusChanged)
       this.$socket.on('memberJoined', this.handleMemberJoined)
@@ -258,7 +288,14 @@ export default {
 
       this.socketListenersSetup = true
 
-      // จัดการ beforeunload
+      // ประกาศสถานะของตัวเองเป็น online ทันทีที่ setup เสร็จ เพื่อให้
+      // คนอื่นในห้องเห็นเราออนไลน์โดยไม่ต้องรอ action อื่น
+      this.$socket.emit('statusChanged', {
+        userId: this.currentUserId,
+        status: 'online',
+        roomId: this.roomId
+      })
+
       this.beforeUnloadHandler = () => {
         if (this.$socket && this.currentUserId) {
           this.$socket.emit('statusChanged', {
@@ -274,7 +311,6 @@ export default {
     cleanupSocket () {
       if (!this.$socket) { return }
 
-      // ลบ listeners ทั้งหมด
       this.$socket.off('roomMembers', this.handleRoomMembers)
       this.$socket.off('statusChanged', this.handleStatusChanged)
       this.$socket.off('memberJoined', this.handleMemberJoined)
@@ -287,92 +323,44 @@ export default {
     handleRoomMembers (members) {
       if (!Array.isArray(members)) { return }
 
-      this.members = members.map(m => ({
-        _id: m._id,
-        fullname: m.fullname || m.displayName || m.username,
-        avatar: m.avatar,
-        status: m.status || 'offline',
-        lastSeen: m.lastSeen || null,
-        activity: m.activity || null,
-        gameName: m.gameName || null
-      }))
+      this.members = members.map(m => this.normalizeMember(m))
+
+      const me = this.members.find(m => m.isYou)
+      if (me) {
+        me.online = true
+      }
     },
 
-    handleStatusChanged ({ userId, status, activity, gameName }) {
-      const member = this.members.find(m => m._id === userId)
+    handleStatusChanged ({ userId, status }) {
+      const member = this.members.find(m => String(m._id) === String(userId))
       if (member) {
-        member.status = status
-        if (activity !== undefined) { member.activity = activity }
-        if (gameName !== undefined) { member.gameName = gameName }
+        member.online = status === 'online'
         if (status === 'offline') {
           member.lastSeen = new Date()
+        } else {
+          member.lastSeen = null
         }
-        // Force update
-        this.$forceUpdate()
       }
     },
 
     handleMemberJoined (member) {
-      const exists = this.members.find(m => m._id === member._id)
+      const normalized = this.normalizeMember(member)
+      const exists = this.members.find(m => m._id === normalized._id)
       if (!exists) {
-        this.members.push({
-          _id: member._id,
-          fullname: member.fullname || member.displayName || member.username,
-          avatar: member.avatar,
-          status: member.status || 'online',
-          lastSeen: member.lastSeen || null,
-          activity: member.activity || null,
-          gameName: member.gameName || null
-        })
+        normalized.online = true
+        this.members.push(normalized)
+      } else {
+        exists.online = true
+        exists.lastSeen = null
       }
     },
 
     handleMemberLeft ({ userId }) {
-      const index = this.members.findIndex(m => m._id === userId)
-      if (index !== -1) {
-        this.members[index].status = 'offline'
-        this.members[index].lastSeen = new Date()
-        this.$forceUpdate()
+      const member = this.members.find(m => String(m._id) === String(userId))
+      if (member) {
+        member.online = false
+        member.lastSeen = new Date()
       }
-    },
-
-    isCurrentUser (member) {
-      return String(member._id) === String(this.currentUserId)
-    },
-
-    isOnline (member) {
-      if (!member) { return false }
-
-      // ถ้าเป็นตัวเอง ให้ดูจาก status ที่เก็บไว้
-      if (this.isCurrentUser(member)) {
-        return member.status === 'online'
-      }
-
-      // ถ้ามี status เป็น online
-      if (member.status === 'online') {
-        return true
-      }
-
-      // ถ้าไม่มี status แต่มี lastSeen ภายใน 5 นาที
-      if (!member.status && member.lastSeen) {
-        const diff = (new Date() - new Date(member.lastSeen)) / 1000 / 60
-        return diff <= 5
-      }
-
-      return false
-    },
-
-    filterMembers (list) {
-      if (!this.searchQuery.trim()) { return list }
-      const q = this.searchQuery.toLowerCase()
-      return list.filter((m) => {
-        const name = (m.fullname || m.displayName || m.username || '').toLowerCase()
-        return name.includes(q)
-      })
-    },
-
-    getMemberName (member) {
-      return member.fullname || member.displayName || member.username || 'Unknown User'
     },
 
     formatLastSeen (lastSeen) {
@@ -398,12 +386,6 @@ export default {
 </script>
 
 <style scoped>
-/*
-  Same token system as MessageList.vue: one dark ink surface, violet as
-  the single accent, coral/mint reserved for status meaning only. The
-  cream-and-yellow brutalist sidebar previously clashed with the dark
-  chat pane it sits next to; this brings both into one visual family.
-*/
 .member-list-container {
   --bg: #121218;
   --surface: #1c1c26;
