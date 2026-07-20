@@ -1,124 +1,134 @@
-// components/MemberList.vue
 <template>
-  <div class="discord-member-list" :data-theme="chatTheme">
-    <div class="search-container">
-      <div class="search-box">
+  <div class="member-list-container" :data-theme="chatTheme">
+    <!-- Header -->
+    <div class="member-list-header">
+      <h3 class="member-list-title">
+        <i class="fas fa-users" />
+        <span>สมาชิก ({{ totalMembers }})</span>
+      </h3>
+      <button class="close-sidebar-btn" @click="$emit('close')">
+        <i class="fas fa-times" />
+      </button>
+    </div>
+
+    <!-- Search Box -->
+    <div class="member-search-wrapper">
+      <div class="search-icon">
         <i class="fas fa-search" />
-        <input v-model="searchQuery" type="text" placeholder="ค้นหาสมาชิก">
       </div>
+      <input
+        v-model="searchQuery"
+        type="text"
+        class="member-search-input"
+        placeholder="ค้นหาสมาชิก..."
+      >
+      <button v-if="searchQuery" class="clear-search-btn" @click="clearSearch">
+        <i class="fas fa-times" />
+      </button>
     </div>
 
-    <div class="members-container">
-      <div v-if="filteredActivityMembers.length">
-        <div class="category-header">
-          กิจกรรม — {{ filteredActivityMembers.length }}
-          <i class="fas fa-chevron-down" />
-        </div>
-        <div class="member-list">
-          <div
-            v-for="member in filteredActivityMembers"
-            :key="member._id"
-            class="member-item activity"
-            :class="{ 'current-user': isCurrentUser(member) }"
-            @click="$emit('member-click', member)"
-          >
-            <div class="member-avatar">
-              <img v-if="member.avatar" :src="member.avatar">
-              <div v-else class="avatar-placeholder">
-                {{ getInitials(member) }}
-              </div>
-              <div class="status-indicator" :class="member.status" />
-            </div>
-            <div class="member-info">
-              <div class="member-name">
-                {{ getMemberName(member) }}
-                <span v-if="isCurrentUser(member)">(คุณ)</span>
-              </div>
-              <div class="member-activity">
-                {{ member.activity || member.gameName }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="filteredOnlineMembers.length">
-        <div class="category-header">
-          ออนไลน์ — {{ filteredOnlineMembers.length }}
-          <i class="fas fa-chevron-down" />
-        </div>
-        <div class="member-list">
-          <div
-            v-for="member in filteredOnlineMembers"
-            :key="member._id"
-            class="member-item"
-            :class="{ 'current-user': isCurrentUser(member) }"
-            @click="$emit('member-click', member)"
-          >
-            <div class="member-avatar">
-              <img v-if="member.avatar" :src="member.avatar">
-              <div v-else class="avatar-placeholder">
-                {{ getInitials(member) }}
-              </div>
-              <div class="status-indicator" :class="member.status" />
-            </div>
-            <div class="member-info">
-              <div class="member-name">
-                {{ getMemberName(member) }}
-                <span v-if="isCurrentUser(member)">(คุณ)</span>
-              </div>
-              <div class="member-status-text online">
-                ออนไลน์
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="filteredOfflineMembers.length">
-        <div class="category-header">
-          ออฟไลน์ — {{ filteredOfflineMembers.length }}
-          <i class="fas fa-chevron-down" />
-        </div>
-        <div class="member-list">
-          <div
-            v-for="member in filteredOfflineMembers"
-            :key="member._id"
-            class="member-item offline"
-            :class="{ 'current-user': isCurrentUser(member) }"
-            @click="$emit('member-click', member)"
-          >
-            <div class="member-avatar">
-              <img v-if="member.avatar" :src="member.avatar">
-              <div v-else class="avatar-placeholder offline">
-                {{ getInitials(member) }}
-              </div>
-              <div class="status-indicator offline" />
-            </div>
-            <div class="member-info">
-              <div class="member-name">
-                {{ getMemberName(member) }}
-                <span v-if="isCurrentUser(member)">(คุณ)</span>
-              </div>
-              <div class="member-status-text offline">
-                ออฟไลน์
-                <span v-if="member.lastSeen"> - {{ formatLastSeen(member.lastSeen) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="filteredMembers.length === 0" class="empty-state">
-        <i class="fas fa-users-slash" /> <div>ไม่พบสมาชิก</div>
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="member-status-panel">
+      <b-spinner small class="mr-2" />
+      <span>กำลังโหลดสมาชิก...</span>
     </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="member-status-panel error">
+      <i class="fas fa-exclamation-circle" />
+      <span>โหลดรายชื่อสมาชิกไม่สำเร็จ</span>
+      <button class="retry-btn" @click="fetchMembers">
+        ลองใหม่
+      </button>
+    </div>
+
+    <template v-else>
+      <!-- Online Members Section -->
+      <div v-if="onlineMembers.length" class="member-section">
+        <div class="section-header">
+          <span class="section-title">ออนไลน์</span>
+          <span class="section-count">{{ onlineMembers.length }}</span>
+        </div>
+        <div class="members-grid">
+          <div
+            v-for="member in onlineMembers"
+            :key="member._id || member.id"
+            :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
+            @click="$emit('select-member', member)"
+          >
+            <div class="member-avatar-wrapper">
+              <div class="member-avatar">
+                <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
+                <span v-else>{{ getInitials(member.username) }}</span>
+              </div>
+              <span class="online-status" />
+            </div>
+            <div class="member-info">
+              <div class="member-name-wrapper">
+                <span class="member-name">{{ member.username }}</span>
+                <span v-if="member.isYou" class="you-badge">คุณ</span>
+              </div>
+              <div class="member-status-text">
+                <span class="status-dot online" />
+                <span>ออนไลน์</span>
+              </div>
+            </div>
+            <div class="member-actions">
+              <button class="member-action-btn" title="ส่งข้อความ" @click.stop="$emit('message-member', member)">
+                <i class="fas fa-comment" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offline Members Section -->
+      <div v-if="offlineMembers.length" class="member-section">
+        <div class="section-header">
+          <span class="section-title">ออฟไลน์</span>
+          <span class="section-count">{{ offlineMembers.length }}</span>
+        </div>
+        <div class="members-grid">
+          <div
+            v-for="member in offlineMembers"
+            :key="member._id || member.id"
+            :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
+            @click="$emit('select-member', member)"
+          >
+            <div class="member-avatar-wrapper">
+              <div class="member-avatar offline">
+                <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
+                <span v-else>{{ getInitials(member.username) }}</span>
+              </div>
+            </div>
+            <div class="member-info">
+              <div class="member-name-wrapper">
+                <span class="member-name">{{ member.username }}</span>
+                <span v-if="member.isYou" class="you-badge">คุณ</span>
+              </div>
+              <div class="member-status-text">
+                <span class="status-dot offline" />
+                <span>ออฟไลน์</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Results -->
+      <div v-if="members.length === 0" class="no-members">
+        <div class="no-members-icon">
+          <i class="fas fa-user-slash" />
+        </div>
+        <p>{{ searchQuery ? 'ไม่พบสมาชิกที่ค้นหา' : 'ยังไม่มีสมาชิกในห้องนี้' }}</p>
+      </div>
+    </template>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'DiscordMemberList',
+  name: 'MemberList',
   props: {
     roomId: { type: String, required: true },
     currentUserId: { type: String, required: true },
@@ -128,76 +138,104 @@ export default {
     return {
       members: [],
       searchQuery: '',
+      loading: false,
+      error: false,
       socketListenersSetup: false
     }
   },
   computed: {
-    activityMembers () {
-      return this.members.filter(m => this.isOnline(m) && (m.activity || m.gameName))
+    totalMembers () {
+      return this.members.length
     },
-    onlineMembers () {
-      return this.members.filter(m => this.isOnline(m) && !m.activity && !m.gameName)
+
+    sortedMembers () {
+      return [...this.members].sort((a, b) => {
+        // Sort by online status first
+        if (a.online && !b.online) {
+          return -1
+        }
+        if (!a.online && b.online) {
+          return 1
+        }
+
+        return (a.username || '').localeCompare(b.username || '')
+      })
     },
-    offlineMembers () {
-      return this.members.filter(m => !this.isOnline(m))
-    },
-    filteredActivityMembers () {
-      return this.filterMembers(this.activityMembers)
-    },
-    filteredOnlineMembers () {
-      return this.filterMembers(this.onlineMembers)
-    },
-    filteredOfflineMembers () {
-      return this.filterMembers(this.offlineMembers)
-    },
+
     filteredMembers () {
-      return [...this.filteredActivityMembers, ...this.filteredOnlineMembers, ...this.filteredOfflineMembers]
+      if (!this.searchQuery.trim()) {
+        return this.sortedMembers
+      }
+
+      const query = this.searchQuery.toLowerCase().trim()
+      return this.sortedMembers.filter((member) => {
+        const username = (member.username || '').toLowerCase()
+        return username.includes(query)
+      })
+    },
+
+    onlineMembers () {
+      return this.filteredMembers.filter(m => m.online)
+    },
+
+    offlineMembers () {
+      return this.filteredMembers.filter(m => !m.online)
     }
   },
   watch: {
-    roomId: {
-      immediate: true,
-      async handler (newVal, oldVal) {
-        // ถ้า roomId เปลี่ยน ให้ cleanup socket listeners เก่า
-        if (oldVal && oldVal !== newVal) {
-          this.cleanupSocket()
-        }
-        if (newVal) {
-          await this.init()
-        }
-      }
+    // Re-fetch if the user switches rooms while this sidebar stays mounted —
+    // previously roomId changes were ignored after the initial mount.
+    roomId () {
+      this.fetchMembers()
     }
   },
-  beforeDestroy () {
-    this.cleanupSocket()
-    // ลบ beforeunload listener
-    if (this.beforeUnloadHandler) {
-      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
-    }
+  mounted () {
+    this.fetchMembers()
   },
   methods: {
-    async init () {
-      await this.fetchMembers()
-      this.setupSocket()
+    getInitials (username) {
+      if (!username) {
+        return '?'
+      }
+      return username
+        .split(' ')
+        .map(name => name[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2)
     },
 
+    clearSearch () {
+      this.searchQuery = ''
+    },
     async fetchMembers () {
+      this.loading = true
+      this.error = false
       try {
         const res = await this.$axios.$get(
           process.env.API_GET_ROOM_MEMBER.replace(':roomId', this.roomId)
         )
-        this.members = (res.result || []).map(m => ({
-          _id: m._id,
-          fullname: m.fullname || m.displayName || m.username,
-          avatar: m.avatar,
-          status: m.status || 'offline',
-          lastSeen: m.lastSeen || null,
-          activity: m.activity || null,
-          gameName: m.gameName || null
+
+        const data = Array.isArray(res)
+          ? res
+          : (res?.result ?? res?.members ?? res?.data ?? res?.items ?? [])
+
+        if (!Array.isArray(data)) {
+          throw new TypeError(`Unexpected members response shape: ${typeof data}`)
+        }
+
+        this.members = data.map(member => ({
+          ...member,
+          username: member.username || member.fullname || member.name || 'Unknown',
+          online: member.online === true || member.status === 'online' || member.isOnline === true,
+          isYou: member._id === this.currentUserId || member.id === this.currentUserId
         }))
       } catch (err) {
-        console.error('Error fetching members:', err)
+        console.error('Failed to fetch members:', err)
         this.members = []
+        this.error = true
+      } finally {
+        this.loading = false
       }
     },
 
@@ -337,15 +375,6 @@ export default {
       return member.fullname || member.displayName || member.username || 'Unknown User'
     },
 
-    getInitials (member) {
-      const name = member.fullname || member.displayName || member.username || ''
-      if (!name) { return '?' }
-      const parts = name.split(' ').filter(p => p.length > 0)
-      if (parts.length === 0) { return '?' }
-      if (parts.length === 1) { return parts[0][0].toUpperCase() }
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    },
-
     formatLastSeen (lastSeen) {
       if (!lastSeen) { return '' }
 
@@ -369,323 +398,335 @@ export default {
 </script>
 
 <style scoped>
-.discord-member-list {
-  background: linear-gradient(180deg, #2f3136 0%, #232428 100%);
+/*
+  Same token system as MessageList.vue: one dark ink surface, violet as
+  the single accent, coral/mint reserved for status meaning only. The
+  cream-and-yellow brutalist sidebar previously clashed with the dark
+  chat pane it sits next to; this brings both into one visual family.
+*/
+.member-list-container {
+  --bg: #121218;
+  --surface: #1c1c26;
+  --surface-raised: #262636;
+  --ink: #0d0d12;
+  --text: #f3f1ec;
+  --text-muted: rgba(243, 241, 236, 0.56);
+  --violet: #8b7ffb;
+  --violet-deep: #6a5cf0;
+  --coral: #ff6b5b;
+  --mint: #34d9a6;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --radius-pill: 999px;
+  --font-display: 'Space Grotesk', 'Noto Sans Thai', sans-serif;
+
   display: flex;
   flex-direction: column;
   height: 100%;
-  color: #dcddde;
-  border-left: 1px solid #202225;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.4);
-  font-family: "Segoe UI", sans-serif;
-}
-.search-container {
-  padding: 16px;
-  border-bottom: 1px solid #40444b;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(6px);
+  min-height: 0;
+  background: var(--bg);
+  color: var(--text);
 }
 
-.search-box {
-  background: rgba(64, 68, 75, 0.8);
-  border-radius: 8px;
-  padding: 8px 12px;
+.member-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.member-list-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.member-list-title .fa-users { color: var(--violet); }
+
+.close-sidebar-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.close-sidebar-btn:hover { transform: rotate(90deg); color: var(--coral); }
+
+.member-search-wrapper {
+  position: relative;
+  margin: 14px 16px 6px;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.member-search-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 9px 34px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.member-search-input::placeholder { color: var(--text-muted); }
+
+.member-search-input:focus {
+  outline: none;
+  border-color: var(--violet);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--coral);
+  color: #ffffff;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.member-status-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.member-status-panel.error .fa-exclamation-circle {
+  font-size: 1.3rem;
+  color: var(--coral);
+}
+
+.retry-btn {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.retry-btn:hover { background: rgba(139, 127, 251, 0.25); }
+
+.member-section {
+  padding: 10px 16px 4px;
+}
+
+.section-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  margin-bottom: 8px;
 }
 
-.search-box:focus-within {
-  background: rgba(88, 101, 242, 0.15);
-  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.4);
-}
-
-.search-box i {
-  color: #72767d;
-  font-size: 14px;
-}
-
-.search-box input {
-  background: none;
-  border: none;
-  color: #fff;
-  outline: none;
-  flex: 1;
-  font-size: 14px;
-}
-
-.search-box input::placeholder {
-  color: #72767d;
-}
-.members-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 8px;
-}
-
-.members-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.members-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.members-container::-webkit-scrollbar-thumb {
-  background: #202225;
-  border-radius: 4px;
-}
-
-.members-container::-webkit-scrollbar-thumb:hover {
-  background: #1e2124;
-}
-
-.category-header {
-  font-size: 12px;
-  font-weight: 700;
-  color: #8e9297;
+.section-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 8px 8px 4px 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: color 0.2s ease;
+  color: var(--text-muted);
 }
 
-.category-header:hover {
-  color: #fff;
+.section-count {
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
 }
 
-.member-list {
+.members-grid {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .member-item {
   display: flex;
   align-items: center;
-  padding: 10px 8px;
-  border-radius: 8px;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 4px 6px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .member-item:hover {
-  background: rgba(88, 101, 242, 0.15);
-  transform: translateX(4px);
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
 }
 
-.member-item.current-user {
-  background: linear-gradient(90deg, #5865f2, #4752c4);
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(88, 101, 242, 0.5);
-}
+.member-item.is-you { border-color: rgba(139, 127, 251, 0.4); }
 
-.member-item.offline {
-  opacity: 0.4;
-  filter: grayscale(50%);
-}
+.member-avatar-wrapper { position: relative; flex-shrink: 0; }
 
 .member-avatar {
-  position: relative;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.member-avatar img,
-.avatar-placeholder {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s ease;
-}
-
-.member-item:hover .member-avatar img,
-.member-item:hover .avatar-placeholder {
-  transform: scale(1.05);
-}
-
-.avatar-placeholder {
-  background: linear-gradient(135deg, #5865f2, #4752c4);
+  background: var(--violet);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.82rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.avatar-placeholder.offline {
-  background: #72767d;
-}
-
-.status-indicator {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 2px solid #2f3136;
-  transition: all 0.2s ease;
-}
-
-.status-indicator.online {
-  background-color: #3ba55c;
-  animation: pulse-online 2s infinite;
-}
-
-.status-indicator.offline {
-  background-color: #747f8d;
-}
-
-@keyframes pulse-online {
-  0% {
-    box-shadow: 0 0 0 0 rgba(59, 165, 92, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(59, 165, 92, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(59, 165, 92, 0);
-  }
-}
-.member-info {
-  flex: 1;
   overflow: hidden;
+}
+
+.member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.member-avatar.offline { background: var(--surface-raised); color: var(--text-muted); }
+
+.online-status {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--mint);
+  border: 2px solid var(--bg);
+}
+
+.member-info { flex: 1; min-width: 0; }
+
+.member-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .member-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
+}
+
+.you-badge {
+  background: var(--violet);
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
 }
 
 .member-status-text {
-  font-size: 12px;
-  color: #b9bbbe;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
-.member-status-text.online {
-  color: #3ba55c;
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
 }
 
-.member-status-text.offline {
-  color: #747f8d;
+.status-dot.online { background: var(--mint); }
+.status-dot.offline { background: var(--text-muted); }
+
+.member-actions { flex-shrink: 0; }
+
+.member-action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-raised);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 40px 16px;
-  color: #72767d;
-  font-style: italic;
+.member-action-btn:hover { background: rgba(139, 127, 251, 0.3); }
+
+.no-members {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-muted);
+  padding: 24px;
 }
 
-.empty-state i {
-  font-size: 48px;
-  margin-bottom: 12px;
-  opacity: 0.5;
+.no-members-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--text-muted);
 }
 
-/* Minimal Theme */
-[data-theme="minimal"] .discord-member-list {
-  background: #ffffff;
-  color: #1e293b;
-  border-left: 1px solid #e2e8f0;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-}
+.no-members p { margin: 0; font-size: 0.85rem; font-weight: 600; }
 
-[data-theme="minimal"] .search-container {
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
-}
-
-[data-theme="minimal"] .search-box {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-}
-
-[data-theme="minimal"] .search-box:focus-within {
-  background: #ffffff;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-}
-
-[data-theme="minimal"] .search-box i {
-  color: #64748b;
-}
-
-[data-theme="minimal"] .search-box input {
-  color: #1e293b;
-}
-
-[data-theme="minimal"] .search-box input::placeholder {
-  color: #94a3b8;
-}
-
-[data-theme="minimal"] .category-header {
-  color: #64748b;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-[data-theme="minimal"] .category-header:hover {
-  color: #2563eb;
-}
-
-[data-theme="minimal"] .member-item:hover {
-  background: #f1f5f9;
-  transform: translateX(2px);
-}
-
-[data-theme="minimal"] .member-item.current-user {
-  background: #dbeafe;
-  color: #1e293b;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
-}
-
-[data-theme="minimal"] .member-name {
-  color: #1e293b;
-}
-
-[data-theme="minimal"] .member-status-text {
-  color: #64748b;
-}
-
-[data-theme="minimal"] .member-status-text.online {
-  color: #10b981;
-}
-
-[data-theme="minimal"] .member-status-text.offline {
-  color: #94a3b8;
-}
-
-[data-theme="minimal"] .empty-state {
-  color: #94a3b8;
-}
-
-@media (max-width: 768px) {
-  .discord-member-list {
-    width: 200px;
-  }
-
-  .member-avatar img,
-  .avatar-placeholder {
-    width: 30px;
-    height: 30px;
-  }
-
-  .status-indicator {
-    width: 9px;
-    height: 9px;
-  }
+@media (max-width: 992px) {
+  .members-grid { flex-direction: row; flex-wrap: wrap; }
+  .member-item { flex: 1 1 220px; }
 }
 </style>

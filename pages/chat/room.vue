@@ -1,32 +1,39 @@
-// pages/chat/room.vue
+<!-- pages/chat/room.vue -->
 <template>
   <div
-    class="chat-room-page d-flex"
+    class="chat-room-page"
     :data-theme="chatTheme"
-    :style="{
-      height: '100vh',
-      background: chatBackground.startsWith('http')
-        ? `url(${chatBackground}) center/cover no-repeat`
-        : chatBackground || '#f8f9fa'
-    }"
   >
-    <!-- Main Chat Section -->
-    <div class="d-flex flex-column flex-grow-1">
-      <header class="bg-dark text-white p-2 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-          ห้องแชท {{ currentRoom.name || roomId }}
-        </h5>
-        <div class="d-flex align-items-center gap-2">
-          <button
-            v-if="currentRoom.type === 'private'"
-            class="btn btn-outline-light btn-sm"
-            @click="openSettings"
-          >
-            <i class="fas fa-cog mr-1" /> ตั้งค่า
-          </button>
-          <nuxt-link to="/chat/chat" class="btn btn-warning btn-sm" @click.prevent="goBack">
-            <i class="fas fa-arrow-left mr-1" /> กลับ
-          </nuxt-link>
+    <div class="chat-area">
+      <header class="chat-header">
+        <div class="header-content">
+          <div class="room-info">
+            <div class="room-avatar">
+              <i class="fas fa-comments" />
+            </div>
+            <div class="room-details">
+              <h4 class="room-name">
+                {{ currentRoom.name || roomId }}
+              </h4>
+              <p class="room-status">
+                <span class="status-dot online" />
+                {{ currentRoom.memberCount || 0 }} สมาชิกออนไลน์
+              </p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button
+              v-if="currentRoom.type === 'private'"
+              class="icon-btn"
+              title="ตั้งค่า"
+              @click="openSettings"
+            >
+              <i class="fas fa-cog" />
+            </button>
+            <button class="icon-btn back-btn" title="กลับ" @click.prevent="goBack">
+              <i class="fas fa-arrow-left" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -45,48 +52,64 @@
         @load-more="loadMoreMessages"
       />
 
-      <TypingIndicator :typing-users="typingUsers" class="px-3 mb-1" />
+      <TypingIndicator :typing-users="typingUsers" class="typing-slot" />
 
-      <MessageInput
-        ref="messageInput"
-        :reply-to="replyTo"
-        @send-message="sendMessage"
-        @cancel-reply="cancelReply"
-      />
+      <div class="message-input-container">
+        <MessageInput
+          ref="messageInput"
+          :room-id="roomId"
+          :replying-to="replyTo"
+          :chat-theme="chatTheme"
+          @send-message="sendMessage"
+          @cancel-reply="cancelReply"
+          @send-file="handleSendFile"
+          @typing-start="handleTypingStart"
+          @typing-stop="handleTypingStop"
+        />
+      </div>
     </div>
 
-    <!-- Member List -->
-    <aside style="width: 250px;">
-      <DiscordMemberList :room-id="roomId" :current-user-id="currentUserId" :chat-theme="chatTheme" />
+    <aside class="member-sidebar">
+      <DiscordMemberList
+        :room-id="roomId"
+        :current-user-id="currentUserId"
+        :chat-theme="chatTheme"
+        :member-count="currentRoom.memberCount || 0"
+      />
     </aside>
 
-    <!-- Reaction Picker -->
-    <b-modal
-      id="reaction-picker-modal"
-      v-model="showReactionPicker"
-      title="เลือกรีแอคชั่น"
-      size="sm"
-      centered
-      hide-footer
-    >
-      <div class="reaction-picker-grid">
-        <button
-          v-for="emoji in emojiList"
-          :key="emoji"
-          class="emoji-btn"
-          @click="selectReaction(emoji)"
-        >
-          {{ emoji }}
-        </button>
+    <transition name="emoji-fade">
+      <div v-if="showReactionPicker" class="reaction-picker-overlay" @click="showReactionPicker = false">
+        <div class="reaction-picker-panel" @click.stop>
+          <div class="picker-header">
+            <h6>เลือกรีแอคชั่น</h6>
+            <button class="close-picker" @click="showReactionPicker = false">
+              <i class="fas fa-times" />
+            </button>
+          </div>
+          <div class="reaction-picker-grid">
+            <button
+              v-for="emoji in emojiList"
+              :key="emoji"
+              class="emoji-btn"
+              @click="selectReaction(emoji)"
+            >
+              {{ emoji }}
+            </button>
+          </div>
+        </div>
       </div>
-    </b-modal>
+    </transition>
 
-    <!-- Room Settings Modal -->
     <RoomSettings
+      v-if="showSettingsModal"
       :show="showSettingsModal"
       :value="{ theme: chatTheme, background: chatBackground }"
       :available-themes="availableThemes"
+      :room="currentRoom"
+      :chat-theme="chatTheme"
       @save="handleSettingsSave"
+      @save-settings="handleSettingsSave"
       @close="showSettingsModal = false"
     />
   </div>
@@ -205,7 +228,6 @@ export default {
 
     if (!this.roomId) { return }
 
-    // Animate page entrance
     this.$anime({
       targets: '.chat-room-page',
       opacity: [0, 1],
@@ -215,7 +237,7 @@ export default {
     })
 
     this.$anime({
-      targets: 'header',
+      targets: '.chat-header',
       opacity: [0, 1],
       translateY: [-20, 0],
       duration: 400,
@@ -224,7 +246,7 @@ export default {
     })
 
     this.$anime({
-      targets: 'aside',
+      targets: '.member-sidebar',
       opacity: [0, 1],
       translateX: [20, 0],
       duration: 400,
@@ -283,9 +305,24 @@ export default {
     },
 
     handleSettingsSave (settings) {
-      this.chatTheme = settings.theme
-      this.chatBackground = settings.background
+      if (settings.theme) {
+        this.chatTheme = settings.theme
+      }
+      if (settings.background) {
+        this.chatBackground = settings.background
+      }
+      if (settings.name) {
+        this.currentRoom.name = settings.name
+      }
+      if (settings.description) {
+        this.currentRoom.description = settings.description
+      }
+      if (settings.avatar) {
+        this.currentRoom.avatar = settings.avatar
+      }
+
       this.saveRoomSettings()
+      this.showSettingsModal = false
     },
 
     async fetchMessages () {
@@ -300,7 +337,6 @@ export default {
         this.messages = Array.isArray(data) ? data.map(msg => this.formatMessage(msg)) : []
         this.hasMore = res.hasMore || false
       } catch (err) {
-        console.error('โหลดข้อความไม่สำเร็จ', err)
         this.$bvToast.toast('ไม่สามารถโหลดข้อความได้', {
           variant: 'danger',
           solid: true
@@ -320,7 +356,6 @@ export default {
         this.messages = [...oldMessages, ...this.messages]
         this.hasMore = res.hasMore || false
       } catch (err) {
-        console.error('โหลดข้อความเพิ่มเติมไม่สำเร็จ', err)
       }
     },
 
@@ -343,6 +378,15 @@ export default {
           message.content = content
           message.edited = true
         }
+      })
+      this.$socket.on('userTyping', ({ userId, username }) => {
+        if (userId === this.currentUserId) { return }
+        if (!this.typingUsers.some(u => u.userId === userId)) {
+          this.typingUsers.push({ userId, username })
+        }
+      })
+      this.$socket.on('userStoppedTyping', ({ userId }) => {
+        this.typingUsers = this.typingUsers.filter(u => u.userId !== userId)
       })
     },
 
@@ -381,6 +425,35 @@ export default {
       this.cancelReply()
     },
 
+    handleSendFile ({ roomId, file, replyTo }) {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('roomId', roomId)
+      formData.append('userId', this.currentUserId)
+      if (replyTo) { formData.append('replyTo', JSON.stringify(replyTo)) }
+
+      this.$axios.$post(process.env.API_UPLOAD_CHAT_FILE, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      }).catch(() => {
+        this.$bvToast.toast('อัปโหลดไฟล์ไม่สำเร็จ', { variant: 'danger', solid: true })
+      })
+    },
+
+    handleTypingStart () {
+      this.$socket.emit('typing', {
+        roomId: this.roomId,
+        userId: this.currentUserId,
+        username: this.user?.username || this.user?.fullname || 'Unknown'
+      })
+    },
+
+    handleTypingStop () {
+      this.$socket.emit('stopTyping', {
+        roomId: this.roomId,
+        userId: this.currentUserId
+      })
+    },
+
     handleToggleReaction ({ messageId, emoji }) {
       this.$socket.emit('toggleReaction', {
         roomId: this.roomId,
@@ -414,7 +487,7 @@ export default {
         content: message.content
       }
       this.$nextTick(() => {
-        this.$refs.messageInput?.focusInput()
+        this.$refs.messageInput?.$refs?.messageInput?.focus()
       })
     },
 
@@ -454,9 +527,37 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 .chat-room-page {
+  --ink: #101014;
+  --paper: #14141c;
+  --paper-soft: #1b1b25;
+  --cream: #f6f3ed;
+  --coral: #ff5c4d;
+  --violet: #7c6ff5;
+  --violet-deep: #5b4fd6;
+  --yellow: #ffc94d;
+  --mint: #33d9b2;
+  --white: #ffffff;
+  --line: 3px;
+  --line-sm: 2px;
+  --shadow: 6px 6px 0 var(--ink);
+  --shadow-sm: 4px 4px 0 var(--ink);
+  --shadow-xs: 2px 2px 0 var(--ink);
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-pill: 999px;
+  --font-display: 'Space Grotesk', 'Noto Sans Thai', sans-serif;
+  --font-body: 'Inter', 'Noto Sans Thai', sans-serif;
+
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
-  transition: background 0.4s ease, transform 0.4s ease;
+  background: var(--paper);
   position: relative;
 }
 
@@ -464,117 +565,417 @@ export default {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.14), transparent 20%),
-              radial-gradient(circle at 80% 30%, rgba(59, 130, 246, 0.1), transparent 18%);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
   pointer-events: none;
   z-index: 0;
 }
 
-.chat-room-page > div,
-.chat-room-page aside,
-.chat-room-page .b-modal {
-  position: relative;
-  z-index: 1;
+.chat-room-page > * { position: relative; z-index: 1; }
+
+.chat-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-header {
-  background: rgba(15, 23, 42, 0.96);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-  color: #e2e8f0;
+.chat-header {
+  background: var(--violet);
+  border-bottom: var(--line) solid var(--ink);
+  padding: 18px 24px;
+  flex-shrink: 0;
 }
 
-header h5 {
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.room-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  background: var(--coral);
+  border: var(--line-sm) solid var(--ink);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.room-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.room-name {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-header .btn {
-  border-radius: 999px;
+.room-status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
 }
 
-header .btn-warning {
-  background: #f59e0b;
-  border-color: #d97706;
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1.5px solid var(--ink);
 }
 
-header .btn-warning:hover {
-  background: #d97706;
+.status-dot.online {
+  background: var(--mint);
+  animation: pulse-status 2s infinite;
 }
 
-aside {
-  width: 280px;
-  border-left: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(15, 23, 42, 0.93);
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.2); }
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  border: var(--line-sm) solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.icon-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.icon-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.icon-btn.back-btn {
+  background: var(--yellow);
+}
+
+.member-sidebar {
+  width: 320px;
+  border-left: var(--line) solid var(--ink);
+  background: var(--cream);
   overflow-y: auto;
-  min-height: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
 }
 
-aside::-webkit-scrollbar,
-.chat-room-page .b-modal::-webkit-scrollbar {
-  width: 8px;
+.sidebar-header {
+  padding: 16px 20px;
+  border-bottom: var(--line-sm) solid var(--ink);
+  background: var(--yellow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-aside::-webkit-scrollbar-track,
-.chat-room-page .b-modal::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+.sidebar-header h5 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-aside::-webkit-scrollbar-thumb,
-.chat-room-page .b-modal::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.4);
-  border-radius: 999px;
+.member-count {
+  background: var(--ink);
+  border: var(--line-sm) solid var(--ink);
+  color: var(--white);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-xs);
 }
+
+.typing-slot {
+  padding: 0 16px 4px;
+}
+
+.message-input-container {
+  flex-shrink: 0;
+  border-top: var(--line) solid var(--ink);
+  background: var(--paper-soft);
+}
+
+.reaction-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 16, 20, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.reaction-picker-panel {
+  background: var(--cream);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  min-width: 360px;
+  animation: slideUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: var(--line-sm) dashed var(--ink);
+}
+
+.picker-header h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.close-picker {
+  background: var(--coral);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--white);
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.12s ease;
+}
+
+.close-picker:hover { transform: rotate(90deg); }
 
 .reaction-picker-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(40px, 1fr));
-  gap: 10px;
-  padding: 14px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
 }
 
 .emoji-btn {
-  font-size: 24px;
-  padding: 14px;
-  border: 1px solid rgba(168, 85, 247, 0.25);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #f8fafc;
+  font-size: 1.6rem;
+  padding: 10px;
+  background: var(--white);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-xs);
 }
 
 .emoji-btn:hover {
-  transform: scale(1.1);
-  border-color: #a855f7;
-  background: rgba(168, 85, 247, 0.18);
+  background: var(--yellow);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
-@media (max-width: 992px) {
-  .chat-room-page {
-    flex-direction: column;
-  }
+.emoji-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 
-  aside {
+.emoji-fade-enter-active,
+.emoji-fade-leave-active { transition: all 0.2s ease; }
+
+.emoji-fade-enter-from,
+.emoji-fade-leave-to { opacity: 0; transform: scale(0.94); }
+
+.message-bubble {
+  background: var(--white) !important;
+  border: var(--line-sm) solid var(--ink) !important;
+  color: var(--ink) !important;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.message-bubble.own-message {
+  background: var(--violet) !important;
+  border-color: var(--ink) !important;
+  color: var(--white) !important;
+}
+
+.message-bubble.other { background: var(--white) !important; }
+
+.member-item {
+  background: var(--white);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.member-item:hover {
+  border-color: var(--ink);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.member-name { color: var(--ink); font-weight: 600; }
+.member-status { color: var(--violet-deep); }
+
+.member-search-input {
+  background: var(--white);
+  border: var(--line-sm) solid var(--ink);
+  color: var(--ink);
+  border-radius: var(--radius-md);
+}
+
+.member-search-input::placeholder { color: rgba(16, 16, 20, 0.45); }
+
+.member-search-input:focus {
+  background: var(--white);
+  border-color: var(--violet);
+  outline: none;
+}
+
+.date-separator {
+  background: var(--yellow);
+  color: var(--ink);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+
+.modal-content {
+  background: var(--paper-soft);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  border-bottom: var(--line-sm) solid var(--ink);
+  background: var(--coral);
+  border-radius: calc(var(--radius-lg) - 3px) calc(var(--radius-lg) - 3px) 0 0;
+}
+
+.modal-body { padding: 24px; }
+
+@media (max-width: 992px) {
+  .chat-room-page { height: 100vh; max-height: 100vh; flex-direction: column; }
+  .chat-area { height: 100%; }
+  .member-sidebar {
     width: 100%;
     border-left: none;
-    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-top: var(--line) solid var(--ink);
+    height: 280px;
+    max-height: 280px;
   }
+  .room-avatar { width: 44px; height: 44px; font-size: 18px; }
+  .room-name { font-size: 1.05rem; }
+  .reaction-picker-panel { min-width: 340px; }
+  .reaction-picker-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .chat-header { padding: 14px 16px; }
+  .header-content { gap: 12px; }
+  .room-info { gap: 10px; }
+  .room-avatar { width: 40px; height: 40px; font-size: 16px; }
+  .room-name { font-size: 0.98rem; }
+  .room-status { font-size: 0.76rem; }
+  .icon-btn { width: 38px; height: 38px; }
+  .member-sidebar { height: 260px; max-height: 260px; }
+  .sidebar-header { padding: 12px 16px; }
+  .reaction-picker-panel { min-width: 90%; max-width: 400px; padding: 18px; }
+  .reaction-picker-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .emoji-btn { font-size: 1.5rem; padding: 9px; }
 }
 
 @media (max-width: 640px) {
-  header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
+  .chat-header { padding: 10px 14px; }
+  .room-avatar { width: 36px; height: 36px; font-size: 14px; }
+  .room-name { font-size: 0.9rem; }
+  .room-status { font-size: 0.7rem; }
+  .status-dot { width: 7px; height: 7px; }
+  .icon-btn { width: 34px; height: 34px; }
+  .member-sidebar { height: 230px; max-height: 230px; }
+  .sidebar-header h5 { font-size: 0.85rem; }
+  .member-count { font-size: 0.7rem; padding: 3px 10px; }
+  .reaction-picker-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .emoji-btn { font-size: 1.3rem; padding: 7px; }
+}
 
-  header h5 {
-    font-size: 1rem;
-  }
-
-  .reaction-picker-grid {
-    grid-template-columns: repeat(4, minmax(40px, 1fr));
-  }
+@media (max-width: 480px) {
+  .room-avatar { width: 32px; height: 32px; font-size: 13px; }
+  .room-name { font-size: 0.85rem; }
+  .reaction-picker-panel { min-width: 95%; padding: 14px; }
+  .reaction-picker-grid { grid-template-columns: repeat(3, 1fr); }
+  .emoji-btn { font-size: 1.2rem; padding: 6px; }
 }
 </style>

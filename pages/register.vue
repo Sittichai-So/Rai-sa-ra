@@ -1,7 +1,14 @@
 <template>
   <div class="auth-page">
-    <div class="auth-card shadow-lg">
+    <div class="bg-shapes">
+      <div class="shape shape-1" />
+      <div class="shape shape-2" />
+      <div class="shape shape-3" />
+    </div>
+
+    <div class="auth-card">
       <div class="auth-header text-center">
+        <span class="auth-eyebrow">RAI-SA-RA</span>
         <h2 class="title">
           Create Account ✨
         </h2>
@@ -28,7 +35,6 @@
 
       <validation-observer ref="observer" v-slot="{ handleSubmit, valid }">
         <b-form @submit.stop.prevent="handleSubmit(onRegister)">
-          <!-- Section 1: Personal Information -->
           <div class="form-section">
             <h4 class="section-title">
               <i class="fas fa-user" />
@@ -99,7 +105,6 @@
             </b-row>
           </div>
 
-          <!-- Section 2: Account Information -->
           <div class="form-section">
             <h4 class="section-title">
               <i class="fas fa-lock" />
@@ -210,7 +215,7 @@
                 id="acceptTerms"
                 v-model="form.acceptTerms"
                 :state="getValidationState(validationContext)"
-                style="font-size: 20px;display: flex;flex-direction: column;justify-content: center; color: white;"
+                class="terms-checkbox"
               >
                 ฉันยอมรับ <b-link href="#" @click="showTerms">
                   เงื่อนไขการใช้งาน
@@ -225,7 +230,6 @@
           <b-button
             type="submit"
             block
-            variant="light"
             size="lg"
             class="submit-btn mt-4"
             :disabled="!valid || isRegistering"
@@ -240,7 +244,7 @@
         </b-form>
       </validation-observer>
 
-      <div class="auth-footer text-center mt-4" style="font-size: 20px;">
+      <div class="auth-footer text-center mt-4">
         <p>
           มีบัญชีแล้ว? <b-link to="/login">
             <i class="fas fa-sign-in-alt" /> เข้าสู่ระบบ
@@ -277,6 +281,13 @@ export default {
         text: 'รหัสผ่านอ่อนแอ'
       },
       isRegistering: false
+    }
+  },
+  head () {
+    return {
+      link: [
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap' }
+      ]
     }
   },
   computed: {
@@ -439,136 +450,225 @@ export default {
 </script>
 
 <style scoped>
+* {
+  font-family: 'Kanit', sans-serif;
+}
+
+.fas,
+.far,
+.fal,
+.fab,
+.fa {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+}
+
+.fab {
+  font-family: "Font Awesome 6 Brands" !important;
+  font-weight: 400 !important;
+}
+
+.fas,
+.fa {
+  font-weight: 900 !important;
+}
+
 .auth-page {
   position: relative;
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
-  padding: 20px;
+  background: #121218 !important;
+  padding: 40px 20px;
+  overflow: hidden;
 }
 
-.auth-page::before {
-  content: "";
+.bg-shapes {
   position: absolute;
   inset: 0;
-  background: rgba(114, 113, 113, 0.35);
   z-index: 0;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  border: 2px solid #000;
+}
+
+.shape-1 {
+  top: 8%;
+  left: 6%;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #ff5c4d !important;
+}
+
+.shape-2 {
+  bottom: 10%;
+  right: 8%;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #ffc94d !important;
+  transform: rotate(12deg);
+}
+
+.shape-3 {
+  top: 40%;
+  right: 4%;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #7b5cfa !important;
 }
 
 .auth-card {
-  background: rgba(20, 20, 30, 0.6);
-  backdrop-filter: blur(14px);
-  border-radius: 20px;
-  padding: 40px;
-  color: #fff;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+  position: relative;
+  z-index: 1;
+  background: #1c1c26 !important;
+  border: 2px solid #000;
+  border-radius: 24px;
+  padding: 44px;
+  width: 100%;
+  max-width: 720px;
+  color: #f6f3ed;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.9);
+}
+
+.auth-eyebrow {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #ffc94d;
+  border: 2px solid #ffc94d;
+  border-radius: 999px;
+  padding: 5px 16px;
+  margin-bottom: 16px;
 }
 
 .auth-header .title {
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 800;
+  color: #f6f3ed;
   margin-bottom: 10px;
 }
 
 .auth-header .subtitle {
-  font-size: 18px;
-  opacity: 0.85;
-  margin-bottom: 30px;
+  font-size: 16px;
+  color: rgba(246, 243, 237, 0.72);
+  margin-bottom: 28px;
 }
 
 .progress-steps {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 8px;
 }
 
 .step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  opacity: 0.6;
+  opacity: 0.45;
 }
 
 .step.active {
   opacity: 1;
 }
 
+.step span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f6f3ed;
+}
+
 .step-number {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid #000;
+  background: #121218;
+  color: #f6f3ed;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-weight: 800;
   margin-bottom: 8px;
 }
 
 .step.active .step-number {
-  background: #ffd369;
-  color: #333;
+  background: #ffc94d;
+  color: #121218;
 }
 
 .step-divider {
   width: 60px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  margin: 0 20px;
+  background: rgba(246, 243, 237, 0.25);
+  margin: 0 16px;
+  margin-bottom: 26px;
 }
 
 .form-section {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  padding: 25px;
-  margin-bottom: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #121218;
+  border: 2px solid rgba(246, 243, 237, 0.12);
+  border-radius: 18px;
+  padding: 26px;
+  margin-bottom: 22px;
 }
 
 .section-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #ffd369;
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: #ff9f95;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .section-title i {
-  font-size: 18px;
+  font-size: 16px;
+  color: #ff5c4d;
 }
 
 .form-group label {
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 8px;
-  color: #fff;
+  color: #f6f3ed;
+  font-size: 15px;
 }
 
 .form-control {
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 20px !important;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #333;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  background: #1c1c26 !important;
+  border: 2px solid rgba(246, 243, 237, 0.2) !important;
+  color: #f6f3ed !important;
+  height: auto !important;
+}
+
+.form-control::placeholder {
+  color: rgba(246, 243, 237, 0.4);
 }
 
 .form-control:focus {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: #ffd369;
-  box-shadow: 0 0 0 0.2rem rgba(255, 211, 105, 0.25);
+  background: #1c1c26 !important;
+  border-color: #ff5c4d !important;
+  box-shadow: 0 0 0 3px rgba(255, 92, 77, 0.25) !important;
+  color: #f6f3ed !important;
 }
 
 .form-control.is-invalid {
-  border-color: #dc3545;
+  border-color: #ff5c4d !important;
 }
 
 .form-control.is-valid {
-  border-color: #28a745;
+  border-color: #4ade80 !important;
 }
 
 .password-strength {
@@ -576,115 +676,120 @@ export default {
 }
 
 .strength-bar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
+  height: 6px;
+  background: rgba(246, 243, 237, 0.15);
+  border-radius: 999px;
   overflow: hidden;
 }
 
 .strength-fill {
   height: 100%;
   transition: all 0.3s ease;
-  border-radius: 2px;
+  border-radius: 999px;
 }
 
 .strength-fill.weak {
-  background: #dc3545;
+  background: #ff5c4d;
 }
 
 .strength-fill.medium {
-  background: #ffc107;
+  background: #ffc94d;
 }
 
 .strength-fill.strong {
-  background: #28a745;
+  background: #4ade80;
 }
 
 .strength-text {
   display: block;
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 5px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .strength-text.weak {
-  color: #ff6b6b;
+  color: #ff8f84;
 }
 
 .strength-text.medium {
-  color: #ffd93d;
+  color: #ffc94d;
 }
 
 .strength-text.strong {
-  color: #6bcf7f;
+  color: #4ade80;
 }
+
+.terms-checkbox {
+  font-size: 15px;
+  color: #f6f3ed;
+}
+
 .submit-btn {
-  border-radius: 12px;
-  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-  border: none;
-  color: #333;
-  font-weight: 600;
-  font-size: 18px;
-  padding: 15px 30px;
-  transition: all 0.3s ease;
+  border-radius: 999px !important;
+  background: #ff5c4d !important;
+  border: 2px solid #000 !important;
+  color: #121218 !important;
+  font-weight: 700 !important;
+  font-size: 17px !important;
+  padding: 13px 0 !important;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffdde1, #ee9ca7);
-  transform: translateY(-2px);
+  background: #ffc94d !important;
+  color: #121218 !important;
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.9);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translate(0, 0);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.9);
 }
 
 .submit-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .auth-footer p {
-  font-size: 16px;
-  opacity: 0.9;
+  font-size: 15px;
+  color: rgba(246, 243, 237, 0.75);
 }
 
 .auth-footer a {
-  color: #ffd369;
-  font-weight: 500;
+  color: #ffc94d;
+  font-weight: 700;
   text-decoration: none;
 }
 
 .auth-footer a:hover {
-  color: #ffed4e;
+  color: #ff5c4d;
   text-decoration: underline;
 }
 
-/* Input Group Buttons */
 .input-group-text {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-}
-
-.btn-outline-light {
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-}
-
-.btn-outline-light:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #1c1c26 !important;
+  border: 2px solid rgba(246, 243, 237, 0.2) !important;
+  color: #f6f3ed;
 }
 
 .text-success {
-  color: #6bcf7f !important;
+  color: #4ade80 !important;
 }
 
 .text-danger {
-  color: #ff6b6b !important;
+  color: #ff8f84 !important;
 }
 
 .text-info {
-  color: #74c0fc !important;
+  color: #7dd3fc !important;
 }
 
 .text-muted {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(246, 243, 237, 0.5) !important;
 }
 
 @media (max-width: 768px) {
@@ -694,17 +799,17 @@ export default {
 
   .progress-steps {
     flex-direction: column;
-    gap: 15px;
+    gap: 4px;
   }
 
   .step-divider {
     width: 2px;
-    height: 30px;
-    margin: 10px 0;
+    height: 24px;
+    margin: 6px 0;
   }
 
   .form-section {
-    padding: 20px 15px;
+    padding: 20px 16px;
   }
 }
 </style>
