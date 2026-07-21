@@ -767,4 +767,73 @@ export default {
 .fade-enter, .fade-leave-to { opacity: 0; }
 .wave-fade-enter-active, .wave-fade-leave-active { transition: opacity 0.5s; }
 .wave-fade-enter, .wave-fade-leave-to { opacity: 0; }
+
+@media (max-width: 900px) {
+  .hud {
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .hud-left, .hud-right {
+    min-width: 0;
+    gap: 8px;
+  }
+  .hp-bar { width: 90px; }
+  .wave-num { font-size: 20px; }
+  .wave-label { font-size: 9px; }
+  .score-num { font-size: 15px; }
+  .combo-display { padding: 4px 10px; margin-left: 8px; }
+  .combo-num { font-size: 18px; }
+  .escape-btn { width: 32px; height: 32px; font-size: 12px; }
+
+  .mini-scoreboard {
+    top: 64px;
+    right: 8px;
+    min-width: 150px;
+  }
+  .sb-row { font-size: 10.5px; padding: 4px 8px; }
+  .sb-kills { display: none; }
+
+  .wave-announce-inner { padding: 20px 32px; }
+  .wave-announce-inner h2 { font-size: 32px; }
+  .wa-tag { font-size: 10px; }
+
+  .dead-box { padding: 28px 36px; }
+  .dead-icon { font-size: 40px; }
+  .dead-box h2 { font-size: 18px; }
+
+  .gameover-box {
+    min-width: 0;
+    width: 90vw;
+    padding: 28px 24px;
+  }
+  .gameover-box h2 { font-size: 17px; }
+  .lb-row, .lb-header { font-size: 11.5px; }
+}
+
+@media (max-width: 480px) {
+  .hud { height: 52px; padding: 0 8px; gap: 6px; }
+  .hud-label { font-size: 7.5px; }
+  .hp-bar { width: 60px; height: 6px; }
+  .hp-num { font-size: 11px; min-width: 22px; }
+  .wave-num { font-size: 16px; }
+  .wave-countdown, .timer-display { font-size: 10px; padding: 2px 8px; }
+  .score-num { font-size: 12px; }
+  .combo-display { padding: 3px 8px; margin-left: 4px; }
+  .combo-num { font-size: 14px; }
+  .escape-btn { width: 28px; height: 28px; }
+
+  .mini-scoreboard { min-width: 120px; top: 58px; }
+  .sb-row { font-size: 9.5px; gap: 4px; padding: 3px 6px; }
+
+  .wave-announce-inner { padding: 14px 20px; }
+  .wave-announce-inner h2 { font-size: 24px; }
+
+  .dead-box { padding: 20px 24px; }
+  .dead-box h2 { font-size: 16px; }
+  .dead-box p { font-size: 11px; }
+
+  .gameover-box { width: 94vw; padding: 20px 16px; }
+  .go-actions { flex-direction: column; }
+  .go-btn { font-size: 11px; padding: 11px; }
+}
 </style>

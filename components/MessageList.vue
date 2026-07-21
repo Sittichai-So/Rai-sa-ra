@@ -506,6 +506,7 @@ export default {
   font-weight: 700;
   letter-spacing: 0.02em;
   display: inline-block;
+  font-size: 14px !important;
 }
 
 .message-wrapper {

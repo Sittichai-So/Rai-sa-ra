@@ -1291,11 +1291,6 @@ export default {
 </script>
 
 <style scoped>
-/* ============================================================
-   DESIGN TOKENS — bold "sticker card" system, inspired by the
-   reference dashboard: near-black chrome, punchy flat color
-   blocks (coral / amber / violet), chunky confident type.
-   ============================================================ */
 .community-chat-app {
   --bg-app: #0C0B10;
   --bg-panel: #17151D;
@@ -2167,10 +2162,14 @@ export default {
   background: rgba(0, 0, 0, 0.55);
   z-index: 99;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
-.sidebar-overlay.active { opacity: 1; }
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 @media (max-width: 1024px) {
   .sidebar { width: 280px; }
@@ -2190,11 +2189,9 @@ export default {
   .header-left h1 { font-size: 22px; }
   .header-left p { font-size: var(--fs-small); }
   .search-container { width: 100%; }
+  .community-hero { display: none; }
   .rooms-grid { grid-template-columns: 1fr; gap: 16px; }
   .rooms-container { padding: 16px 18px; }
-  .community-hero { padding: 22px 18px; border-radius: 20px; margin: 0 16px; }
-  .community-title { font-size: 22px; }
-  .community-subtitle { font-size: var(--fs-small); }
   .filter-tabs { gap: 8px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 6px; }
   .filter-tab { padding: 9px 16px; font-size: 12px; }
   .categories-filter { padding: 12px 18px; }
