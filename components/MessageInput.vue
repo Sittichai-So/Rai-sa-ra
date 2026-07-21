@@ -344,9 +344,84 @@ export default {
 
 .send-btn i { font-size: 1.05rem; }
 
+.reply-preview {
+  margin-bottom: 8px;
+  border-left: 3px solid var(--violet);
+  padding-left: 10px;
+}
+
+.reply-header {
+  margin-bottom: 4px;
+}
+
+.reply-info {
+  font-size: 0.85rem;
+  color: var(--violet);
+}
+
+.reply-message {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reply-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.reply-close:hover { color: var(--coral); }
+
 @media (max-width: 768px) {
   .message-input-container { padding: 12px 16px 16px; }
-  .action-btn.emoji-btn { width: 30px; height: 30px; }
+  .action-btn.emoji-btn { width: 30px; height: 30px; font-size: 0.85rem; }
   .send-btn { width: 40px; height: 40px; }
+  .send-btn i { font-size: 0.95rem; }
+  .message-input { font-size: 14px; padding: 10px 45px 10px 14px; }
+  .reply-preview { margin-bottom: 6px; padding-left: 8px; }
+  .reply-info { font-size: 0.8rem; }
+  .reply-message { font-size: 0.75rem; }
+}
+
+@media (max-width: 640px) {
+  .message-input-container { padding: 10px 14px 14px; }
+  .action-btn.emoji-btn { width: 28px; height: 28px; font-size: 0.8rem; right: 5px; bottom: 5px; }
+  .send-btn { width: 38px; height: 38px; margin-left: 6px; }
+  .send-btn i { font-size: 0.9rem; }
+  .message-input { font-size: 14px; padding: 9px 42px 9px 12px; min-height: 40px; }
+  .reply-preview { margin-bottom: 5px; padding-left: 7px; border-left-width: 2.5px; }
+  .reply-info { font-size: 0.75rem; }
+  .reply-message { font-size: 0.7rem; }
+}
+
+@media (max-width: 480px) {
+  .message-input-container { padding: 8px 12px 12px; }
+  .action-btn.emoji-btn { width: 26px; height: 26px; font-size: 0.75rem; right: 4px; bottom: 4px; }
+  .send-btn { width: 36px; height: 36px; margin-left: 5px; }
+  .send-btn i { font-size: 0.85rem; }
+  .message-input { font-size: 14px; padding: 8px 38px 8px 10px; min-height: 38px; }
+  .reply-preview { margin-bottom: 4px; padding-left: 6px; border-left-width: 2px; }
+  .reply-info { font-size: 0.7rem; }
+  .reply-message { font-size: 0.65rem; max-width: calc(100vw - 120px); }
+  .reply-close { width: 20px; height: 20px; font-size: 0.7rem; }
+}
+
+@media (max-width: 360px) {
+  .message-input-container { padding: 6px 10px 10px; }
+  .action-btn.emoji-btn { width: 24px; height: 24px; font-size: 0.7rem; }
+  .send-btn { width: 34px; height: 34px; }
+  .message-input { min-height: 36px; padding: 7px 36px 7px 9px; }
+  .reply-preview { margin-bottom: 3px; padding-left: 5px; }
+  .reply-info { font-size: 0.65rem; }
+  .reply-message { font-size: 0.6rem; }
 }
 </style>

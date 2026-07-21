@@ -409,6 +409,7 @@ export default {
   min-height: 0;
   background: var(--bg);
   color: var(--text);
+  width: 100%;
 }
 
 .member-list-header {
@@ -566,7 +567,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 0;
+  padding-bottom: 4px;
 }
 
 .member-item {
@@ -579,6 +581,8 @@ export default {
   padding: 4px 6px;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
+  width: 100%;
+  max-width: 100%;
 }
 
 .member-item:hover {
@@ -619,12 +623,19 @@ export default {
   border: 2px solid var(--bg);
 }
 
-.member-info { flex: 1; min-width: 0; }
+.member-info {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
 
 .member-name-wrapper {
   display: flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .member-name {
@@ -634,6 +645,7 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .you-badge {
@@ -707,8 +719,86 @@ export default {
 
 .no-members p { margin: 0; font-size: 0.85rem; font-weight: 600; }
 
-@media (max-width: 992px) {
-  .members-grid { flex-direction: row; flex-wrap: wrap; }
-  .member-item { flex: 1 1 220px; }
+@media (max-width: 768px) {
+  .member-list-container { width: 100%; }
+  .member-list-header { padding: 14px 16px; }
+  .member-list-title { font-size: 1rem; gap: 8px; }
+  .member-search-wrapper { padding: 12px 16px; }
+  .member-search-input { font-size: 13px; padding: 9px 36px 9px 38px; }
+  .search-icon { width: 32px; font-size: 0.85rem; }
+  .section-header { padding: 10px 16px 8px; }
+  .section-title { font-size: 0.8rem; }
+  .section-count { font-size: 0.7rem; padding: 2px 8px; }
+  .member-item { padding: 10px 16px; gap: 10px; }
+  .member-avatar-wrapper { width: 38px; height: 38px; }
+  .member-avatar { width: 38px; height: 38px; font-size: 14px; }
+  .member-name { font-size: 0.85rem; }
+  .you-badge { font-size: 0.6rem; padding: 2px 6px; }
+  .member-status-text { font-size: 0.7rem; gap: 5px; }
+  .status-dot { width: 6px; height: 6px; }
+  .member-action-btn { width: 28px; height: 28px; font-size: 0.75rem; }
+}
+
+@media (max-width: 640px) {
+  .member-list-header { padding: 12px 14px; }
+  .member-list-title { font-size: 0.95rem; }
+  .member-search-wrapper { padding: 10px 14px; }
+  .member-search-input { font-size: 13px; padding: 8px 34px 8px 36px; }
+  .search-icon { width: 30px; font-size: 0.8rem; }
+  .section-header { padding: 8px 14px 6px; }
+  .section-title { font-size: 0.75rem; }
+  .section-count { font-size: 0.65rem; padding: 2px 6px; }
+  .member-item { padding: 8px 14px; gap: 8px; }
+  .member-avatar-wrapper { width: 36px; height: 36px; }
+  .member-avatar { width: 36px; height: 36px; font-size: 13px; }
+  .online-status { width: 9px; height: 9px; bottom: -2px; right: -2px; }
+  .member-name { font-size: 0.8rem; }
+  .you-badge { font-size: 0.55rem; padding: 1px 5px; }
+  .member-status-text { font-size: 0.65rem; }
+  .status-dot { width: 5px; height: 5px; }
+  .member-action-btn { width: 26px; height: 26px; font-size: 0.7rem; }
+}
+
+@media (max-width: 480px) {
+  .member-list-header { padding: 10px 12px; }
+  .member-list-title { font-size: 0.9rem; gap: 6px; }
+  .close-sidebar-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+  .member-search-wrapper { padding: 8px 12px; }
+  .member-search-input { font-size: 13px; padding: 7px 32px 7px 34px; }
+  .search-icon { width: 28px; font-size: 0.75rem; }
+  .clear-search-btn { width: 26px; height: 26px; font-size: 0.7rem; }
+  .section-header { padding: 6px 12px 4px; }
+  .section-title { font-size: 0.7rem; }
+  .section-count { font-size: 0.6rem; padding: 1px 5px; }
+  .member-item { padding: 7px 12px; gap: 7px; }
+  .member-avatar-wrapper { width: 34px; height: 34px; }
+  .member-avatar { width: 34px; height: 34px; font-size: 12px; }
+  .online-status { width: 8px; height: 8px; bottom: -1px; right: -1px; border-width: 1px; }
+  .member-name { font-size: 0.75rem; }
+  .you-badge { font-size: 0.5rem; padding: 1px 4px; }
+  .member-status-text { font-size: 0.6rem; gap: 4px; }
+  .status-dot { width: 5px; height: 5px; }
+  .member-action-btn { width: 24px; height: 24px; font-size: 0.65rem; }
+  .members-grid { gap: 4px; }
+}
+
+@media (max-width: 360px) {
+  .member-list-header { padding: 8px 10px; }
+  .member-list-title { font-size: 0.85rem; }
+  .member-search-wrapper { padding: 6px 10px; }
+  .member-search-input { font-size: 12px; padding: 6px 30px 6px 32px; }
+  .search-icon { width: 26px; font-size: 0.7rem; }
+  .section-header { padding: 5px 10px 3px; }
+  .section-title { font-size: 0.65rem; }
+  .section-count { font-size: 0.55rem; padding: 1px 4px; }
+  .member-item { padding: 6px 10px; gap: 6px; }
+  .member-avatar-wrapper { width: 32px; height: 32px; }
+  .member-avatar { width: 32px; height: 32px; font-size: 11px; }
+  .online-status { width: 7px; height: 7px; }
+  .member-name { font-size: 0.7rem; }
+  .you-badge { font-size: 0.45rem; }
+  .member-status-text { font-size: 0.55rem; }
+  .status-dot { width: 4px; height: 4px; }
+  .member-action-btn { width: 22px; height: 22px; font-size: 0.6rem; }
 }
 </style>

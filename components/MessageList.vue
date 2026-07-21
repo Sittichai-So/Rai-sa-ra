@@ -883,11 +883,78 @@ export default {
   .message-list { padding: 14px 16px; }
   .message-main { max-width: 78%; }
   .message-bubble { padding: 8px 12px; font-size: 13px; }
+  .message-avatar { width: 26px !important; height: 26px !important; font-size: 11px !important; }
   .scroll-bottom-btn { right: 16px; bottom: 16px; width: 40px; height: 40px; }
+  .sender-name { font-size: 11px; margin-bottom: 4px; }
+  .message-meta { font-size: 10px; }
+  .reply-preview-outside { padding: 6px 8px; }
+  .reply-username-outside { font-size: 11px; }
+  .reply-text-outside { font-size: 11px; }
+  .message-reactions-outside { gap: 4px; }
+  .reaction-pill { padding: 3px 6px; font-size: 11px; }
+  .message-image img { max-height: 240px; }
+}
+
+@media (max-width: 640px) {
+  .message-list { padding: 12px 14px; }
+  .message-main { max-width: 80%; }
+  .message-bubble { padding: 7px 10px; font-size: 12px; }
+  .message-avatar { width: 24px !important; height: 24px !important; font-size: 10px !important; }
+  .sender-name { font-size: 10px; }
+  .message-meta { font-size: 9px; }
+  .reply-preview-outside { padding: 5px 7px; }
+  .reply-username-outside { font-size: 10px; }
+  .reply-text-outside { font-size: 10px; max-width: 180px; }
+  .message-reactions-outside { gap: 3px; }
+  .reaction-pill { padding: 2px 5px; font-size: 10px; }
+  .reaction-emoji { font-size: 12px; }
+  .message-image img { max-height: 200px; }
+  .file-info { padding: 8px; }
+  .file-name { font-size: 11px; }
+  .file-size-text { font-size: 9px; }
 }
 
 @media (max-width: 480px) {
-  .message-image img { max-width: 200px; }
+  .message-list { padding: 10px 12px; }
+  .message-main { max-width: 82%; }
+  .message-bubble { padding: 6px 9px; font-size: 11px; }
+  .message-avatar { width: 22px !important; height: 22px !important; font-size: 9px !important; }
+  .sender-name { font-size: 9px; margin-bottom: 3px; }
+  .message-meta { font-size: 8px; }
+  .reply-preview-outside { padding: 4px 6px; margin-bottom: 4px; }
+  .reply-username-outside { font-size: 9px; }
+  .reply-text-outside { font-size: 9px; max-width: 160px; }
+  .reply-line { width: 3px; height: 14px; }
+  .message-reactions-outside { gap: 2px; flex-wrap: wrap; }
+  .reaction-pill { padding: 2px 4px; font-size: 9px; }
+  .reaction-emoji { font-size: 11px; }
+  .reaction-count { font-size: 8px; }
+  .message-image img { max-width: 180px; max-height: 180px; }
+  .image-caption { font-size: 10px; }
+  .file-info { padding: 6px; }
+  .file-name { font-size: 10px; }
+  .file-size-text { font-size: 8px; }
+  .download-btn { padding: 2px 6px; font-size: 10px; }
+  .quick-actions { gap: 4px; }
+  .quick-action-btn { width: 24px; height: 24px; font-size: 10px; }
+  .context-menu { min-width: 160px; }
+  .context-menu-item { padding: 7px 8px; font-size: 12px; }
+}
+
+@media (max-width: 360px) {
+  .message-list { padding: 8px 10px; }
+  .message-main { max-width: 85%; }
+  .message-bubble { padding: 5px 8px; font-size: 10px; }
+  .message-avatar { width: 20px !important; height: 20px !important; font-size: 8px !important; }
+  .sender-name { font-size: 8px; }
+  .message-meta { font-size: 7px; }
+  .reply-preview-outside { padding: 3px 5px; }
+  .reply-username-outside { font-size: 8px; }
+  .reply-text-outside { font-size: 8px; max-width: 140px; }
+  .message-reactions-outside { gap: 2px; }
+  .reaction-pill { padding: 1px 3px; font-size: 8px; }
+  .reaction-emoji { font-size: 10px; }
+  .message-image img { max-width: 160px; max-height: 160px; }
 }
 </style>
 

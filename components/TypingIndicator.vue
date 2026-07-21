@@ -121,6 +121,7 @@ export default {
 
   .typing-bubble {
     padding: 7px 12px;
+    gap: 8px;
   }
 
   .typing-dots .dot {
@@ -133,23 +134,65 @@ export default {
   }
 }
 
+@media (max-width: 640px) {
+  .modern-typing-indicator {
+    padding: 4px 14px;
+  }
+
+  .typing-bubble {
+    padding: 6px 10px;
+    gap: 7px;
+  }
+
+  .typing-dots .dot {
+    width: 5px;
+    height: 5px;
+    gap: 3px;
+  }
+
+  .typing-text {
+    font-size: 0.75rem;
+  }
+}
+
 @media (max-width: 480px) {
   .modern-typing-indicator {
     padding: 4px 12px;
   }
 
   .typing-bubble {
-    padding: 6px 10px;
-    gap: 8px;
+    padding: 5px 9px;
+    gap: 6px;
   }
 
   .typing-dots .dot {
     width: 5px;
     height: 5px;
+    gap: 2px;
   }
 
   .typing-text {
     font-size: 0.74rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .modern-typing-indicator {
+    padding: 3px 10px;
+  }
+
+  .typing-bubble {
+    padding: 4px 8px;
+    gap: 5px;
+  }
+
+  .typing-dots .dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .typing-text {
+    font-size: 0.7rem;
   }
 }
 </style>

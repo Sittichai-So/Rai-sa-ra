@@ -390,8 +390,101 @@ export default {
   flex-shrink: 0;
 }
 
+@media (max-width: 768px) {
+  .modern-emoji-picker {
+    width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+  .emoji-btn {
+    font-size: 1.4rem;
+    padding: 8px;
+  }
+  .category-tabs {
+    gap: 4px;
+    padding: 8px;
+  }
+  .category-tab {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .modern-emoji-picker {
+    width: 300px;
+    max-height: 65vh;
+  }
+  .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+  }
+  .emoji-btn {
+    font-size: 1.3rem;
+    padding: 7px;
+  }
+  .category-tabs {
+    gap: 3px;
+    padding: 6px;
+  }
+  .category-tab {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+}
+
 @media (max-width: 480px) {
-  .modern-emoji-picker { width: 280px; }
-  .emoji-grid { grid-template-columns: repeat(6, 1fr); }
+  .modern-emoji-picker {
+    width: 280px;
+    max-height: 60vh;
+    padding: 12px;
+  }
+  .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+  .emoji-btn {
+    font-size: 1.2rem;
+    padding: 6px;
+  }
+  .category-tabs {
+    gap: 2px;
+    padding: 5px;
+  }
+  .category-tab {
+    padding: 4px 7px;
+    font-size: 0.65rem;
+  }
+  .recent-section {
+    padding: 3px 8px 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .modern-emoji-picker {
+    width: 260px;
+    max-height: 55vh;
+    padding: 10px;
+  }
+  .emoji-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+  }
+  .emoji-btn {
+    font-size: 1.1rem;
+    padding: 5px;
+  }
+  .category-tabs {
+    gap: 2px;
+    padding: 4px;
+  }
+  .category-tab {
+    padding: 3px 6px;
+    font-size: 0.6rem;
+  }
 }
 </style>

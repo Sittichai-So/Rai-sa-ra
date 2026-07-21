@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <h6 class="settings-heading mt-4">
+      <!-- <h6 class="settings-heading mt-4">
         <i class="fas fa-image mr-2" /> พื้นหลังห้องแชท
       </h6>
       <div class="background-input">
@@ -49,7 +49,7 @@
         <small class="bg-hint">
           รองรับทั้ง URL รูปภาพ และสี เช่น <code>#ffffff</code> หรือ <code>https://...jpg</code>
         </small>
-      </div>
+      </div> -->
 
       <div class="mt-4 d-flex justify-content-end action-row">
         <button class="btn-ghost" @click="$emit('close')">

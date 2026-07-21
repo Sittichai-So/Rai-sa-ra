@@ -30,6 +30,9 @@
             >
               <i class="fas fa-cog" />
             </button>
+            <button class="icon-btn members-toggle-btn" title="สมาชิก" :class="{ active: showMemberSidebar }" @click="toggleMemberSidebar">
+              <i class="fas fa-users" />
+            </button>
             <button class="icon-btn back-btn" title="กลับ" @click.prevent="goBack">
               <i class="fas fa-arrow-left" />
             </button>
@@ -69,14 +72,17 @@
       </div>
     </div>
 
-    <aside class="member-sidebar">
+    <aside class="member-sidebar" :class="{ hidden: !showMemberSidebar }">
       <DiscordMemberList
         :room-id="roomId"
         :current-user-id="currentUserId"
         :chat-theme="chatTheme"
         :member-count="currentRoom.memberCount || 0"
+        @close="showMemberSidebar = false"
       />
     </aside>
+
+    <div v-if="showMemberSidebar" class="sidebar-overlay" @click="showMemberSidebar = false" />
 
     <transition name="emoji-fade">
       <div v-if="showReactionPicker" class="reaction-picker-overlay" @click="showReactionPicker = false">
@@ -155,6 +161,7 @@ export default {
       chatTheme: 'minimal',
       chatBackground: '#0f0f23',
       roomSettings: { theme: 'minimal', background: '#0f0f23' },
+      showMemberSidebar: true,
 
       availableThemes: [
         {
@@ -229,6 +236,12 @@ export default {
     'roomSettings.background' (newVal) {
       if (newVal) {
         this.chatBackground = newVal
+      }
+    },
+    '$route.params.id' (newId) {
+      if (newId) {
+        this.roomId = newId
+        this.loadRoomSettings()
       }
     }
   },
@@ -519,6 +532,10 @@ export default {
 
     goBack () {
       this.$router.push('/chat/chat')
+    },
+
+    toggleMemberSidebar () {
+      this.showMemberSidebar = !this.showMemberSidebar
     }
   }
 }
@@ -577,6 +594,7 @@ export default {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .chat-header {
@@ -712,6 +730,8 @@ export default {
   cursor: pointer;
   box-shadow: var(--shadow-xs);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .icon-btn:hover {
@@ -728,6 +748,12 @@ export default {
   background: var(--yellow);
 }
 
+.icon-btn.members-toggle-btn.active {
+  background: var(--violet);
+  color: var(--white);
+  border-color: var(--violet);
+}
+
 .member-sidebar {
   width: 320px;
   border-left: var(--line) solid var(--ink);
@@ -738,6 +764,66 @@ export default {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.member-sidebar.hidden {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .chat-room-page {
+    height: 100vh;
+    max-height: 100vh;
+    flex-direction: column;
+  }
+  .chat-area {
+    height: 100%;
+    max-height: calc(100vh - 140px);
+    width: 100%;
+  }
+  .member-sidebar {
+    width: 100%;
+    max-width: 100%;
+    border-left: none;
+    border-top: var(--line) solid var(--ink);
+    height: calc(100vh - 140px);
+    max-height: calc(100vh - 140px);
+    flex-shrink: 0;
+    transform: translateY(0);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+  .member-sidebar.hidden {
+    display: none;
+  }
+  .members-toggle-btn {
+    display: flex;
+  }
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .room-avatar { width: 44px; height: 44px; font-size: 18px; }
+  .room-name { font-size: 1.05rem; }
+  .reaction-picker-panel { min-width: 340px; }
+  .reaction-picker-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
 .sidebar-header {
@@ -863,6 +949,10 @@ export default {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-xs);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .emoji-btn:hover {
@@ -984,14 +1074,36 @@ export default {
 .modal-body { padding: 24px; }
 
 @media (max-width: 992px) {
-  .chat-room-page { height: 100vh; max-height: 100vh; flex-direction: column; }
-  .chat-area { height: 100%; }
+  .chat-room-page {
+    height: 100vh;
+    max-height: 100vh;
+    flex-direction: column;
+  }
+  .chat-area {
+    height: 100%;
+    max-height: 100vh;
+    width: 100%;
+  }
   .member-sidebar {
     width: 100%;
+    max-width: 100%;
     border-left: none;
     border-top: var(--line) solid var(--ink);
-    height: 280px;
-    max-height: 280px;
+    height: 50vh;
+    max-height: 50vh;
+    flex-shrink: 0;
+    transform: translateY(0);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+  .member-sidebar.hidden {
+    display: none;
+  }
+  .members-toggle-btn {
+    display: flex;
   }
   .room-avatar { width: 44px; height: 44px; font-size: 18px; }
   .room-name { font-size: 1.05rem; }
@@ -1000,39 +1112,140 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .chat-room-page { flex-direction: column; }
+  .chat-area {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+  }
+  .member-sidebar {
+    width: 100%;
+    max-width: 100%;
+    height: 45vh;
+    max-height: 45vh;
+    border-left: none;
+    border-top: var(--line) solid var(--ink);
+  }
   .chat-header { padding: 14px 16px; }
   .header-content { gap: 12px; }
   .room-info { gap: 10px; }
   .room-avatar { width: 40px; height: 40px; font-size: 16px; }
-  .room-name { font-size: 0.98rem; }
+  .room-name { font-size: 0.98rem; max-width: calc(100vw - 160px); }
   .room-status { font-size: 0.76rem; }
-  .icon-btn { width: 38px; height: 38px; }
-  .member-sidebar { height: 260px; max-height: 260px; }
+  .icon-btn { width: 38px; height: 38px; font-size: 0.85rem; }
   .sidebar-header { padding: 12px 16px; }
   .reaction-picker-panel { min-width: 90%; max-width: 400px; padding: 18px; }
   .reaction-picker-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .emoji-btn { font-size: 1.5rem; padding: 9px; }
+  .typing-slot { padding: 0 12px 4px; }
+  .message-input-container { padding: 0; }
 }
 
 @media (max-width: 640px) {
+  .chat-room-page { flex-direction: column; }
+  .chat-area {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+  }
+  .member-sidebar {
+    width: 100%;
+    max-width: 100%;
+    height: 40vh;
+    max-height: 40vh;
+    border-left: none;
+    border-top: var(--line) solid var(--ink);
+  }
   .chat-header { padding: 10px 14px; }
+  .header-content { gap: 10px; }
+  .room-info { gap: 8px; }
   .room-avatar { width: 36px; height: 36px; font-size: 14px; }
-  .room-name { font-size: 0.9rem; }
-  .room-status { font-size: 0.7rem; }
+  .room-name { font-size: 0.9rem; max-width: calc(100vw - 140px); }
+  .room-status { font-size: 0.7rem; gap: 6px; }
   .status-dot { width: 7px; height: 7px; }
-  .icon-btn { width: 34px; height: 34px; }
-  .member-sidebar { height: 230px; max-height: 230px; }
-  .sidebar-header h5 { font-size: 0.85rem; }
+  .icon-btn { width: 34px; height: 34px; font-size: 0.8rem; }
+  .header-actions { gap: 8px; }
+  .sidebar-header { padding: 10px 14px; }
+  .sidebar-header h5 { font-size: 0.85rem; gap: 8px; }
   .member-count { font-size: 0.7rem; padding: 3px 10px; }
+  .reaction-picker-panel { min-width: 92%; padding: 16px; }
   .reaction-picker-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .emoji-btn { font-size: 1.3rem; padding: 7px; }
+  .picker-header h6 { font-size: 0.9rem; }
+  .close-picker { width: 28px; height: 28px; font-size: 0.9rem; }
 }
 
 @media (max-width: 480px) {
-  .room-avatar { width: 32px; height: 32px; font-size: 13px; }
+  .chat-room-page {
+    --line: 2px;
+    --line-sm: 1.5px;
+    flex-direction: column;
+  }
+  .chat-area {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+  }
+  .member-sidebar {
+    width: 100%;
+    max-width: 100%;
+    height: 35vh;
+    max-height: 35vh;
+    border-left: none;
+    border-top: var(--line) solid var(--ink);
+  }
+  .chat-header { padding: 8px 12px; }
+  .header-content { gap: 8px; }
+  .room-info { gap: 8px; }
+  .room-avatar { width: 32px; height: 32px; font-size: 13px; border-radius: 12px; }
+  .room-name { font-size: 0.85rem; max-width: calc(100vw - 120px); }
+  .room-status { font-size: 0.68rem; }
+  .icon-btn { width: 32px; height: 32px; font-size: 0.75rem; border-radius: 50%; }
+  .header-actions { gap: 6px; }
+  .sidebar-header { padding: 8px 12px; }
+  .sidebar-header h5 { font-size: 0.8rem; }
+  .member-count { font-size: 0.65rem; padding: 2px 8px; }
+  .reaction-picker-panel { min-width: 95%; padding: 14px; border-radius: 18px; }
+  .reaction-picker-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .emoji-btn { font-size: 1.2rem; padding: 6px; border-radius: 12px; }
+  .typing-slot { padding: 0 10px 4px; }
+  .picker-header { margin-bottom: 12px; padding-bottom: 10px; }
+  .picker-header h6 { font-size: 0.85rem; }
+  .close-picker { width: 26px; height: 26px; }
+}
+
+/* Landscape mode on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .chat-room-page { flex-direction: column; }
+  .member-sidebar {
+    height: 30vh;
+    max-height: 30vh;
+    border-left: none;
+    border-top: var(--line) solid var(--ink);
+  }
+  .chat-header { padding: 8px 12px; }
+  .room-avatar { width: 32px; height: 32px; }
   .room-name { font-size: 0.85rem; }
-  .reaction-picker-panel { min-width: 95%; padding: 14px; }
-  .reaction-picker-grid { grid-template-columns: repeat(3, 1fr); }
-  .emoji-btn { font-size: 1.2rem; padding: 6px; }
+  .room-status { font-size: 0.65rem; }
+  .icon-btn { width: 32px; height: 32px; }
+  .reaction-picker-panel { min-width: 90%; max-height: 60vh; overflow-y: auto; }
+  .reaction-picker-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .chat-header { padding: 6px 10px; }
+  .room-avatar { width: 28px; height: 28px; font-size: 12px; }
+  .room-name { font-size: 0.78rem; max-width: calc(100vw - 120px); }
+  .room-status { font-size: 0.62rem; gap: 5px; }
+  .status-dot { width: 6px; height: 6px; }
+  .icon-btn { width: 28px; height: 28px; font-size: 0.7rem; }
+  .header-actions { gap: 5px; }
+  .member-sidebar { height: 30vh; max-height: 30vh; }
+  .sidebar-header h5 { font-size: 0.75rem; }
+  .member-count { font-size: 0.6rem; padding: 2px 6px; }
+  .reaction-picker-panel { min-width: 98%; padding: 12px; }
+  .reaction-picker-grid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .emoji-btn { font-size: 1.1rem; padding: 5px; }
 }
 </style>
