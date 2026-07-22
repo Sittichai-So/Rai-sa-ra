@@ -1,5 +1,5 @@
 <template>
-  <div style="font-size: 20px;">
+  <div>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top custom-navbar">
       <b-container>
         <b-navbar-brand href="#" class="navbar-brand-custom">
@@ -286,19 +286,19 @@
             คุณสมบัติเด่นของ RAI-SA-RA
           </h5>
           <ul class="styled-list">
-            <li style="font-size: 22px;">
+            <li>
               ⚡ แชทแบบเรียลไทม์ไม่มีดีเลย์
             </li>
-            <li style="font-size: 22px;">
+            <li>
               📂 ห้องแชทแยกตามหมวดหมู่
             </li>
-            <li style="font-size: 22px;">
+            <li>
               🔒 ระบบรักษาความปลอดภัยสูง
             </li>
-            <li style="font-size: 22px;">
+            <li>
               🎨 Interface ใช้งานง่าย
             </li>
-            <li style="font-size: 22px;">
+            <li>
               📱 Support ทั้ง Desktop และ Mobile
             </li>
           </ul>
@@ -328,19 +328,19 @@
             กฎของชุมชน
           </h5>
           <ol class="styled-ol">
-            <li style="font-size: 22px;">
+            <li>
               🙏 เคารพสมาชิกคนอื่น
             </li>
-            <li style="font-size: 22px;">
+            <li>
               🚫 ไม่โพสต์เนื้อหาที่ไม่เหมาะสม
             </li>
-            <li style="font-size: 22px;">
+            <li>
               💡 ไม่ Spam หรือ Flood ข้อความ
             </li>
-            <li style="font-size: 22px;">
+            <li>
               🗣 ใช้ภาษาที่สุภาพ
             </li>
-            <li style="font-size: 22px;">
+            <li>
               🔐 ไม่แชร์ข้อมูลส่วนตัวของคนอื่น
             </li>
           </ol>
@@ -590,8 +590,20 @@ export default {
   background: rgba(18, 18, 24, 0.96);
   border: 2px solid #000;
   border-radius: 999px;
-  padding: 8px 20px;
+  padding: 10px 20px;
   box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.custom-navbar .navbar-brand {
+  margin-right: 0;
+}
+
+.custom-navbar .navbar-collapse {
+  flex-basis: auto;
+  margin-left: 20px;
 }
 
 .navbar-brand-custom {
@@ -603,11 +615,11 @@ export default {
 
 .nav-item-custom {
   margin: 0 4px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-radius: 999px;
   transition: all 0.2s ease;
   cursor: pointer;
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-weight: 600;
   color: rgba(246, 243, 237, 0.82);
 }
@@ -641,26 +653,76 @@ export default {
 
 .navbar-toggler {
   border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-left: auto;
 }
 
 .navbar-toggler:focus {
   box-shadow: none;
+  outline: none;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(246, 243, 237, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 @media (max-width: 991px) {
+  .custom-navbar .container {
+    padding: 10px 16px;
+  }
+
+  .custom-navbar .navbar-collapse {
+    margin-left: 0;
+    margin-top: 16px;
+    background: rgba(18, 18, 24, 0.98);
+    border: 2px solid #000;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.9);
+  }
+
   .navbar-nav {
     text-align: center;
-    font-size: 16px !important;
+    font-size: 14px !important;
+    width: 100%;
+  }
+
+  .nav-center {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 16px;
   }
 
   .nav-item-custom {
     margin: 6px 0;
     display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px 16px;
   }
 
   .nav-item-custom.join-btn,
   .nav-item-custom.login-btn {
     margin: 8px auto;
+    display: inline-block;
+    width: auto;
+    min-width: 140px;
+  }
+
+  .ml-auto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .d-flex.justify-content-center {
+    width: 100%;
   }
 }
 
@@ -677,49 +739,49 @@ export default {
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 180px 0 110px;
+  padding: 150px 0 90px;
   text-align: center;
   color: #f6f3ed;
 }
 
 .hero-eyebrow {
   display: inline-block;
-  padding: 8px 18px;
+  padding: 6px 16px;
   border-radius: 999px;
   border: 2px solid #ffc94d;
   color: #ffc94d;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 0.14em;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .hero-title {
-  font-size: clamp(3.2rem, 8vw, 6rem);
+  font-size: clamp(2.8rem, 7vw, 5rem);
   font-weight: 800;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   letter-spacing: 0.04em;
-  line-height: 1;
+  line-height: 1.1;
   color: #f6f3ed;
   -webkit-text-stroke: 1px #000;
 }
 
 .hero-subtitle {
-  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
-  margin-bottom: 22px;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  margin-bottom: 18px;
   font-weight: 600;
   color: #ff5c4d;
 }
 
 .hero-description {
-  font-size: 1.1rem;
-  margin-bottom: 36px;
-  max-width: 620px;
+  font-size: 1rem;
+  margin-bottom: 32px;
+  max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  line-height: 1.75;
+  line-height: 1.7;
   color: rgba(246, 243, 237, 0.78);
 }
 
@@ -727,20 +789,20 @@ export default {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 56px;
+  gap: 14px;
+  margin-bottom: 48px;
 }
 
 .btn-primary-custom {
   background: #ff5c4d !important;
   border: 2px solid #000 !important;
-  padding: 14px 34px !important;
-  font-size: 17px !important;
+  padding: 12px 28px !important;
+  font-size: 15px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   color: #121218 !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.9);
 }
 
 .btn-primary-custom:hover {
@@ -752,8 +814,8 @@ export default {
   border: 2px solid #f6f3ed !important;
   color: #f6f3ed !important;
   background: transparent !important;
-  padding: 14px 34px !important;
-  font-size: 17px !important;
+  padding: 12px 28px !important;
+  font-size: 15px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -769,28 +831,28 @@ export default {
   text-align: left;
   background: #7b5cfa !important;
   border: 2px solid #000;
-  border-radius: 24px;
-  padding: 22px 26px;
-  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.9);
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
   transform: rotate(-2deg);
-  min-width: 280px;
+  min-width: 240px;
 }
 
 .hero-stat-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .hero-stat-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(18, 18, 24, 0.4);
   border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 14px;
+  padding: 5px 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
 }
@@ -804,8 +866,8 @@ export default {
 }
 
 .arrow-btn {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #121218;
   color: #fff;
@@ -813,19 +875,19 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 14px;
   border: 2px solid #000;
 }
 
 .hero-stat-value {
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 800;
   color: #fff;
   margin-bottom: 2px;
 }
 
 .hero-stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
 }
@@ -848,23 +910,23 @@ export default {
 }
 
 .features-section {
-  padding: 110px 0;
+  padding: 80px 0;
   background: #f6f3ed;
   text-align: center;
 }
 
 .feature-card {
-  border-radius: 24px !important;
+  border-radius: 20px !important;
   border: 2px solid #000 !important;
-  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.9);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
   text-align: left;
 }
 
 .feature-card:hover {
-  transform: translate(-4px, -4px);
-  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.9);
+  transform: translate(-3px, -3px);
+  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.9);
 }
 
 .feature-card.tone-0 {
@@ -895,30 +957,30 @@ export default {
 }
 
 .feature-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: rgba(0, 0, 0, 0.15);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .feature-title {
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .feature-description {
-  line-height: 1.7;
+  line-height: 1.6;
   opacity: 0.86;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .chat-demo {
-  padding: 110px 0;
+  padding: 80px 0;
   background: #121218 !important;
   color: #f6f3ed;
   text-align: center;
@@ -955,8 +1017,8 @@ export default {
 }
 
 .chat-messages {
-  padding: 24px;
-  height: 320px;
+  padding: 20px;
+  height: 280px;
   overflow-y: auto;
 }
 
@@ -964,10 +1026,11 @@ export default {
   background: rgba(255, 255, 255, 0.06) !important;
   border: 2px solid rgba(255, 255, 255, 0.1);
   color: #f6f3ed;
-  padding: 12px 16px;
-  border-radius: 18px;
+  padding: 10px 14px;
+  border-radius: 16px;
   display: inline-block;
-  max-width: 72%;
+  max-width: 70%;
+  font-size: 14px;
 }
 
 .message.own .message-bubble {
@@ -987,7 +1050,7 @@ export default {
 }
 
 .about-section {
-  padding: 100px 0;
+  padding: 80px 0;
   background: #f6f3ed;
   text-align: center;
 }
@@ -995,22 +1058,22 @@ export default {
 .about-card {
   background: #121218 !important;
   border: 2px solid #000;
-  border-radius: 24px;
-  padding: 44px;
-  max-width: 820px;
+  border-radius: 20px;
+  padding: 36px;
+  max-width: 760px;
   margin: 0 auto;
-  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.9);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
 }
 
 .about-text {
-  font-size: 19px;
+  font-size: 16px;
   color: #f6f3ed;
-  line-height: 1.8;
+  line-height: 1.7;
   margin: 0;
 }
 
 .testimonials-section {
-  padding: 100px 0;
+  padding: 80px 0;
   background: #f6f3ed;
   text-align: center;
 }
@@ -1042,13 +1105,13 @@ export default {
 }
 
 .testimonial-text {
-  font-size: 18px;
+  font-size: 15px;
   font-style: italic;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .stats-section {
-  padding: 100px 0;
+  padding: 80px 0;
   background: #121218 !important;
   color: #f6f3ed;
   text-align: center;
@@ -1057,11 +1120,11 @@ export default {
 .stat-item {
   position: relative;
   text-align: left;
-  border-radius: 22px;
+  border-radius: 18px;
   border: 2px solid #000;
-  padding: 26px 22px 22px;
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.9);
-  margin-bottom: 10px;
+  padding: 22px 18px 18px;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
+  margin-bottom: 8px;
 }
 
 .stat-item.tone-0 {
@@ -1095,14 +1158,14 @@ export default {
 }
 
 .stat-number {
-  font-size: 42px !important;
+  font-size: 36px !important;
   font-weight: 800;
-  margin-bottom: 6px;
-  margin-top: 6px;
+  margin-bottom: 4px;
+  margin-top: 4px;
 }
 
 .stat-label {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   opacity: 0.85;
 }
@@ -1110,7 +1173,7 @@ export default {
 .footer {
   background: #121218 !important;
   color: #cbd5e1;
-  padding: 60px 0 30px;
+  padding: 50px 0 25px;
   border-top: 2px solid #000;
 }
 
@@ -1121,11 +1184,11 @@ export default {
 
 .social-links a {
   color: #cbd5e1;
-  font-size: 20px;
-  margin: 0 8px;
+  font-size: 18px;
+  margin: 0 6px;
   display: inline-flex;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
@@ -1140,10 +1203,10 @@ export default {
 }
 
 .section-title {
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 800;
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
   color: #111827;
 }
 
@@ -1165,58 +1228,66 @@ export default {
 .shape:nth-child(1) {
   top: 14%;
   left: 8%;
-  width: 90px;
-  height: 90px;
+  width: 70px;
+  height: 70px;
   background: #ff5c4d !important;
 }
 
 .shape:nth-child(2) {
   top: 20%;
   right: 10%;
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background: #ffc94d !important;
-  border-radius: 16px;
+  border-radius: 14px;
 }
 
 .shape:nth-child(3) {
   bottom: 12%;
   left: 14%;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   background: #7b5cfa !important;
 }
 
 @media (max-width: 768px) {
   .hero-title {
-    font-size: 2.6rem;
+    font-size: 2.2rem;
   }
 
   .hero-subtitle {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .hero-description {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .btn-primary-custom,
   .btn-outline-custom {
-    font-size: 15px !important;
-    padding: 12px 26px !important;
+    font-size: 14px !important;
+    padding: 10px 22px !important;
     width: 100%;
   }
 
   .section-title {
-    font-size: 26px;
+    font-size: 22px;
   }
 
   .stat-number {
-    font-size: 34px;
+    font-size: 28px;
   }
 
   .hero-content {
-    padding: 140px 0 70px;
+    padding: 120px 0 60px;
+  }
+
+  .features-section,
+  .chat-demo,
+  .about-section,
+  .testimonials-section,
+  .stats-section {
+    padding: 60px 0;
   }
 }
 
@@ -1238,7 +1309,7 @@ export default {
 }
 
 :deep(.custom-modal-header .modal-title) {
-  font-size: 1.5rem !important;
+  font-size: 1.25rem !important;
   font-weight: 700;
   margin: 0;
   color: #fff;
@@ -1268,7 +1339,7 @@ export default {
 }
 
 :deep(.custom-modal-body) {
-  padding: 28px;
+  padding: 24px;
   background: #f6f3ed;
   font-family: 'Kanit', sans-serif;
 }
@@ -1283,9 +1354,9 @@ export default {
 :deep(.nav-tabs .nav-link) {
   border: 2px solid #000;
   border-radius: 12px;
-  padding: 10px 20px;
+  padding: 8px 16px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #121218;
   background: #ffc94d;
   transition: all 0.2s ease;
@@ -1308,8 +1379,8 @@ export default {
   background: #fff;
   border: 2px solid #000;
   border-radius: 16px;
-  padding: 24px;
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.9);
+  padding: 20px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.9);
 }
 
 /* List Group Styling */
@@ -1344,10 +1415,10 @@ export default {
 .highlight-sub {
   font-family: 'Kanit', sans-serif;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #7b5cfa;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
   border-bottom: 2px solid #000;
 }
 
@@ -1362,10 +1433,12 @@ export default {
   background: #fff;
   border: 2px solid #000;
   border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
   transition: all 0.2s ease;
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .styled-list li:hover,
