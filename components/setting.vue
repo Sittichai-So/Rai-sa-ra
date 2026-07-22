@@ -613,61 +613,82 @@ export default {
 
 <style scoped>
 .modern-settings-container {
-  background: #ffffff;
-  border-radius: 6px;
+  --ink: #101014;
+  --paper: #14141c;
+  --cream: #f6f3ed;
+  --coral: #ff5c4d;
+  --violet: #7c6ff5;
+  --violet-deep: #5b4fd6;
+  --yellow: #ffc94d;
+  --white: #ffffff;
+  --line: 3px;
+  --line-sm: 2px;
+  --shadow-sm: 4px 4px 0 var(--ink);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+
+  background: var(--paper);
+  border-radius: var(--radius-lg);
   overflow: hidden;
+  border: var(--line) solid var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 14px;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: var(--line-sm) solid var(--ink);
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   color: white;
 }
 
 .settings-header h3 {
-  font-size: 28px;
+  font-family: 'Kanit', sans-serif;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
 }
 
 .settings-header p {
-  font-size: 18px;
-  opacity: 0.9;
+  font-size: 0.9rem;
+  opacity: 0.95;
+  margin: 4px 0 0 0;
 }
 
 .close-btn {
   background: rgba(255, 255, 255, 0.2);
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  border: 2px solid var(--ink);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   color: white;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.1rem;
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: rotate(90deg);
+  background: var(--coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .settings-body {
   display: flex;
-  min-height: 500px;
+  min-height: 550px;
+  background: var(--cream);
 }
 
 .settings-sidebar {
-  width: 280px;
-  background: #f9fafb;
-  padding: 24px 16px;
-  border-right: 1px solid #e5e7eb;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 20px 16px;
+  border-right: var(--line-sm) solid var(--ink);
 }
 
 .settings-nav {
@@ -681,40 +702,45 @@ export default {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: transparent;
-  border: none;
-  border-radius: 12px;
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   text-align: left;
   width: 100%;
+  margin-bottom: 10px;
 }
 
 .nav-item:hover {
-  background: #ffffff;
-  transform: translateX(4px);
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
 }
 
 .nav-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 10px;
-  font-size: 18px;
+  background: var(--violet);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  font-size: 1.2rem;
   flex-shrink: 0;
+  color: white;
+  box-shadow: 2px 2px 0 var(--ink);
 }
 
 .nav-item.active .nav-icon {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
 }
 
@@ -726,13 +752,14 @@ export default {
 }
 
 .nav-label {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: 'Kanit', sans-serif;
 }
 
 .nav-desc {
-  font-size: 18px;
-  opacity: 0.7;
+  font-size: 0.8rem;
+  opacity: 0.75;
 }
 
 .nav-arrow {
@@ -748,9 +775,10 @@ export default {
 
 .settings-content {
   flex: 1;
-  padding: 32px;
+  padding: 28px;
   overflow-y: auto;
-  max-height: 600px;
+  max-height: 620px;
+  background: var(--cream);
 }
 
 .content-section {
@@ -771,22 +799,24 @@ export default {
 .section-header {
   display: flex;
   gap: 16px;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: var(--line-sm) solid var(--ink);
 }
 
 .icon-wrapper {
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  border: 2px solid var(--ink);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 24px;
+  font-size: 1.4rem;
   flex-shrink: 0;
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .section-header h4 {

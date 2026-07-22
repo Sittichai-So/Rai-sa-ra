@@ -3,12 +3,21 @@
   <b-modal
     v-model="showModal"
     size="lg"
-    :title="`แชทกับ ${friendName}`"
-    modal-class="dm-modal"
-    body-class="dm-modal-body"
-    header-class="dm-modal-header"
+    centered
+    hide-header
+    modal-class="modern-dm-modal"
+    body-class="p-0"
     @hidden="closeModal"
   >
+    <div class="dm-modal-header-custom">
+      <div class="dm-modal-title">
+        <i class="fas fa-comments" />
+        <span>แชทกับ {{ friendName }}</span>
+      </div>
+      <button class="dm-modal-close-btn" @click="closeModal">
+        <i class="fas fa-times" />
+      </button>
+    </div>
     <div class="dm-chat-container">
       <!-- Messages Area -->
       <div ref="messagesContainer" class="dm-messages">
@@ -227,6 +236,54 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+/* Modal Styling */
+:deep(.modern-dm-modal .modal-content) {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 8px 8px 0 var(--ink);
+  overflow: hidden;
+}
+
+.dm-modal-header-custom {
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  border-bottom: 2px solid var(--ink);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dm-modal-title {
+  font-family: 'Kanit', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dm-modal-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--white);
+}
+
+.dm-modal-close-btn:hover {
+  background: var(--coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .dm-messages {

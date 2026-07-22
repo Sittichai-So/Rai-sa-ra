@@ -242,10 +242,38 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  background: var(--violet);
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   border-bottom: var(--line-sm) solid var(--ink);
   flex-shrink: 0;
+}
+
+.picker-title {
+  font-family: 'Kanit', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--white);
+}
+
+.close-picker {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--white);
+  font-size: 0.9rem;
+}
+
+.close-picker:hover {
+  background: var(--coral);
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 var(--ink);
 }
 
 .picker-title {
@@ -275,8 +303,8 @@ export default {
 
 .emoji-categories {
   display: flex;
-  gap: 6px;
-  padding: 10px 10px 8px;
+  gap: 8px;
+  padding: 12px 12px 10px;
   border-bottom: var(--line-sm) solid var(--ink);
   background: var(--yellow);
   overflow-x: auto;
@@ -287,23 +315,28 @@ export default {
 
 .category-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: var(--line-sm) solid var(--ink);
+  border: 2px solid var(--ink);
   background: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease;
+  transition: all 0.2s ease;
+}
+
+.category-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 var(--ink);
 }
 
 .category-btn.active {
   background: var(--violet);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-xs);
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .emoji-search-wrapper {
@@ -324,15 +357,20 @@ export default {
 .emoji-search-input {
   width: 100%;
   background: var(--white);
-  border: var(--line-sm) solid var(--ink);
+  border: 2px solid var(--ink);
   border-radius: var(--radius-pill);
-  padding: 7px 12px 7px 32px;
-  font-size: 0.82rem;
+  padding: 8px 14px 8px 36px;
+  font-size: 0.85rem;
   color: var(--ink);
+  font-family: 'Kanit', sans-serif;
 }
 
 .emoji-search-input::placeholder { color: rgba(16, 16, 20, 0.4); }
-.emoji-search-input:focus { outline: none; border-color: var(--violet); }
+.emoji-search-input:focus {
+  outline: none;
+  border-color: var(--violet);
+  box-shadow: 2px 2px 0 var(--ink);
+}
 
 .emoji-grid-container {
   flex: 1;
@@ -344,15 +382,19 @@ export default {
 .emoji-grid-container::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 3px; }
 
 .section-title {
-  font-size: 0.68rem;
-  font-weight: 800;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(16, 16, 20, 0.55);
-  margin: 8px 2px 6px;
+  color: var(--ink);
+  margin: 10px 2px 8px;
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 4px 8px;
+  background: rgba(124, 111, 245, 0.1);
+  border: 1px solid var(--ink);
+  border-radius: 8px;
 }
 
 .emoji-grid {
@@ -362,19 +404,19 @@ export default {
 }
 
 .emoji-item {
-  background: transparent;
-  border: none;
+  background: var(--white);
+  border: 2px solid var(--ink);
   font-size: 1.35rem;
-  padding: 5px;
-  border-radius: var(--radius-md);
+  padding: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.12s ease, transform 0.12s ease;
+  transition: all 0.2s ease;
 }
 
 .emoji-item:hover {
-  background: var(--white);
-  border: var(--line-sm) solid var(--ink);
-  transform: scale(1.1);
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0 var(--ink);
+  background: var(--yellow);
 }
 
 .no-results {

@@ -112,28 +112,60 @@ export default {
 <style scoped>
 .settings-content {
   --ink: #101014;
+  --paper: #14141c;
   --cream: #f6f3ed;
   --coral: #ff5c4d;
   --violet: #7c6ff5;
+  --violet-deep: #5b4fd6;
   --yellow: #ffc94d;
   --white: #ffffff;
+  --line: 3px;
   --line-sm: 2px;
-  --shadow-xs: 2px 2px 0 var(--ink);
   --shadow-sm: 4px 4px 0 var(--ink);
+  --radius-lg: 20px;
   --radius-md: 14px;
-  --font-display: 'Space Grotesk', 'Noto Sans Thai', sans-serif;
+  --font-display: 'Kanit', sans-serif;
 
-  padding: 4px;
+  padding: 8px;
+  background: var(--cream);
+}
+
+/* Modal Styling */
+:deep(.settings-modal .modal-content) {
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+:deep(.settings-modal .modal-header) {
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  border-bottom: var(--line-sm) solid var(--ink);
+  padding: 18px 24px;
+}
+
+:deep(.settings-modal .modal-title) {
+  font-family: 'Kanit', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--white);
+}
+
+:deep(.settings-modal .modal-body) {
+  padding: 0;
 }
 
 .settings-heading {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.85rem;
-  text-transform: uppercase;
+  font-family: 'Kanit', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
   color: var(--ink);
   display: flex;
   align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: var(--line-sm) solid var(--ink);
 }
 
 .theme-selector {
@@ -146,23 +178,30 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  border: var(--line-sm) solid var(--ink);
+  padding: 14px 16px;
+  border: 2px solid var(--ink);
   border-radius: var(--radius-md);
   background: var(--white);
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
 }
 
 .theme-option:hover {
   transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .theme-option.active {
-  background: #fff8e8;
-  border-color: var(--violet);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.theme-option.active .theme-name,
+.theme-option.active .theme-description {
+  color: var(--white);
 }
 
 .theme-preview {
@@ -185,13 +224,14 @@ export default {
 
 .theme-name {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--ink);
+  font-family: 'Kanit', sans-serif;
 }
 
 .theme-description {
-  font-size: 0.76rem;
-  color: rgba(16, 16, 20, 0.55);
+  font-size: 0.8rem;
+  color: rgba(16, 16, 20, 0.65);
 }
 
 .theme-check {
@@ -235,19 +275,34 @@ export default {
 
 .btn-ghost,
 .btn-primary {
-  font-family: var(--font-display);
+  font-family: 'Kanit', sans-serif;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   border-radius: 999px;
-  padding: 9px 20px;
-  border: var(--line-sm) solid var(--ink);
+  padding: 10px 24px;
+  border: 2px solid var(--ink);
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: all 0.2s ease;
 }
 
 .btn-ghost {
   background: var(--white);
   color: var(--ink);
+}
+
+.btn-ghost:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--ink);
 }
 
 .btn-ghost:hover {
