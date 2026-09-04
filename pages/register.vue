@@ -232,7 +232,7 @@
             block
             size="lg"
             class="submit-btn mt-4"
-            :disabled="!valid || isRegistering"
+            :disabled="!valid || isRegistering || usernameCheckStatus === 'unavailable' || usernameCheckStatus === 'checking'"
           >
             <template v-if="isRegistering">
               <i class="fas fa-spinner fa-spin" /> กำลังสมัครสมาชิก...
@@ -336,7 +336,6 @@ export default {
           const response = await this.$axios.$post(`${process.env.API_CHECK_USERNAME}`, { username: this.form.username })
           this.usernameCheckStatus = response.available ? 'available' : 'unavailable'
         } catch (error) {
-          console.error('Username check error:', error)
           this.usernameCheckStatus = null
         }
       }, 500)
@@ -387,8 +386,6 @@ export default {
             password: this.form.password
           }
 
-          console.log('payload', payload)
-
           const response = await this.$axios.$post(process.env.API_REGISTER_USER, payload)
 
           if (response.status === 'success') {
@@ -403,8 +400,6 @@ export default {
           }
         }
       } catch (err) {
-        console.error('Registration error:', err)
-
         const errorMessage = err.response?.data?.message || 'เกิดข้อผิดพลาดในการสมัครสมาชิก'
 
         await this.$swal({
@@ -439,11 +434,32 @@ export default {
     },
 
     showTerms () {
-      console.log('Show terms and conditions')
+      this.$swal({
+        title: 'เงื่อนไขการใช้งาน',
+        html: `
+          <div style="text-align:left;line-height:1.8">
+            <p>1. เคารพสมาชิกคนอื่นและใช้ภาษาที่สุภาพ</p>
+            <p>2. ไม่โพสต์เนื้อหาที่ผิดกฎหมายหรือไม่เหมาะสม</p>
+            <p>3. ไม่ Spam หรือรบกวนผู้อื่น</p>
+            <p>4. ไม่แอบอ้างเป็นผู้อื่น</p>
+            <p>5. ทีมงานมีสิทธิ์ระงับบัญชีที่ละเมิดเงื่อนไข</p>
+          </div>`,
+        confirmButtonText: 'รับทราบ'
+      })
     },
 
     showPrivacy () {
-      console.log('Show privacy policy')
+      this.$swal({
+        title: 'นโยบายความเป็นส่วนตัว',
+        html: `
+          <div style="text-align:left;line-height:1.8">
+            <p>เราเก็บข้อมูล ชื่อ อีเมล เบอร์โทร เพื่อใช้ยืนยันตัวตนและให้บริการแชทเท่านั้น</p>
+            <p>รหัสผ่านถูกเข้ารหัสก่อนจัดเก็บ</p>
+            <p>เราจะไม่เปิดเผยข้อมูลของคุณให้บุคคลที่สามโดยไม่ได้รับความยินยอม</p>
+            <p>ข้อความในห้องแชทจะถูกลบอัตโนมัติตามระยะเวลาที่กำหนด</p>
+          </div>`,
+        confirmButtonText: 'รับทราบ'
+      })
     }
   }
 }

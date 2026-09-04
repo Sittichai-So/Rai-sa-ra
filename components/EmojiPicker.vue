@@ -18,26 +18,19 @@
       </button>
     </div>
 
-    <div class="emoji-search-wrapper">
-      <div class="search-icon">
-        <i class="fas fa-search" />
-      </div>
-      <input
-        v-model="searchQuery"
-        type="text"
-        class="emoji-search-input"
-        placeholder="ค้นหาอิโมจิ..."
-      >
-    </div>
-
     <div class="emoji-grid-container">
-      <div v-if="searchQuery" class="search-results">
+      <div
+        v-for="(category, catIndex) in categories"
+        v-show="activeCategory === catIndex"
+        :key="category.id"
+        class="emoji-section"
+      >
         <div class="section-title">
-          ผลการค้นหา
+          {{ category.name }}
         </div>
         <div class="emoji-grid">
           <button
-            v-for="emoji in filteredEmojis"
+            v-for="emoji in category.emojis"
             :key="emoji"
             class="emoji-item"
             @click="handleEmojiClick(emoji)"
@@ -45,36 +38,10 @@
             {{ emoji }}
           </button>
         </div>
-        <div v-if="filteredEmojis.length === 0" class="no-results">
-          <p>ไม่พบอิโมจิ</p>
-        </div>
-      </div>
-
-      <div v-else>
-        <div
-          v-for="(category, catIndex) in categories"
-          v-show="activeCategory === catIndex"
-          :key="category.id"
-          class="emoji-section"
-        >
-          <div class="section-title">
-            {{ category.name }}
-          </div>
-          <div class="emoji-grid">
-            <button
-              v-for="emoji in category.emojis"
-              :key="emoji"
-              class="emoji-item"
-              @click="handleEmojiClick(emoji)"
-            >
-              {{ emoji }}
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
-    <div v-if="recentEmojis.length && !searchQuery" class="recent-section">
+    <div v-if="recentEmojis.length" class="recent-section">
       <div class="section-title">
         <i class="fas fa-history" />
         <span>ล่าสุด</span>
@@ -102,7 +69,6 @@ export default {
   data () {
     return {
       activeCategory: 0,
-      searchQuery: '',
       recentEmojis: [],
       categories: [
         {
@@ -168,33 +134,22 @@ export default {
       ]
     }
   },
-  computed: {
-    filteredEmojis () {
-      if (!this.searchQuery.trim()) {
-        return []
-      }
-
-      const query = this.searchQuery.toLowerCase()
-      const allEmojis = this.categories.flatMap(cat => cat.emojis)
-
-      return allEmojis.filter((emoji) => {
-        // Simple search - in real app, would use emoji names/keywords
-        return emoji.includes(query) || query.length === 1
-      })
-    }
+  mounted () {
+    try {
+      const saved = JSON.parse(localStorage.getItem('recentEmojis') || '[]')
+      if (Array.isArray(saved)) { this.recentEmojis = saved.slice(0, 16) }
+    } catch (e) {}
   },
   methods: {
     handleEmojiClick (emoji) {
-      console.log('🎯 Emoji clicked:', emoji)
+      this.addRecent(emoji)
       this.$emit('emoji-selected', emoji)
     },
     addRecent (emoji) {
-      if (!this.recentEmojis.includes(emoji)) {
-        this.recentEmojis.unshift(emoji)
-        if (this.recentEmojis.length > 20) {
-          this.recentEmojis.pop()
-        }
-      }
+      this.recentEmojis = [emoji, ...this.recentEmojis.filter(e => e !== emoji)].slice(0, 16)
+      try {
+        localStorage.setItem('recentEmojis', JSON.stringify(this.recentEmojis))
+      } catch (e) {}
     }
   }
 }
@@ -218,10 +173,10 @@ export default {
   --radius-pill: 999px;
 
   position: absolute;
-  right: 0;
-  bottom: 68px;
-  width: 340px;
-  max-height: 380px;
+  right: 16px;
+  bottom: calc(100% + 8px);
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(380px, 60vh);
   display: flex;
   flex-direction: column;
   background: var(--cream);
@@ -339,43 +294,10 @@ export default {
   box-shadow: 3px 3px 0 var(--ink);
 }
 
-.emoji-search-wrapper {
-  position: relative;
-  padding: 10px;
-  flex-shrink: 0;
-}
-
-.search-icon {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(16, 16, 20, 0.5);
-  font-size: 0.8rem;
-}
-
-.emoji-search-input {
-  width: 100%;
-  background: var(--white);
-  border: 2px solid var(--ink);
-  border-radius: var(--radius-pill);
-  padding: 8px 14px 8px 36px;
-  font-size: 0.85rem;
-  color: var(--ink);
-  font-family: 'Kanit', sans-serif;
-}
-
-.emoji-search-input::placeholder { color: rgba(16, 16, 20, 0.4); }
-.emoji-search-input:focus {
-  outline: none;
-  border-color: var(--violet);
-  box-shadow: 2px 2px 0 var(--ink);
-}
-
 .emoji-grid-container {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 10px 10px;
+  padding: 8px 10px 10px;
 }
 
 .emoji-grid-container::-webkit-scrollbar { width: 5px; }
@@ -399,18 +321,19 @@ export default {
 
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
 }
 
 .emoji-item {
   background: var(--white);
   border: 2px solid var(--ink);
-  font-size: 1.35rem;
-  padding: 6px;
+  font-size: 1.3rem;
+  padding: 5px 0;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  line-height: 1;
 }
 
 .emoji-item:hover {
@@ -419,114 +342,25 @@ export default {
   background: var(--yellow);
 }
 
-.no-results {
-  text-align: center;
-  padding: 20px 0;
-  color: rgba(16, 16, 20, 0.5);
-  font-size: 0.85rem;
-}
-
 .recent-section {
   border-top: var(--line-sm) dashed var(--ink);
   padding: 4px 10px 10px;
   flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-  .modern-emoji-picker {
-    width: 320px;
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-  .emoji-grid {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
-  }
-  .emoji-btn {
-    font-size: 1.4rem;
-    padding: 8px;
-  }
-  .category-tabs {
-    gap: 4px;
-    padding: 8px;
-  }
-  .category-tab {
-    padding: 6px 10px;
-    font-size: 0.75rem;
-  }
-}
-
 @media (max-width: 640px) {
   .modern-emoji-picker {
-    width: 300px;
-    max-height: 65vh;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: 56vh;
   }
-  .emoji-grid {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 5px;
-  }
-  .emoji-btn {
-    font-size: 1.3rem;
-    padding: 7px;
-  }
-  .category-tabs {
-    gap: 3px;
-    padding: 6px;
-  }
-  .category-tab {
-    padding: 5px 8px;
-    font-size: 0.7rem;
-  }
+  .emoji-grid { grid-template-columns: repeat(6, 1fr); gap: 5px; }
+  .emoji-item { font-size: 1.25rem; padding: 5px; }
+  .category-btn { width: 32px; height: 32px; font-size: 1rem; }
 }
 
-@media (max-width: 480px) {
-  .modern-emoji-picker {
-    width: 280px;
-    max-height: 60vh;
-    padding: 12px;
-  }
-  .emoji-grid {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 4px;
-  }
-  .emoji-btn {
-    font-size: 1.2rem;
-    padding: 6px;
-  }
-  .category-tabs {
-    gap: 2px;
-    padding: 5px;
-  }
-  .category-tab {
-    padding: 4px 7px;
-    font-size: 0.65rem;
-  }
-  .recent-section {
-    padding: 3px 8px 8px;
-  }
-}
-
-@media (max-width: 360px) {
-  .modern-emoji-picker {
-    width: 260px;
-    max-height: 55vh;
-    padding: 10px;
-  }
-  .emoji-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 3px;
-  }
-  .emoji-btn {
-    font-size: 1.1rem;
-    padding: 5px;
-  }
-  .category-tabs {
-    gap: 2px;
-    padding: 4px;
-  }
-  .category-tab {
-    padding: 3px 6px;
-    font-size: 0.6rem;
-  }
+@media (max-width: 380px) {
+  .emoji-grid { grid-template-columns: repeat(5, 1fr); }
 }
 </style>

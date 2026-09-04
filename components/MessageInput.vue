@@ -1,25 +1,40 @@
 <!-- MessageInput.vue -->
 <template>
-  <div class="message-input-container">
-    <div v-if="replyTo" class="reply-preview">
-      <div class="reply-content">
-        <div class="reply-header d-flex justify-content-between align-items-center">
-          <div class="reply-info">
-            <i class="fas fa-reply mr-2" />
-            <span class="font-weight-bold">ตอบกลับ {{ replyTo.username }}</span>
-          </div>
-          <button class="reply-close" @click="cancelReply">
-            <i class="fas fa-times" />
-          </button>
+  <div class="message-input-container" :class="{ 'has-reply': !!replyTo }">
+    <transition name="reply-slide">
+      <div v-if="replyTo" class="reply-bar">
+        <span class="reply-accent" />
+        <i class="fas fa-reply reply-icon" />
+        <div class="reply-body">
+          <span class="reply-to-name">ตอบกลับ {{ replyTo.username }}</span>
+          <span class="reply-snippet">{{ replyTo.content }}</span>
         </div>
-        <div class="reply-message">
-          {{ replyTo.content }}
-        </div>
+        <button class="reply-cancel" type="button" title="ยกเลิกการตอบกลับ" @click="cancelReply">
+          <i class="fas fa-times" />
+        </button>
       </div>
-    </div>
+    </transition>
 
     <div class="input-area">
       <div class="input-wrapper d-flex align-items-center">
+        <button
+          class="action-btn attach-btn"
+          type="button"
+          title="แนบไฟล์หรือรูปภาพ"
+          :disabled="uploading"
+          @click="$refs.fileInput.click()"
+        >
+          <i v-if="uploading" class="fas fa-spinner fa-spin" />
+          <i v-else class="fas fa-paperclip" />
+        </button>
+        <input
+          ref="fileInput"
+          type="file"
+          class="d-none"
+          accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+          @change="onFileSelected"
+        >
+
         <div class="text-input-wrapper flex-grow-1 d-flex align-items-center position-relative">
           <textarea
             ref="textarea"
@@ -72,7 +87,8 @@ export default {
     return {
       messageText: '',
       sending: false,
-      showEmojiPicker: false
+      showEmojiPicker: false,
+      uploading: false
     }
   },
   computed: {
@@ -85,6 +101,16 @@ export default {
       const textarea = event.target
       textarea.style.height = 'auto'
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+
+      // ส่งสัญญาณ "กำลังพิมพ์" แบบ debounce
+      this.$emit('typing-start')
+      clearTimeout(this._typingTimer)
+      this._typingTimer = setTimeout(() => this.$emit('typing-stop'), 1500)
+    },
+
+    stopTyping () {
+      clearTimeout(this._typingTimer)
+      this.$emit('typing-stop')
     },
 
     addNewLine () {
@@ -102,6 +128,7 @@ export default {
         replyTo: this.replyTo
       })
 
+      this.stopTyping()
       this.messageText = ''
       this.$refs.textarea.style.height = 'auto'
 
@@ -114,18 +141,36 @@ export default {
       this.showEmojiPicker = !this.showEmojiPicker
     },
 
-    addEmoji (emoji) {
-      const textarea = this.$refs.textarea
-      if (!textarea) {
-        console.error('❌ Textarea ref not found')
+    onFileSelected (e) {
+      const file = e.target.files && e.target.files[0]
+      e.target.value = ''
+      if (!file) { return }
+
+      const maxSize = 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        this.$emit('file-error', 'ไฟล์มีขนาดใหญ่เกิน 10MB')
         return
       }
 
-      console.log('✅ Emoji received:', emoji)
+      this.$emit('send-file', file)
+    },
+
+    setUploading (val) {
+      this.uploading = val
+    },
+
+    addEmoji (emoji) {
+      const textarea = this.$refs.textarea
+      const val = typeof emoji === 'string' ? emoji : (emoji.native || '')
+      if (!textarea) {
+        this.messageText += val
+        this.showEmojiPicker = false
+        return
+      }
+
       const cursorPos = textarea.selectionStart || 0
       const textBefore = this.messageText.substring(0, cursorPos)
       const textAfter = this.messageText.substring(cursorPos)
-      const val = typeof emoji === 'string' ? emoji : (emoji.native || '')
 
       this.messageText = textBefore + val + textAfter
 
@@ -133,7 +178,6 @@ export default {
         const newPos = cursorPos + val.length
         textarea.setSelectionRange(newPos, newPos)
         textarea.focus()
-        console.log('✅ Emoji added at position:', newPos)
       })
 
       this.showEmojiPicker = false
@@ -173,32 +217,58 @@ export default {
   padding: 14px 20px 18px;
 }
 
-/* ---------- Reply preview ---------- */
-.reply-preview {
-  padding: 0 0 12px;
-}
-
-.reply-content {
-  position: relative;
-  background: var(--cream);
-  border: var(--line-sm) solid var(--ink);
-  border-left: 6px solid var(--violet);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-  box-shadow: var(--shadow-xs);
-}
-
-.reply-header {
+/* ---------- Reply bar (compact, sits flush above the input pill) ---------- */
+.reply-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
-  color: var(--violet);
-  margin-bottom: 4px;
-  font-weight: 700;
+  gap: 10px;
+  background: var(--cream);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: 8px 10px 8px 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
 }
 
-.reply-close {
+.reply-accent {
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--violet);
+}
+
+.reply-icon {
+  flex-shrink: 0;
+  color: var(--violet);
+  font-size: 0.85rem;
+}
+
+.reply-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.reply-to-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--violet);
+}
+
+.reply-snippet {
+  font-size: 0.8rem;
+  color: rgba(16, 16, 20, 0.62);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reply-cancel {
+  flex-shrink: 0;
   background: var(--coral);
   border: var(--line-sm) solid var(--ink);
   color: var(--white);
@@ -210,21 +280,22 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   transition: transform 0.15s ease;
 }
 
-.reply-close:hover { transform: rotate(90deg); }
+.reply-cancel:hover { transform: rotate(90deg); }
 
-.reply-message {
-  font-size: 0.85rem;
-  color: var(--ink);
-  opacity: 0.75;
-  line-height: 1.4;
-  max-width: 90%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.reply-slide-enter-active,
+.reply-slide-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease, margin 0.18s ease;
+}
+
+.reply-slide-enter,
+.reply-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+  margin-bottom: 0;
 }
 
 /* ---------- Input pill ---------- */
@@ -244,6 +315,10 @@ export default {
 .input-wrapper:focus-within {
   box-shadow: 6px 6px 0 var(--violet);
   transform: translate(-1px, -1px);
+}
+
+.has-reply .input-wrapper {
+  border-color: var(--violet);
 }
 
 .text-input-wrapper {
@@ -304,6 +379,30 @@ export default {
   box-shadow: var(--shadow-xs);
 }
 
+.action-btn.attach-btn {
+  background: var(--cream);
+  border: var(--line-sm) solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.action-btn.attach-btn:hover:not(:disabled) {
+  background: var(--yellow);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-xs);
+}
+
+.action-btn.attach-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
 .send-btn {
   background: var(--cream);
   border: var(--line-sm) solid var(--ink);
@@ -344,84 +443,44 @@ export default {
 
 .send-btn i { font-size: 1.05rem; }
 
-.reply-preview {
-  margin-bottom: 8px;
-  border-left: 3px solid var(--violet);
-  padding-left: 10px;
-}
-
-.reply-header {
-  margin-bottom: 4px;
-}
-
-.reply-info {
-  font-size: 0.85rem;
-  color: var(--violet);
-}
-
-.reply-message {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.reply-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease;
-}
-
-.reply-close:hover { color: var(--coral); }
-
 @media (max-width: 768px) {
   .message-input-container { padding: 12px 16px 16px; }
   .action-btn.emoji-btn { width: 30px; height: 30px; font-size: 0.85rem; }
+  .action-btn.attach-btn { width: 34px; height: 34px; font-size: 0.85rem; margin-right: 6px; }
   .send-btn { width: 40px; height: 40px; }
   .send-btn i { font-size: 0.95rem; }
-  .message-input { font-size: 14px; padding: 10px 45px 10px 14px; }
-  .reply-preview { margin-bottom: 6px; padding-left: 8px; }
-  .reply-info { font-size: 0.8rem; }
-  .reply-message { font-size: 0.75rem; }
+  .message-input { font-size: 14px; padding: 10px 44px 10px 0; }
+  .reply-bar { margin-bottom: 8px; padding: 7px 9px 7px 10px; }
+  .reply-snippet { font-size: 0.75rem; }
 }
 
 @media (max-width: 640px) {
   .message-input-container { padding: 10px 14px 14px; }
   .action-btn.emoji-btn { width: 28px; height: 28px; font-size: 0.8rem; right: 5px; bottom: 5px; }
+  .action-btn.attach-btn { width: 32px; height: 32px; margin-right: 6px; }
   .send-btn { width: 38px; height: 38px; margin-left: 6px; }
   .send-btn i { font-size: 0.9rem; }
-  .message-input { font-size: 14px; padding: 9px 42px 9px 12px; min-height: 40px; }
-  .reply-preview { margin-bottom: 5px; padding-left: 7px; border-left-width: 2.5px; }
-  .reply-info { font-size: 0.75rem; }
-  .reply-message { font-size: 0.7rem; }
+  .input-wrapper { padding: 5px 6px 5px 12px; }
+  .message-input { font-size: 14px; padding: 9px 40px 9px 0; min-height: 40px; }
 }
 
 @media (max-width: 480px) {
   .message-input-container { padding: 8px 12px 12px; }
   .action-btn.emoji-btn { width: 26px; height: 26px; font-size: 0.75rem; right: 4px; bottom: 4px; }
+  .action-btn.attach-btn { width: 30px; height: 30px; margin-right: 5px; }
   .send-btn { width: 36px; height: 36px; margin-left: 5px; }
   .send-btn i { font-size: 0.85rem; }
-  .message-input { font-size: 14px; padding: 8px 38px 8px 10px; min-height: 38px; }
-  .reply-preview { margin-bottom: 4px; padding-left: 6px; border-left-width: 2px; }
-  .reply-info { font-size: 0.7rem; }
-  .reply-message { font-size: 0.65rem; max-width: calc(100vw - 120px); }
-  .reply-close { width: 20px; height: 20px; font-size: 0.7rem; }
+  .input-wrapper { padding: 4px 5px 4px 10px; }
+  .message-input { font-size: 14px; padding: 8px 36px 8px 0; min-height: 38px; }
+  .reply-snippet { font-size: 0.7rem; }
+  .reply-cancel { width: 22px; height: 22px; }
 }
 
 @media (max-width: 360px) {
   .message-input-container { padding: 6px 10px 10px; }
   .action-btn.emoji-btn { width: 24px; height: 24px; font-size: 0.7rem; }
+  .action-btn.attach-btn { width: 28px; height: 28px; margin-right: 4px; }
   .send-btn { width: 34px; height: 34px; }
-  .message-input { min-height: 36px; padding: 7px 36px 7px 9px; }
-  .reply-preview { margin-bottom: 3px; padding-left: 5px; }
-  .reply-info { font-size: 0.65rem; }
-  .reply-message { font-size: 0.6rem; }
+  .message-input { min-height: 36px; padding: 7px 34px 7px 0; }
 }
 </style>

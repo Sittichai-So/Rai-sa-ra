@@ -192,3 +192,13 @@ input, textarea, select {
     padding: 10px 20px;
   }
 }
+
+/* SweetAlert2 / toasts ต้องอยู่เหนือ overlay ของหน้าแชท (z-index 3000)
+   ไม่งั้น dialog แจ้งเตือนจะโผล่ "ข้างหลัง" modal จนกดปิดไม่ได้ */
+.swal2-container {
+  z-index: 20000 !important;
+}
+
+.b-toaster {
+  z-index: 20001 !important;
+}

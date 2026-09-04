@@ -1,12 +1,14 @@
+const API_BASE = process.env.API_BASE || 'http://localhost:8012/api/raisara'
+const FILE_BASE = process.env.API_FILE_BASE || 'http://localhost:8012'
+
 const environment = {
-  development: {
-    api: 'http://localhost:8012/api/raisara'
-  },
-  production: {
-    // uat
-    // api: 'https://uat-config-ktb.thaijobjob.com/api/config'
-  }
+  development: { api: API_BASE },
+  production: { api: API_BASE },
+  test: { api: API_BASE }
 }
+
+// Fallback so a missing/unknown NODE_ENV never crashes config loading.
+const currentEnv = environment[process.env.NODE_ENV] || environment.development
 
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
@@ -71,57 +73,68 @@ export default {
 
   env: {
     NODE_ENV: process.env.NODE_ENV,
+    API_BASE: currentEnv.api,
+    API_FILE_BASE: FILE_BASE,
+
     // auth
-    API_LOGIN: environment[process.env.NODE_ENV].api + '/auth/login',
-    API_REGISTER_USER: environment[process.env.NODE_ENV].api + '/auth/register',
-    API_CHECK_USERNAME: environment[process.env.NODE_ENV].api + '/auth/check-username',
+    API_LOGIN: currentEnv.api + '/auth/login',
+    API_REGISTER_USER: currentEnv.api + '/auth/register',
+    API_CHECK_USERNAME: currentEnv.api + '/auth/check-username',
 
     // getCategories
-    API_GET_CATEGORIES_ROOM: environment[process.env.NODE_ENV].api + '/categories/getCategories',
+    API_GET_CATEGORIES_ROOM: currentEnv.api + '/categories/getCategories',
 
     // room
-    API_GET_ROOM: environment[process.env.NODE_ENV].api + '/room/getRoom',
-    API_JOIN_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/joinRoom',
-    API_CREATE_ROOM: environment[process.env.NODE_ENV].api + '/room/createRoom',
-    API_LEAVE_ROOM_USERS: environment[process.env.NODE_ENV].api + '/room/removeJoinRoom',
+    API_GET_ROOM: currentEnv.api + '/room/getRoom',
+    API_JOIN_ROOM_USERS: currentEnv.api + '/room/joinRoom',
+    API_CREATE_ROOM: currentEnv.api + '/room/createRoom',
+    API_LEAVE_ROOM_USERS: currentEnv.api + '/room/removeJoinRoom',
 
     // chat
-    API_GET_ROOMID_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/messages',
-    API_SENT_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/messages',
-    API_UPDATE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
-    API_DELETE_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/messages/:messageId',
-    API_SEARCH_MESSAGE: environment[process.env.NODE_ENV].api + '/chat/:roomId/search',
-    API_GET_ROOM_MEMBER: environment[process.env.NODE_ENV].api + '/chat/:roomId/members',
+    API_GET_ROOM_MEMBER: currentEnv.api + '/chat/:roomId/members',
+    API_GET_ROOM_BY_ID: currentEnv.api + '/chat/room/:roomId',
 
-    // chatLog
-    API_GET_CHATLOG_ROOM_ID: environment[process.env.NODE_ENV].api + '/chatLog',
-    API_DELETE_CHATLOG_ROOM_ID: environment[process.env.NODE_ENV].api + '/chatLog',
+    // chatLog (ข้อความในห้อง)
+    API_GET_CHATLOG_ROOM_ID: currentEnv.api + '/chatLog',
+    API_DELETE_CHATLOG_ROOM_ID: currentEnv.api + '/chatLog',
+    API_SEARCH_MESSAGE: currentEnv.api + '/chatLog/:roomId/search',
 
     // count
-    API_GET_COUNT_ALL_CHAT_MESSAGES: environment[process.env.NODE_ENV].api + '/chatLog/counts/all',
+    API_GET_COUNT_ALL_CHAT_MESSAGES: currentEnv.api + '/chatLog/counts/all',
+
+    // upload
+    API_UPLOAD_FILE: currentEnv.api + '/upload',
+
+    // direct messages
+    API_DM_CONVERSATIONS: currentEnv.api + '/dm/conversations',
+    API_DM_MESSAGES: currentEnv.api + '/dm/:friendId/messages',
+    API_DM_READ: currentEnv.api + '/dm/:friendId/read',
 
     // friends
-    API_SEND_FRIEND: environment[process.env.NODE_ENV].api + '/friends/send',
-    API_POST_ACCEPT_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/accept/:friendshipId',
-    API_POST_REJECT_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/reject/:friendshipId',
-    API_DELETE_CANCEL_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/cancel/:friendshipId',
-    API_DELETE_REMOVE_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/:friendId',
-    API_GET_ALL_FRIENDSHIP_ID: environment[process.env.NODE_ENV].api + '/friends/all',
-    API_ONLINE_FRIEND: environment[process.env.NODE_ENV].api + '/friends/online',
-    API_PENDING_FRIEND: environment[process.env.NODE_ENV].api + '/friends/pending',
-    API_SENT_FRIEND: environment[process.env.NODE_ENV].api + '/friends/sent',
-    API_SEARCH_FRIEND: environment[process.env.NODE_ENV].api + '/friends/search',
-    API_STATS_FRIEND: environment[process.env.NODE_ENV].api + '/friends/stats',
-    API_PROFILE_FRIEND_ID: environment[process.env.NODE_ENV].api + '/friends/profile/:friendId',
+    API_SEND_FRIEND: currentEnv.api + '/friends/send',
+    API_POST_ACCEPT_FRIENDSHIP_ID: currentEnv.api + '/friends/accept/:friendshipId',
+    API_POST_REJECT_FRIENDSHIP_ID: currentEnv.api + '/friends/reject/:friendshipId',
+    API_DELETE_CANCEL_FRIENDSHIP_ID: currentEnv.api + '/friends/cancel/:friendshipId',
+    API_DELETE_REMOVE_FRIENDSHIP_ID: currentEnv.api + '/friends/:friendId',
+    API_GET_ALL_FRIENDSHIP_ID: currentEnv.api + '/friends/all',
+    API_ONLINE_FRIEND: currentEnv.api + '/friends/online',
+    API_PENDING_FRIEND: currentEnv.api + '/friends/pending',
+    API_SENT_FRIEND: currentEnv.api + '/friends/sent',
+    API_SEARCH_FRIEND: currentEnv.api + '/friends/search',
+    API_STATS_FRIEND: currentEnv.api + '/friends/stats',
+    API_PROFILE_FRIEND_ID: currentEnv.api + '/friends/profile/:friendId',
 
     // users
-    API_PATCH_USER_STATUS: environment[process.env.NODE_ENV].api + '/users/:roomId/members',
-    API_GET_USER_BY_ID: environment[process.env.NODE_ENV].api + '/user/getByID',
-    API_EDIT_PROFILE_BY_ID: environment[process.env.NODE_ENV].api + '/user/editProfile',
-    API_EDIT_PASSWORD_BY_ID: environment[process.env.NODE_ENV].api + '/user/resetPassword',
+    API_PATCH_USER_STATUS: currentEnv.api + '/user/:id/status',
+    API_GET_USER_BY_ID: currentEnv.api + '/user/getByID',
+    API_EDIT_PROFILE_BY_ID: currentEnv.api + '/user/editProfile',
+    API_EDIT_PASSWORD_BY_ID: currentEnv.api + '/user/resetPassword',
+
+    // landing stats
+    API_STATS: currentEnv.api + '/stats',
 
     // socket
-    SOCKET_URL: process.env.SOCKET_URL
+    SOCKET_URL: process.env.SOCKET_URL || FILE_BASE
   },
 
   bootstrapVue: {

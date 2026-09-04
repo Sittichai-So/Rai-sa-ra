@@ -16,19 +16,18 @@
                 {{ currentRoom.name || roomId }}
               </h4>
               <p class="room-status">
-                <span class="status-dot online" />
-                {{ currentRoom.memberCount || 0 }} สมาชิกออนไลน์
+                <span class="status-dot" :class="socketConnected ? 'online' : 'offline'" />
+                {{ roomStatusText }}
               </p>
             </div>
           </div>
           <div class="header-actions">
             <button
-              v-if="currentRoom.type === 'private'"
               class="icon-btn"
-              title="ตั้งค่า"
+              title="ตั้งค่าธีมแชท"
               @click="openSettings"
             >
-              <i class="fas fa-cog" />
+              <i class="fas fa-palette" />
             </button>
             <button class="icon-btn members-toggle-btn" title="สมาชิก" :class="{ active: showMemberSidebar }" @click="toggleMemberSidebar">
               <i class="fas fa-users" />
@@ -45,7 +44,8 @@
         class="flex-grow-1"
         :messages="messages"
         :current-user-id="currentUserId"
-        :typing-users="typingUsers"
+        :typing-users="[]"
+        :loading-more="loadingMore"
         :chat-theme="chatTheme"
         @toggle-reaction="handleToggleReaction"
         @add-reaction="handleAddReaction"
@@ -55,17 +55,18 @@
         @load-more="loadMoreMessages"
       />
 
-      <TypingIndicator :typing-users="typingUsers" class="typing-slot" />
+      <TypingIndicator :typing-users="typingNames" class="typing-slot" />
 
       <div class="message-input-container">
         <MessageInput
           ref="messageInput"
           :room-id="roomId"
-          :replying-to="replyTo"
+          :reply-to="replyTo"
           :chat-theme="chatTheme"
           @send-message="sendMessage"
           @cancel-reply="cancelReply"
           @send-file="handleSendFile"
+          @file-error="onFileError"
           @typing-start="handleTypingStart"
           @typing-stop="handleTypingStop"
         />
@@ -108,14 +109,11 @@
     </transition>
 
     <RoomSettings
-      v-if="showSettingsModal"
       v-model="roomSettings"
       :show="showSettingsModal"
       :available-themes="availableThemes"
-      :room="currentRoom"
-      :chat-theme="chatTheme"
       @save="handleSettingsSave"
-      @close="showSettingsModal = false"
+      @close="closeSettings"
     />
   </div>
 </template>
@@ -135,9 +133,13 @@ export default {
     TypingIndicator,
     RoomSettings
   },
+  middleware: 'middlewareAuth',
   data () {
     return {
       roomId: this.$route.params.id || this.$route.query.id,
+      loadingMore: false,
+      socketConnected: false,
+      roomMemberList: [],
       currentRoom: {
         name: this.$route.query?.name || this.$route.params.name || '',
         category: this.$route.query?.category || '',
@@ -161,7 +163,8 @@ export default {
       chatTheme: 'minimal',
       chatBackground: '#0f0f23',
       roomSettings: { theme: 'minimal', background: '#0f0f23' },
-      showMemberSidebar: true,
+      // เดสก์ท็อปเปิดค้างไว้ได้, มือถือเริ่มด้วยปิด (ไม่งั้นบังครึ่งจอ)
+      showMemberSidebar: typeof window !== 'undefined' ? window.innerWidth > 992 : true,
 
       availableThemes: [
         {
@@ -219,13 +222,30 @@ export default {
   computed: {
     currentUserId () {
       return this.user?._id || ''
+    },
+    typingNames () {
+      return this.typingUsers
+        .filter(u => u.userId !== this.currentUserId)
+        .map(u => u.username)
+    },
+    onlineCount () {
+      return this.currentRoom.memberCount || 0
+    },
+    roomStatusText () {
+      if (!this.socketConnected) { return 'กำลังเชื่อมต่อใหม่...' }
+      return `${this.onlineCount} สมาชิกในห้อง`
     }
   },
   watch: {
-    messages () {
+    // เมื่อกดตอบกลับ กล่อง input จะสูงขึ้น — เลื่อนแชทลงล่างสุดถ้าผู้ใช้อยู่ล่างอยู่แล้ว
+    // จะได้ไม่มีข้อความล่าสุดถูกกล่องตอบกลับบัง
+    replyTo (val) {
+      if (!val) { return }
       this.$nextTick(() => {
-        const el = this.$refs.chatContainer?.$refs.messageList
-        if (el) { el.scrollTop = el.scrollHeight }
+        const list = this.$refs.chatContainer
+        if (list && list.isAtBottom !== false) {
+          list.scrollToBottom()
+        }
       })
     },
     'roomSettings.theme' (newVal) {
@@ -246,6 +266,9 @@ export default {
     }
   },
   async mounted () {
+    // layout เริ่มต้นตั้ง html{font-size:22px !important} ซึ่งทำให้ UI แชท (คิดจากฐาน 16px) ใหญ่เกิน
+    document.documentElement.style.setProperty('font-size', '16px', 'important')
+
     this.loadUserData()
     this.loadRoomSettings()
 
@@ -277,15 +300,22 @@ export default {
       easing: 'easeOutQuad'
     })
 
+    await this.fetchRoomInfo()
     await this.fetchMessages()
     this.setupSocketListeners()
   },
   beforeDestroy () {
+    document.documentElement.style.removeProperty('font-size')
     if (this.$socket) {
       this.$socket.off('receiveMessage')
       this.$socket.off('messageReaction')
       this.$socket.off('messageDeleted')
       this.$socket.off('messageEdited')
+      this.$socket.off('userTyping')
+      this.$socket.off('userStoppedTyping')
+      this.$socket.off('roomMembers', this.onRoomMembers)
+      this.$socket.off('connect', this.onSocketConnect)
+      this.$socket.off('disconnect', this.onSocketDisconnect)
       this.$socket.emit('leaveRoom', { roomId: this.roomId, user: this.user })
     }
   },
@@ -326,14 +356,48 @@ export default {
     },
 
     openSettings () {
+      // จำธีมเดิมไว้ เผื่อผู้ใช้กดปิดโดยไม่บันทึก
+      this._themeSnapshot = this.roomSettings.theme
       this.showSettingsModal = true
     },
 
-    handleSettingsSave (settings) {
-      // ค่าจาก v-model จะถูก sync ผ่าน watcher แล้ว
-      // บันทึก settings ลง localStorage
+    closeSettings () {
+      // ยังไม่บันทึก → คืนค่าธีมเดิม
+      if (this._themeSnapshot && this._themeSnapshot !== this.roomSettings.theme) {
+        this.roomSettings = { ...this.roomSettings, theme: this._themeSnapshot }
+      }
+      this.showSettingsModal = false
+    },
+
+    handleSettingsSave () {
+      // ค่าจาก v-model ถูก sync ผ่าน watcher แล้ว — บันทึกลง localStorage
+      this._themeSnapshot = this.roomSettings.theme
       this.saveRoomSettings()
       this.showSettingsModal = false
+    },
+
+    async fetchRoomInfo () {
+      if (!this.roomId) { return }
+      try {
+        const res = await this.$axios.$get(
+          process.env.API_GET_ROOM_BY_ID.replace(':roomId', this.roomId)
+        )
+        if (res.status === 'success' && res.result) {
+          const r = res.result
+          this.currentRoom = {
+            ...this.currentRoom,
+            name: r.name || this.currentRoom.name,
+            category: r.category || this.currentRoom.category,
+            description: r.description || this.currentRoom.description,
+            memberCount: r.memberCount ?? this.currentRoom.memberCount,
+            tags: r.tags || this.currentRoom.tags,
+            status: r.status || this.currentRoom.status,
+            type: r.type || this.currentRoom.type
+          }
+        }
+      } catch (err) {
+        // ใช้ข้อมูลจาก query string ต่อไป
+      }
     },
 
     async fetchMessages () {
@@ -342,11 +406,13 @@ export default {
 
         const res = await this.$axios.$get(
           `${process.env.API_GET_CHATLOG_ROOM_ID}/${this.roomId}/messages`,
-          { params: { page: 1, limit: 50 } }
+          { params: { page: 1, limit: 30 } }
         )
-        const data = res.result || res.messages || []
-        this.messages = Array.isArray(data) ? data.map(msg => this.formatMessage(msg)) : []
-        this.hasMore = res.hasMore || false
+        const payload = res.result || {}
+        const list = Array.isArray(payload) ? payload : (payload.messages || [])
+        this.messages = list.map(msg => this.formatMessage(msg))
+        this.page = 1
+        this.hasMore = payload.hasMore || false
       } catch (err) {
         this.$bvToast.toast('ไม่สามารถโหลดข้อความได้', {
           variant: 'danger',
@@ -356,21 +422,67 @@ export default {
     },
 
     async loadMoreMessages () {
-      if (!this.hasMore) { return }
+      if (!this.hasMore || this.loadingMore) { return }
+      this.loadingMore = true
+      const container = this.$refs.chatContainer?.$refs?.messageList
+      const prevHeight = container ? container.scrollHeight : 0
       try {
-        this.page++
+        const nextPage = this.page + 1
         const res = await this.$axios.$get(
           `${process.env.API_GET_CHATLOG_ROOM_ID}/${this.roomId}/messages`,
-          { params: { page: this.page, limit: 50 } }
+          { params: { page: nextPage, limit: 30 } }
         )
-        const oldMessages = (res.messages || res || []).map(msg => this.formatMessage(msg))
-        this.messages = [...oldMessages, ...this.messages]
-        this.hasMore = res.hasMore || false
+        const payload = res.result || {}
+        const older = (payload.messages || []).map(msg => this.formatMessage(msg))
+        if (older.length === 0) {
+          this.hasMore = false
+          return
+        }
+        this.messages = [...older, ...this.messages]
+        this.page = nextPage
+        this.hasMore = payload.hasMore || false
+
+        // คงตำแหน่ง scroll ไว้ที่เดิมหลังเติมข้อความเก่าด้านบน
+        // (รอ 2 รอบ ให้ MessageList render + auto-scroll ของมันทำงานก่อน แล้วค่อยแก้กลับ)
+        this.$nextTick(() => {
+          requestAnimationFrame(() => {
+            if (container) {
+              container.scrollTop = container.scrollHeight - prevHeight
+            }
+            const list = this.$refs.chatContainer
+            if (list) { list.newMessagesCount = 0 }
+          })
+        })
       } catch (err) {
+        // เงียบไว้ — ไม่ critical
+      } finally {
+        this.loadingMore = false
+      }
+    },
+
+    onSocketConnect () {
+      this.socketConnected = true
+      // re-join ห้องหลัง reconnect
+      this.$socket.emit('joinRoom', { roomId: this.roomId, user: this.user })
+    },
+
+    onSocketDisconnect () {
+      this.socketConnected = false
+    },
+
+    onRoomMembers (members) {
+      if (Array.isArray(members)) {
+        this.roomMemberList = members
+        this.$set(this.currentRoom, 'memberCount', members.length)
       }
     },
 
     setupSocketListeners () {
+      this.socketConnected = this.$socket.connected
+      this.$socket.on('connect', this.onSocketConnect)
+      this.$socket.on('disconnect', this.onSocketDisconnect)
+      this.$socket.on('roomMembers', this.onRoomMembers)
+
       this.$socket.emit('joinRoom', { roomId: this.roomId, user: this.user })
       this.$socket.on('receiveMessage', (msg) => {
         this.messages.push(this.formatMessage(msg))
@@ -401,20 +513,30 @@ export default {
       })
     },
 
+    resolveFileUrl (url) {
+      if (!url) { return null }
+      if (/^https?:\/\//.test(url)) { return url }
+      return (process.env.API_FILE_BASE || '') + url
+    },
+
     formatMessage (msg) {
       return {
-        _id: msg._id,
-        content: msg.text || msg.content,
+        _id: String(msg._id),
+        content: msg.text || msg.content || '',
         username: msg.username || msg.user?.username || 'Unknown',
-        fullName: `${msg.user?.firstName || ''} ${msg.user?.lastName || ''}`.trim() || msg.username,
-        avatar: msg.avatar || msg.user?.avatar || null,
-        userId: msg.userId || msg.user?._id,
+        fullName: msg.fullName || `${msg.user?.firstName || ''} ${msg.user?.lastName || ''}`.trim() || msg.username,
+        avatar: this.resolveFileUrl(msg.avatar || msg.user?.avatar) || null,
+        userId: String(msg.userId || msg.user?._id || ''),
         createdAt: msg.timestamp || msg.createdAt || new Date(),
         type: msg.type || 'text',
         replyTo: msg.replyTo || null,
         reactions: msg.reactions || [],
         status: msg.status || 'sent',
-        edited: msg.edited || false
+        edited: msg.edited || false,
+        fileUrl: this.resolveFileUrl(msg.fileUrl),
+        fileName: msg.fileName || null,
+        fileSize: msg.fileSize || null,
+        fileType: msg.fileType || null
       }
     },
 
@@ -436,18 +558,53 @@ export default {
       this.cancelReply()
     },
 
-    handleSendFile ({ roomId, file, replyTo }) {
+    async handleSendFile (file) {
+      const input = this.$refs.messageInput
+      input && input.setUploading && input.setUploading(true)
+
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('roomId', roomId)
-      formData.append('userId', this.currentUserId)
-      if (replyTo) { formData.append('replyTo', JSON.stringify(replyTo)) }
 
-      this.$axios.$post(process.env.API_UPLOAD_CHAT_FILE, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }).catch(() => {
-        this.$bvToast.toast('อัปโหลดไฟล์ไม่สำเร็จ', { variant: 'danger', solid: true })
-      })
+      try {
+        const res = await this.$axios.$post(process.env.API_UPLOAD_FILE, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        if (res.status === 'success' && res.result) {
+          const f = res.result
+          const payload = {
+            roomId: this.roomId,
+            message: f.fileName,
+            user: this.user,
+            type: f.type,
+            file: {
+              fileUrl: f.url,
+              fileName: f.fileName,
+              fileSize: f.fileSize,
+              fileType: f.fileType
+            }
+          }
+          if (this.replyTo) {
+            payload.replyTo = {
+              _id: this.replyTo._id,
+              username: this.replyTo.username,
+              content: this.replyTo.content
+            }
+          }
+          this.$socket.emit('sendMessage', payload)
+          this.cancelReply()
+        }
+      } catch (err) {
+        this.$bvToast.toast(
+          err.response?.data?.message || 'อัปโหลดไฟล์ไม่สำเร็จ',
+          { variant: 'danger', solid: true }
+        )
+      } finally {
+        input && input.setUploading && input.setUploading(false)
+      }
+    },
+
+    onFileError (message) {
+      this.$bvToast.toast(message || 'ไฟล์ไม่ถูกต้อง', { variant: 'warning', solid: true })
     },
 
     handleTypingStart () {
@@ -498,7 +655,7 @@ export default {
         content: message.content
       }
       this.$nextTick(() => {
-        this.$refs.messageInput?.$refs?.messageInput?.focus()
+        this.$refs.messageInput && this.$refs.messageInput.focusInput()
       })
     },
 
@@ -506,11 +663,30 @@ export default {
       this.replyTo = null
     },
 
-    handleEditMessage () {
-      this.$bvToast.toast('ฟีเจอร์แก้ไขข้อความกำลังพัฒนา', {
-        variant: 'info',
-        solid: true
+    async handleEditMessage (message) {
+      if (!message || message.type !== 'text') { return }
+      const { value, isConfirmed } = await this.$swal({
+        title: 'แก้ไขข้อความ',
+        input: 'textarea',
+        inputValue: message.content,
+        inputAttributes: { 'aria-label': 'แก้ไขข้อความ' },
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#7c6ff5',
+        inputValidator (v) {
+          if (!v || !v.trim()) { return 'กรุณากรอกข้อความ' }
+          return undefined
+        }
       })
+      if (isConfirmed && value.trim() && value.trim() !== message.content) {
+        this.$socket.emit('editMessage', {
+          roomId: this.roomId,
+          messageId: message._id,
+          content: value.trim(),
+          userId: this.currentUserId
+        })
+      }
     },
 
     async handleDeleteMessage (messageId) {
@@ -586,7 +762,11 @@ export default {
   z-index: 0;
 }
 
-.chat-room-page > * { position: relative; z-index: 1; }
+/* ยกเฉพาะ layout หลักให้อยู่เหนือ ::before ที่เป็นลายจุด
+   (ไม่ใช้ `> *` เพราะจะไป override position ของ overlay ลูกคอมโพเนนต์ด้วย) */
+.chat-area,
+.member-sidebar,
+.sidebar-overlay { position: relative; z-index: 1; }
 
 .chat-area {
   display: flex;
@@ -626,11 +806,27 @@ export default {
 }
 
 .chat-room-page[data-theme="minimal"] .chat-header {
-  background: #f0f0f0;
+  background: #f4f4f6;
 }
 
 .chat-room-page[data-theme="default"] .chat-header {
   background: #0084ff;
+}
+
+/* ธีมพื้นสว่าง (minimal / orange) — ใช้ตัวอักษรสีเข้มไม่งั้นอ่านไม่ออก */
+.chat-room-page[data-theme="minimal"] .room-name,
+.chat-room-page[data-theme="orange"] .room-name {
+  color: var(--ink);
+}
+
+.chat-room-page[data-theme="minimal"] .room-status,
+.chat-room-page[data-theme="orange"] .room-status {
+  color: rgba(16, 16, 20, 0.62);
+}
+
+.chat-room-page[data-theme="minimal"] .status-dot,
+.chat-room-page[data-theme="orange"] .status-dot {
+  background: rgba(16, 16, 20, 0.3);
 }
 
 .header-content {
@@ -705,6 +901,11 @@ export default {
   animation: pulse-status 2s infinite;
 }
 
+.status-dot.offline {
+  background: var(--coral);
+  animation: pulse-status 1s infinite;
+}
+
 @keyframes pulse-status {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.75; transform: scale(1.2); }
@@ -757,14 +958,13 @@ export default {
 .member-sidebar {
   width: 320px;
   border-left: var(--line) solid var(--ink);
-  background: var(--cream);
-  overflow-y: auto;
+  background: #121218;
+  overflow: hidden;
   height: 100vh;
   max-height: 100vh;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  -webkit-overflow-scrolling: touch;
   transition: transform 0.3s ease, opacity 0.3s ease;
   position: relative;
   z-index: 10;
@@ -790,8 +990,8 @@ export default {
     max-width: 100%;
     border-left: none;
     border-top: var(--line) solid var(--ink);
-    height: calc(100vh - 140px);
-    max-height: calc(100vh - 140px);
+    height: min(70vh, 560px);
+    max-height: 70vh;
     flex-shrink: 0;
     transform: translateY(0);
     position: fixed;
@@ -799,6 +999,7 @@ export default {
     left: 0;
     right: 0;
     z-index: 100;
+    border-radius: 18px 18px 0 0;
   }
   .member-sidebar.hidden {
     display: none;
@@ -1089,8 +1290,8 @@ export default {
     max-width: 100%;
     border-left: none;
     border-top: var(--line) solid var(--ink);
-    height: 50vh;
-    max-height: 50vh;
+    height: min(72vh, 560px);
+    max-height: 72vh;
     flex-shrink: 0;
     transform: translateY(0);
     position: fixed;
@@ -1098,6 +1299,7 @@ export default {
     left: 0;
     right: 0;
     z-index: 100;
+    border-radius: 18px 18px 0 0;
   }
   .member-sidebar.hidden {
     display: none;
@@ -1121,8 +1323,8 @@ export default {
   .member-sidebar {
     width: 100%;
     max-width: 100%;
-    height: 45vh;
-    max-height: 45vh;
+    height: min(72vh, 560px);
+    max-height: 72vh;
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
@@ -1151,8 +1353,8 @@ export default {
   .member-sidebar {
     width: 100%;
     max-width: 100%;
-    height: 40vh;
-    max-height: 40vh;
+    height: min(72vh, 560px);
+    max-height: 72vh;
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
@@ -1189,8 +1391,8 @@ export default {
   .member-sidebar {
     width: 100%;
     max-width: 100%;
-    height: 35vh;
-    max-height: 35vh;
+    height: min(78vh, 520px);
+    max-height: 78vh;
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
@@ -1218,8 +1420,8 @@ export default {
 @media (max-height: 500px) and (orientation: landscape) {
   .chat-room-page { flex-direction: column; }
   .member-sidebar {
-    height: 30vh;
-    max-height: 30vh;
+    height: 88vh;
+    max-height: 88vh;
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
@@ -1241,7 +1443,7 @@ export default {
   .status-dot { width: 6px; height: 6px; }
   .icon-btn { width: 28px; height: 28px; font-size: 0.7rem; }
   .header-actions { gap: 5px; }
-  .member-sidebar { height: 30vh; max-height: 30vh; }
+  .member-sidebar { height: 82vh; max-height: 82vh; }
   .sidebar-header h5 { font-size: 0.75rem; }
   .member-count { font-size: 0.6rem; padding: 2px 6px; }
   .reaction-picker-panel { min-width: 98%; padding: 12px; }

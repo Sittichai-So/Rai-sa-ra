@@ -67,7 +67,10 @@
 
         <div class="section">
           <div class="section-header">
-            <h6>เพื่อนของฉัน</h6>
+            <h6>
+              เพื่อนของฉัน
+              <span v-if="friendRequests.length" class="hdr-badge">{{ friendRequests.length }}</span>
+            </h6>
             <button class="add-channel-btn" @click="showAddFriend = true">
               <i class="fas fa-user-plus" />
             </button>
@@ -100,47 +103,14 @@
           </div>
 
           <div class="friends-list">
-            <div
-              v-for="friend in onlineFriends"
-              :key="friend.friendId"
-              class="friend-item online"
-            >
-              <div class="user-avatar" @click="openDirectMessage(friend)">
-                <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.displayName">
-                <div v-else class="avatar-placeholder">
-                  {{ getInitials(friend.displayName) }}
-                </div>
-                <div class="status-indicator online" />
-              </div>
-              <div class="friend-info" @click="openDirectMessage(friend)">
-                <span class="friend-name">{{ friend.displayName }}</span>
-                <span v-if="friend.lastMessage" class="last-message">{{ friend.lastMessage }}</span>
-              </div>
-              <div v-if="friend.unreadCount" class="unread-badge">
-                {{ friend.unreadCount }}
-              </div>
-              <div class="friend-actions">
-                <b-dropdown right variant="link" toggle-class="p-0">
-                  <template #button-content>
-                    <i class="fas fa-ellipsis-v" />
-                  </template>
-                  <b-dropdown-item @click="viewFriendProfile(friend)">
-                    <i class="fas fa-user" /> ดูโปรไฟล์
-                  </b-dropdown-item>
-                  <b-dropdown-item @click="openDirectMessage(friend)">
-                    <i class="fas fa-comments" /> ส่งข้อความ
-                  </b-dropdown-item>
-                  <b-dropdown-item class="text-danger" @click="removeFriend(friend.friendId)">
-                    <i class="fas fa-trash" /> ลบเพื่อน
-                  </b-dropdown-item>
-                </b-dropdown>
-              </div>
+            <div v-if="!allFriends.length" class="friends-empty">
+              ยังไม่มีเพื่อน — กด <i class="fas fa-user-plus" /> เพื่อค้นหาและเพิ่มเพื่อน
             </div>
-
             <div
-              v-for="friend in offlineFriends"
+              v-for="friend in allFriends"
               :key="friend.friendId"
-              class="friend-item offline"
+              class="friend-item"
+              :class="friend.isOnline ? 'online' : 'offline'"
               @click="openDirectMessage(friend)"
             >
               <div class="user-avatar">
@@ -148,29 +118,24 @@
                 <div v-else class="avatar-placeholder">
                   {{ getInitials(friend.displayName) }}
                 </div>
-                <div class="status-indicator offline" />
+                <div class="status-indicator" :class="friend.isOnline ? 'online' : 'offline'" />
               </div>
               <div class="friend-info">
                 <span class="friend-name">{{ friend.displayName }}</span>
+                <span v-if="friend.lastMessage" class="last-message">{{ friend.lastMessage }}</span>
               </div>
               <div v-if="friend.unreadCount" class="unread-badge">
                 {{ friend.unreadCount }}
               </div>
               <div class="friend-actions">
-                <b-dropdown right variant="link" toggle-class="p-0">
-                  <template #button-content>
-                    <i class="fas fa-ellipsis-v" />
-                  </template>
-                  <b-dropdown-item @click="viewFriendProfile(friend)">
-                    <i class="fas fa-user" /> ดูโปรไฟล์
-                  </b-dropdown-item>
-                  <b-dropdown-item @click="openDirectMessage(friend)">
-                    <i class="fas fa-comments" /> ส่งข้อความ
-                  </b-dropdown-item>
-                  <b-dropdown-item class="text-danger" @click="removeFriend(friend.friendId)">
-                    <i class="fas fa-trash" /> ลบเพื่อน
-                  </b-dropdown-item>
-                </b-dropdown>
+                <button
+                  class="friend-menu-btn"
+                  type="button"
+                  aria-label="ตัวเลือก"
+                  @click.stop="openFriendMenu(friend, $event)"
+                >
+                  <i class="fas fa-ellipsis-v" />
+                </button>
               </div>
             </div>
           </div>
@@ -179,10 +144,12 @@
         <!-- Direct Messages Section -->
         <div class="section">
           <div class="section-header">
-            <h6>ข้อความส่วนตัว</h6>
+            <h6>
+              ข้อความส่วนตัว
+              <span v-if="totalUnreadDM" class="hdr-badge">{{ totalUnreadDM > 99 ? '99+' : totalUnreadDM }}</span>
+            </h6>
           </div>
           <div class="dm-list">
-            <!-- TODO: Show active DM conversations here -->
             <div v-if="activeDMs.length === 0" class="empty-dm">
               <i class="fas fa-comments" />
               <span>ยังไม่มีข้อความส่วนตัว</span>
@@ -191,7 +158,10 @@
               v-for="dm in activeDMs"
               :key="dm.friendId"
               class="dm-item"
-              :class="{ active: selectedFriend && selectedFriend.friendId === dm.friendId }"
+              :class="{
+                active: selectedFriend && selectedFriend.friendId === dm.friendId,
+                unread: dm.unreadCount > 0
+              }"
               @click="openDirectMessage(dm)"
             >
               <div class="dm-avatar">
@@ -199,14 +169,17 @@
                 <div v-else class="avatar-placeholder">
                   {{ getInitials(dm.displayName) }}
                 </div>
-                <div v-if="dm.unreadCount" class="dm-unread-badge">
-                  {{ dm.unreadCount }}
-                </div>
+                <span v-if="dm.status === 'online'" class="dm-online-dot" />
               </div>
               <div class="dm-info">
                 <span class="dm-name">{{ dm.displayName }}</span>
-                <span class="dm-last-message">{{ dm.lastMessage || 'เริ่มการสนทนา...' }}</span>
+                <span class="dm-last-message">
+                  <i v-if="dm.lastFromMe" class="fas fa-reply dm-you-icon" />{{ dm.lastMessage || 'เริ่มการสนทนา...' }}
+                </span>
               </div>
+              <span v-if="dm.unreadCount" class="dm-count">
+                {{ dm.unreadCount > 99 ? '99+' : dm.unreadCount }}
+              </span>
             </div>
           </div>
         </div>
@@ -491,94 +464,101 @@
       </b-form>
     </b-modal>
 
-    <!-- Add Friend Modal -->
-    <b-modal
-      v-model="showAddFriend"
-      title="เพิ่มเพื่อน"
-      centered
-      hide-footer
-      body-class="add-friend-modal-body"
-    >
-      <div class="add-friend-form">
-        <div class="search-user-section">
-          <validation-observer ref="observer" v-slot="{ handleSubmit }">
-            <b-form @submit.stop.prevent="handleSubmit(searchUsers)">
-              <validation-provider
-                v-slot="validationContext"
-                name="searchUser"
-                :rules="{ required: true }"
+    <!-- Add Friend -->
+    <transition name="af-fade">
+      <div v-if="showAddFriend" class="af-overlay" @click.self="closeModal">
+        <div class="af-panel" role="dialog" aria-modal="true">
+          <header class="af-header">
+            <h3 class="af-title">
+              <i class="fas fa-user-plus" /> เพิ่มเพื่อน
+            </h3>
+            <button class="af-close" type="button" aria-label="ปิด" @click="closeModal">
+              <i class="fas fa-times" />
+            </button>
+          </header>
+
+          <div class="af-search-row">
+            <div class="af-search-box">
+              <i class="fas fa-search af-search-icon" />
+              <input
+                ref="afSearch"
+                v-model="userSearchQuery"
+                type="text"
+                placeholder="ชื่อผู้ใช้ หรืออีเมล..."
+                @keyup.enter="searchUsers"
               >
-                <b-form-group label="ค้นหาชื่อผู้ใช้หรืออีเมล" label-for="searchUser">
-                  <b-input-group>
-                    <b-form-input
-                      id="searchUser"
-                      v-model="userSearchQuery"
-                      :state="getValidationState(validationContext)"
-                      placeholder="ค้นหาชื่อผู้ใช้หรืออีเมล..."
-                    />
-                    <b-input-group-append>
-                      <b-button variant="primary" type="submit">
-                        <i class="fas fa-search" />
-                      </b-button>
-                    </b-input-group-append>
-                  </b-input-group>
-                  <b-form-invalid-feedback>
-                    {{ validationContext.errors[0] }}
-                  </b-form-invalid-feedback>
-                </b-form-group>
-              </validation-provider>
-            </b-form>
-          </validation-observer>
-        </div>
+              <button
+                v-if="userSearchQuery"
+                class="af-clear"
+                type="button"
+                aria-label="ล้าง"
+                @click="clearSearchInput"
+              >
+                <i class="fas fa-times" />
+              </button>
+            </div>
+            <button
+              class="af-search-btn"
+              type="button"
+              :disabled="!userSearchQuery.trim() || isSearching"
+              @click="searchUsers"
+            >
+              <i v-if="isSearching" class="fas fa-spinner fa-spin" />
+              <i v-else class="fas fa-search" />
+              <span>ค้นหา</span>
+            </button>
+          </div>
 
-        <div v-if="isSearching" class="loading-state">
-          <div class="spinner" />
-          <span>กำลังค้นหา...</span>
-        </div>
+          <div class="af-body">
+            <div v-if="isSearching" class="af-state">
+              <div class="spinner" />
+              <span>กำลังค้นหา...</span>
+            </div>
 
-        <div v-else-if="searchResults.length > 0" class="search-results">
-          <div
-            v-for="resultUser in searchResults"
-            :key="resultUser._id"
-            class="user-result"
-          >
-            <div class="user-avatar">
-              <img v-if="resultUser.avatar" :src="resultUser.avatar" :alt="resultUser.fullname">
-              <div v-else class="avatar-placeholder">
-                {{ resultUser.initials }}
+            <div v-else-if="searchResults.length > 0" class="search-results">
+              <div
+                v-for="u in searchResults"
+                :key="u._id"
+                class="user-result"
+              >
+                <div class="user-avatar">
+                  <img v-if="u.avatar" :src="u.avatar" :alt="u.displayName">
+                  <div v-else class="avatar-placeholder">
+                    {{ u.initials }}
+                  </div>
+                  <span v-if="u.isOnline" class="user-online-dot" />
+                </div>
+                <div class="user-info">
+                  <h4>{{ u.displayName }}</h4>
+                  <p>{{ u.email || ('@' + u.username) }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="friend-add-btn"
+                  :class="friendBtn(u).cls"
+                  :disabled="friendBtn(u).disabled || sendingRequest === u._id"
+                  @click="handleFriendAction(u)"
+                >
+                  <i v-if="sendingRequest === u._id" class="fas fa-spinner fa-spin" />
+                  <i v-else :class="friendBtn(u).icon" />
+                  <span>{{ friendBtn(u).text }}</span>
+                </button>
               </div>
             </div>
-            <div class="user-info">
-              <h4>{{ resultUser.fullname }}</h4>
-              <p>{{ resultUser.email }}</p>
+
+            <div v-else-if="hasSearched" class="af-state">
+              <i class="fas fa-user-slash" />
+              <p>ไม่พบผู้ใช้ "{{ userSearchQuery }}"</p>
             </div>
-            <b-button
-              class="friend-action-btn"
-              :variant="getFriendButtonClass(resultUser)"
-              :disabled="resultUser.friendStatus === 'pending_sent' || sendingRequest === resultUser._id"
-              @click="sendFriendRequest(resultUser)"
-            >
-              <i v-if="sendingRequest === resultUser._id" class="fas fa-spinner fa-spin" />
-              <i v-else :class="getFriendButtonIcon(resultUser)" />
-              {{ getFriendButtonText(resultUser) }}
-            </b-button>
+
+            <div v-else class="af-state">
+              <i class="fas fa-user-friends" />
+              <p>พิมพ์ชื่อผู้ใช้หรืออีเมล แล้วกดค้นหา</p>
+            </div>
           </div>
         </div>
-
-        <div v-else-if="userSearchQuery && !isSearching && searchResults.length === 0" class="empty-state">
-          <i class="fas fa-user-slash" />
-          <p>
-            ไม่พบผู้ใช้ที่ค้นหา
-          </p>
-        </div>
-
-        <div class="modal-actions">
-          <b-button class="btn-secondary" @click="closeModal">
-            ปิด
-          </b-button>
-        </div>
       </div>
-    </b-modal>
+    </transition>
 
     <b-modal
       v-model="showJoinPasswordModal"
@@ -612,7 +592,33 @@
       ref="dmModal"
       :friend="selectedFriend"
       :current-user-id="user?._id"
+      @read="onDmRead"
+      @sent="onDmSent"
     />
+
+    <!-- Friend row context menu (fixed-positioned so it escapes the sidebar scroll) -->
+    <div
+      v-if="friendMenu.open"
+      class="friend-menu-backdrop"
+      @click="closeFriendMenu"
+      @contextmenu.prevent="closeFriendMenu"
+    >
+      <div
+        class="friend-menu"
+        :style="friendMenuStyle"
+        @click.stop
+      >
+        <button type="button" @click="fmProfile">
+          <i class="fas fa-user" /> ดูโปรไฟล์
+        </button>
+        <button type="button" @click="fmMessage">
+          <i class="fas fa-comments" /> ส่งข้อความ
+        </button>
+        <button type="button" class="danger" @click="fmRemove">
+          <i class="fas fa-user-minus" /> ลบเพื่อน
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -651,7 +657,9 @@ export default {
       userSearchQuery: '',
       searchResults: [],
       isSearching: false,
+      hasSearched: false,
       sendingRequest: null,
+      friendMenu: { open: false, friend: null, x: 0, y: 0 },
       showJoinPasswordModal: false,
       limit: 5,
       newRoom: { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [], iconGradient: '' },
@@ -666,7 +674,9 @@ export default {
       joinPassword: '',
       sidebarOpen: false,
       joinRoomIdPending: null,
-      selectedFriend: null
+      selectedFriend: null,
+      dmConversations: [],
+      idleTimer: null
     }
   },
   computed: {
@@ -681,9 +691,10 @@ export default {
       return this.rooms.filter(room => !this.isUserInRoom(room._id))
     },
     userInitials () {
-      return this.userName
+      const name = this.userName || this.profile.displayName || 'U'
+      return String(name)
         .split(' ')
-        .map(name => name.charAt(0))
+        .map(n => n.charAt(0))
         .join('')
         .toUpperCase()
     },
@@ -710,34 +721,73 @@ export default {
       })
     },
     activeDMs () {
-      // TODO: Get from store or API - for now return friends who have conversations
-      return this.friends.filter(friend => friend.hasConversation).slice(0, 5) // Limit to 5 for UI
+      return this.dmConversations
+    },
+    allFriends () {
+      return [...this.onlineFriends, ...this.offlineFriends]
+    },
+    totalUnreadDM () {
+      return this.dmConversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+    },
+    friendMenuStyle () {
+      // เมนูกว้าง ~180px — จัดให้ไม่ทะลุขอบจอ
+      const W = 180
+      const H = 148
+      let left = this.friendMenu.x - W
+      let top = this.friendMenu.y
+      if (typeof window !== 'undefined') {
+        if (left < 8) { left = 8 }
+        if (top + H > window.innerHeight - 8) { top = window.innerHeight - H - 8 }
+      }
+      return { top: top + 'px', left: left + 'px' }
+    }
+  },
+  watch: {
+    showAddFriend (open) {
+      document.body.style.overflow = open ? 'hidden' : ''
+      if (open) {
+        this.$nextTick(() => this.$refs.afSearch && this.$refs.afSearch.focus())
+      }
     }
   },
   async mounted () {
+    // layout เริ่มต้นตั้ง html{font-size:22px !important} — ปรับกลับเป็น 16px สำหรับหน้าแชท
+    document.documentElement.style.setProperty('font-size', '16px', 'important')
+
     this.initialize()
-    this.startSessionTimeout()
+    this.setupIdleLogout()
+
+    if (this.$socket && this.user?._id) {
+      this.$socket.emit('identify', { userId: this.user._id })
+    }
+
     await this.getCategories()
     await this.getProfile()
     await this.getRoom()
 
     await this.loadFriends()
+    await this.loadDMConversations()
 
-    window.addEventListener('resize', () => {
+    this._onResize = () => {
+      this.closeFriendMenu()
       if (window.innerWidth > 768 && this.sidebarOpen) {
         this.closeSidebar()
       }
+    }
+    window.addEventListener('resize', this._onResize)
+
+    // ปิดเมนูเพื่อนเมื่อ scroll (ตำแหน่งจะไม่ตรงแล้ว)
+    this._onSidebarScroll = () => this.closeFriendMenu()
+    this.$nextTick(() => {
+      const sc = this.$el.querySelector('.sidebar-content')
+      if (sc) { sc.addEventListener('scroll', this._onSidebarScroll, { passive: true }) }
+      this._sidebarScrollEl = sc
     })
 
-    this.$socket.on('friendStatusUpdate', ({ friendId, status, lastSeen }) => {
-      const friend = this.friends.find(f => f.friendId === friendId)
-      if (friend) {
-        friend.status = status
-        friend.isOnline = status === 'online'
-        friend.lastActive = lastSeen
-        this.updateFriendLists()
-      }
-    })
+    this.$socket.on('friendStatusUpdate', this.onFriendStatusUpdate)
+    this.$socket.on('dm:new', this.onIncomingDM)
+    this.$socket.on('friend:request', this.onFriendRequest)
+    this.$socket.on('friend:accepted', this.onFriendAccepted)
 
     await this.loadFriendRequests()
     this.setupNotifications()
@@ -746,20 +796,26 @@ export default {
     if (userData) {
       this.user = JSON.parse(userData)
     }
-
-    this.messageInterval = setInterval(() => {
-      this.rooms.forEach((room) => {
-        if (Math.random() > 0.95) {
-          room.messages += Math.floor(Math.random() * 3) + 1
-        }
-      })
-    }, 10000)
   },
   beforeDestroy () {
-    if (this.messageInterval) {
-      clearInterval(this.messageInterval)
+    clearTimeout(this.idleTimer)
+    if (this._idleEvents) {
+      this._idleEvents.forEach(e => window.removeEventListener(e, this._idleReset))
+    }
+    if (this._onResize) {
+      window.removeEventListener('resize', this._onResize)
+    }
+    if (this._sidebarScrollEl && this._onSidebarScroll) {
+      this._sidebarScrollEl.removeEventListener('scroll', this._onSidebarScroll)
+    }
+    if (this.$socket) {
+      this.$socket.off('friendStatusUpdate', this.onFriendStatusUpdate)
+      this.$socket.off('dm:new', this.onIncomingDM)
+      this.$socket.off('friend:request', this.onFriendRequest)
+      this.$socket.off('friend:accepted', this.onFriendAccepted)
     }
     document.body.style.overflow = ''
+    document.documentElement.style.removeProperty('font-size')
   },
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
@@ -779,19 +835,235 @@ export default {
       document.body.style.overflow = ''
     },
     openDirectMessage (friend) {
-      this.selectedFriend = friend
+      // รองรับทั้ง object เพื่อน และ object conversation (มี friendId เหมือนกัน)
+      this.selectedFriend = {
+        friendId: friend.friendId,
+        displayName: friend.displayName || friend.fullname || 'เพื่อน',
+        fullname: friend.fullname || friend.displayName,
+        avatar: friend.avatar || null
+      }
       this.$nextTick(() => {
         if (this.$refs.dmModal) {
           this.$refs.dmModal.open()
         }
       })
+      // เปิดแล้วถือว่าอ่านแล้ว
+      const conv = this.dmConversations.find(c => c.friendId === friend.friendId)
+      if (conv) { conv.unreadCount = 0 }
     },
     getInitials (name) {
+      if (!name) { return '?' }
       return name
         .split(' ')
         .map(n => n.charAt(0))
         .join('')
         .toUpperCase()
+    },
+
+    updateFriendLists () {
+      this.onlineFriends = this.friends.filter(f => f.isOnline)
+      this.offlineFriends = this.friends.filter(f => !f.isOnline)
+    },
+
+    openFriendMenu (friend, event) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      // ถ้ากดปุ่มเดิมซ้ำ = ปิด
+      if (this.friendMenu.open && this.friendMenu.friend &&
+          this.friendMenu.friend.friendId === friend.friendId) {
+        this.closeFriendMenu()
+        return
+      }
+      this.friendMenu = {
+        open: true,
+        friend,
+        x: rect.right,
+        y: rect.bottom + 6
+      }
+    },
+
+    closeFriendMenu () {
+      this.friendMenu.open = false
+    },
+
+    fmProfile () {
+      const f = this.friendMenu.friend
+      this.closeFriendMenu()
+      if (f) { this.viewFriendProfile(f) }
+    },
+
+    fmMessage () {
+      const f = this.friendMenu.friend
+      this.closeFriendMenu()
+      if (f) { this.openDirectMessage(f) }
+    },
+
+    fmRemove () {
+      const f = this.friendMenu.friend
+      this.closeFriendMenu()
+      if (f) { this.removeFriend(f.friendId) }
+    },
+
+    async viewFriendProfile (friend) {
+      const statusText = friend.isOnline ? 'ออนไลน์' : 'ออฟไลน์'
+      await this.$swal({
+        title: friend.displayName || friend.fullname || 'โปรไฟล์เพื่อน',
+        html: `
+          <div style="text-align:left;line-height:1.9">
+            <div><b>สถานะ:</b> ${statusText}</div>
+            ${friend.email ? `<div><b>อีเมล:</b> ${friend.email}</div>` : ''}
+            ${friend.username ? `<div><b>ชื่อผู้ใช้:</b> ${friend.username}</div>` : ''}
+          </div>`,
+        confirmButtonText: 'ส่งข้อความ',
+        showCancelButton: true,
+        cancelButtonText: 'ปิด',
+        confirmButtonColor: '#7c6ff5'
+      }).then((r) => {
+        if (r.isConfirmed) { this.openDirectMessage(friend) }
+      })
+    },
+
+    onFriendStatusUpdate ({ friendId, status, lastSeen }) {
+      const friend = this.friends.find(f => f.friendId === friendId)
+      if (friend) {
+        friend.status = status
+        friend.isOnline = status === 'online'
+        friend.lastActive = lastSeen
+        this.updateFriendLists()
+      }
+    },
+
+    async onFriendRequest (payload) {
+      await this.loadFriendRequests()
+      const name = payload?.from?.displayName || 'มีผู้ใช้'
+      this.showNotification('คำขอเป็นเพื่อนใหม่', `${name} ส่งคำขอเป็นเพื่อนถึงคุณ`)
+      this.$swal({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: `👋 ${name} ส่งคำขอเป็นเพื่อน`,
+        showConfirmButton: false,
+        timer: 4000
+      })
+    },
+
+    async onFriendAccepted () {
+      await this.loadFriends()
+      this.$swal({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: '🎉 มีเพื่อนใหม่เพิ่มเข้ามาแล้ว',
+        showConfirmButton: false,
+        timer: 3000
+      })
+    },
+
+    async loadDMConversations () {
+      try {
+        const res = await this.$axios.$get(process.env.API_DM_CONVERSATIONS)
+        const list = res.result || []
+        this.dmConversations = list
+          .map(c => ({
+            ...c,
+            avatar: c.avatar ? this.resolveAsset(c.avatar) : null
+          }))
+          .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0))
+      } catch (err) {
+        // ไม่ critical
+      }
+    },
+
+    onIncomingDM (m) {
+      const isOpen =
+        this.$refs.dmModal &&
+        this.$refs.dmModal.showModal &&
+        this.selectedFriend &&
+        this.selectedFriend.friendId === m.friendId
+
+      // อัปเดตทันที (optimistic) — เด้ง badge + ดันขึ้นบนสุด ไม่ต้องรอ server
+      const idx = this.dmConversations.findIndex(c => c.friendId === m.friendId)
+      const conv = idx > -1 ? this.dmConversations[idx] : null
+      if (conv) {
+        conv.lastMessage = m.content
+        conv.lastMessageAt = m.createdAt || new Date().toISOString()
+        conv.lastFromMe = false
+        if (!isOpen) { conv.unreadCount = (conv.unreadCount || 0) + 1 }
+        if (idx > 0) {
+          this.dmConversations.splice(idx, 1)
+          this.dmConversations.unshift(conv)
+        }
+      }
+
+      // sync กับ server (ได้ชื่อ/avatar กรณีเป็นคนใหม่ที่ยังไม่มีในลิสต์)
+      this.loadDMConversations()
+
+      if (!isOpen) {
+        const name = conv ? conv.displayName : 'เพื่อน'
+        this.showNotification(`ข้อความใหม่จาก ${name}`, m.content)
+        this.$swal({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: `💬 ${name}: ${m.content.slice(0, 40)}`,
+          showConfirmButton: false,
+          timer: 4000
+        })
+      }
+    },
+
+    onDmRead (friendId) {
+      const conv = this.dmConversations.find(c => c.friendId === friendId)
+      if (conv) { conv.unreadCount = 0 }
+    },
+
+    onDmSent ({ friendId, content }) {
+      const idx = this.dmConversations.findIndex(c => c.friendId === friendId)
+      if (idx > -1) {
+        const conv = this.dmConversations[idx]
+        conv.lastMessage = content
+        conv.lastMessageAt = new Date().toISOString()
+        conv.lastFromMe = true
+        conv.unreadCount = 0
+        if (idx > 0) {
+          this.dmConversations.splice(idx, 1)
+          this.dmConversations.unshift(conv)
+        }
+      } else {
+        // สนทนาใหม่ที่ยังไม่มีในลิสต์ — ดึงจาก server
+        this.loadDMConversations()
+      }
+    },
+
+    resolveAsset (url) {
+      if (!url) { return null }
+      if (/^https?:\/\//.test(url)) { return url }
+      return (process.env.API_FILE_BASE || '') + url
+    },
+
+    setupIdleLogout () {
+      const LIMIT = 30 * 60 * 1000
+      this._idleReset = () => {
+        clearTimeout(this.idleTimer)
+        this.idleTimer = setTimeout(() => this.handleIdleLogout(), LIMIT)
+      }
+      this._idleEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+      this._idleEvents.forEach(e =>
+        window.addEventListener(e, this._idleReset, { passive: true })
+      )
+      this._idleReset()
+    },
+
+    async handleIdleLogout () {
+      ['token', 'userData', 'userStatus'].forEach((key) => {
+        localStorage.removeItem(key)
+        sessionStorage.removeItem(key)
+      })
+      await this.$swal({
+        icon: 'warning',
+        title: 'เซสชันหมดอายุ',
+        text: 'ไม่มีการใช้งานเป็นเวลานาน กรุณาเข้าสู่ระบบใหม่'
+      })
+      this.$router.push('/login')
     },
     async getProfile () {
       try {
@@ -1033,30 +1305,25 @@ export default {
       }
     },
 
-    startSessionTimeout () {
-      setTimeout(() => {
-        ['token', 'userData'].forEach((key) => { localStorage.removeItem(key); sessionStorage.removeItem(key) })
-        this.$swal({ icon: 'warning', title: 'เซสชันหมดอายุ', text: 'กรุณาเข้าสู่ระบบใหม่' }).then(() => this.$router.push('/'))
-      }, 30 * 60 * 1000)
-    },
-
     async loadFriends () {
       try {
         const res = await this.$axios.get(process.env.API_GET_ALL_FRIENDSHIP_ID)
         const friendsData = res.data.friends || []
-        const currentUserId = this.$store.state.user?._id || localStorage.getItem('userId')
-        const filteredFriends = friendsData.filter(friend => friend.friendId !== currentUserId)
+        const currentUserId = this.user?._id || this.$store.state.user?._id
+        const filteredFriends = friendsData.filter(friend => String(friend.friendId) !== String(currentUserId))
 
         this.friends = filteredFriends.map(friend => ({
           ...friend,
-          avatar: friend.avatar ? `${process.env.API_BASE_URL}${friend.avatar}` : null,
-          isOnline: friend.isOnline || false,
+          displayName: friend.displayName ||
+            [friend.firstName, friend.lastName].filter(Boolean).join(' ') ||
+            friend.username || 'เพื่อน',
+          avatar: friend.avatar ? this.resolveAsset(friend.avatar) : null,
+          isOnline: friend.isOnline || friend.status === 'online' || false,
           lastMessage: friend.lastMessage || null,
           unreadCount: friend.unreadCount || 0
         }))
 
-        this.onlineFriends = this.friends.filter(f => f.isOnline)
-        this.offlineFriends = this.friends.filter(f => !f.isOnline)
+        this.updateFriendLists()
       } catch (err) {
         this.$swal({
           icon: 'error',
@@ -1070,12 +1337,13 @@ export default {
       try {
         const res = await this.$axios.get(process.env.API_PENDING_FRIEND)
         this.friendRequests = (res.data.requests || []).map((r) => {
-          const requester = r.requester
-          const displayName = requester.displayName || `${requester.firstName || ''} ${requester.lastName || ''}`.trim() || requester.username || 'Unknown'
+          const requester = r.requester || {}
+          const displayName = requester.displayName || `${requester.firstName || ''} ${requester.lastName || ''}`.trim() || requester.username || 'ผู้ใช้'
           return {
             _id: r._id,
             userName: displayName,
-            avatar: requester.avatar,
+            userInitials: this.getInitials(displayName),
+            avatar: requester.avatar ? this.resolveAsset(requester.avatar) : null,
             requestedAt: r.requestedAt
           }
         })
@@ -1088,23 +1356,35 @@ export default {
       }
     },
     async searchUsers () {
-      if (!this.userSearchQuery.trim()) {
+      const q = this.userSearchQuery.trim()
+      if (!q) {
         this.searchResults = []
+        this.hasSearched = false
         return
       }
       this.isSearching = true
       try {
         const { data } = await this.$axios.get(process.env.API_SEARCH_FRIEND, {
-          params: { q: this.userSearchQuery }
+          params: { q }
         })
 
         const users = data.users || []
-        this.searchResults = users.map(u => ({
-          ...u,
-          friendStatus: u.friendStatus || 'none'
-        }))
+        this.searchResults = users.map((u) => {
+          const name = u.displayName || u.fullname || u.username || 'ผู้ใช้'
+          return {
+            _id: u._id,
+            username: u.username,
+            email: u.email || '',
+            avatar: u.avatar ? this.resolveAsset(u.avatar) : null,
+            displayName: name,
+            initials: this.getInitials(name),
+            isOnline: !!u.isOnline,
+            friendStatus: u.friendStatus || 'none',
+            friendshipId: u.friendshipId || null
+          }
+        })
       } catch (err) {
-        this.searchResults = [] || this.searchResults === null
+        this.searchResults = []
         this.$swal({
           icon: 'error',
           title: 'เกิดข้อผิดพลาด',
@@ -1112,90 +1392,108 @@ export default {
         })
       } finally {
         this.isSearching = false
+        this.hasSearched = true
       }
     },
 
     resetSearch () {
       this.isSearching = false
+      this.hasSearched = false
       this.userSearchQuery = ''
       this.searchResults = []
+    },
+    clearSearchInput () {
+      this.userSearchQuery = ''
+      this.hasSearched = false
+      this.searchResults = []
+      this.$nextTick(() => this.$refs.afSearch && this.$refs.afSearch.focus())
     },
     closeModal () {
       this.showAddFriend = false
       this.resetSearch()
     },
 
-    getFriendButtonClass (user) {
-      const base = 'friend-action-btn'
-      switch (user.friendStatus) {
-        case 'friends': return `${base} success`
-        case 'pending_sent': return `${base} secondary`
-        case 'pending_received': return `${base} warning`
-        default: return `${base} primary`
+    friendBtn (u) {
+      switch (u.friendStatus) {
+        case 'accepted':
+        case 'friends':
+          return { cls: 'is-friend', icon: 'fas fa-check', text: 'เป็นเพื่อนแล้ว', disabled: true }
+        case 'pending_sent':
+          return { cls: 'is-pending', icon: 'fas fa-clock', text: 'รอตอบรับ', disabled: true }
+        case 'pending_received':
+          return { cls: 'is-accept', icon: 'fas fa-user-check', text: 'ตอบรับคำขอ', disabled: false }
+        case 'rejected':
+          return { cls: 'is-add', icon: 'fas fa-user-plus', text: 'เพิ่มเพื่อน', disabled: false }
+        default:
+          return { cls: 'is-add', icon: 'fas fa-user-plus', text: 'เพิ่มเพื่อน', disabled: false }
       }
     },
 
-    getFriendButtonIcon (user) {
-      switch (user.friendStatus) {
-        case 'friends': return 'fas fa-check'
-        case 'pending_sent': return 'fas fa-clock'
-        case 'pending_received': return 'fas fa-user-plus'
-        default: return 'fas fa-user-plus'
+    handleFriendAction (u) {
+      if (u.friendStatus === 'pending_received') {
+        return this.acceptFriendFromSearch(u)
       }
+      return this.sendFriendRequest(u)
     },
 
-    getFriendButtonText (user) {
-      switch (user.friendStatus) {
-        case 'friends': return 'เพื่อนแล้ว'
-        case 'pending_sent': return 'ส่งคำขอแล้ว'
-        case 'pending_received': return 'ตอบรับ'
-        default: return 'เพิ่มเพื่อน'
+    // toast แบบไม่บล็อก — ไม่ต้องกด OK, โผล่เหนือ overlay (z-index จาก main.css)
+    friendToast (icon, title) {
+      this.$swal({
+        toast: true,
+        position: 'top-end',
+        icon,
+        title,
+        showConfirmButton: false,
+        timer: 2600,
+        timerProgressBar: true
+      })
+    },
+
+    async acceptFriendFromSearch (u) {
+      if (!u.friendshipId) {
+        this.friendToast('info', 'ตอบรับคำขอนี้ได้จากช่อง "เพื่อนของฉัน"')
+        return
+      }
+      this.sendingRequest = u._id
+      try {
+        await this.$axios.$post(process.env.API_POST_ACCEPT_FRIENDSHIP_ID.replace(':friendshipId', u.friendshipId))
+        this.$set(u, 'friendStatus', 'accepted')
+        await this.loadFriends()
+        this.friendRequests = this.friendRequests.filter(r => r._id !== u.friendshipId)
+        this.friendToast('success', `เป็นเพื่อนกับ ${u.displayName} แล้ว 🎉`)
+      } catch (err) {
+        this.friendToast('error', err.response?.data?.message || 'ไม่สามารถตอบรับคำขอได้')
+      } finally {
+        this.sendingRequest = null
       }
     },
 
     async sendFriendRequest (targetUser) {
-      if (targetUser.friendStatus !== 'none') { return }
+      if (!['none', 'rejected'].includes(targetUser.friendStatus)) { return }
       this.sendingRequest = targetUser._id
       try {
         await this.$axios.post(process.env.API_SEND_FRIEND, {
           recipientId: targetUser._id
         })
-        targetUser.friendStatus = 'pending_sent'
-        this.$swal({
-          icon: 'success',
-          title: 'สำเร็จ',
-          text: `ส่งคำขอเป็นเพื่อนให้ ${targetUser.displayName} แล้ว`
-        })
+        this.$set(targetUser, 'friendStatus', 'pending_sent')
+        this.friendToast('success', `ส่งคำขอเป็นเพื่อนให้ ${targetUser.displayName || 'ผู้ใช้'} แล้ว`)
       } catch (err) {
-        this.$swal({
-          icon: 'error',
-          title: 'ล้มเหลว',
-          text: 'ไม่สามารถส่งคำขอเป็นเพื่อนได้'
-        })
+        this.friendToast('error', err.response?.data?.message || 'ไม่สามารถส่งคำขอเป็นเพื่อนได้')
       } finally {
         this.sendingRequest = null
       }
     },
 
     async acceptFriend (requestId) {
+      const request = this.friendRequests.find(r => r._id === requestId)
       try {
-        await this.$axios.post(process.env.API_POST_ACCEPT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
-        const request = this.friendRequests.find(r => r._id === requestId)
-        if (request) {
-          this.onlineFriends.push({
-            _id: request._id,
-            fullname: request.userName,
-            initials: request.userInitials,
-            isOnline: true,
-            lastMessage: '',
-            unreadCount: 0
-          })
-          this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
-        }
+        await this.$axios.$post(process.env.API_POST_ACCEPT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
+        this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
+        await this.loadFriends()
         this.$swal({
           icon: 'success',
           title: 'สำเร็จ',
-          text: `ตอบรับคำขอเป็นเพื่อนกับ ${request.userName} แล้ว`
+          text: `ตอบรับคำขอเป็นเพื่อนกับ ${request ? request.userName : 'ผู้ใช้'} แล้ว`
         })
       } catch (err) {
         this.$swal({
@@ -1220,17 +1518,15 @@ export default {
         })
 
         if (confirmResult.isConfirmed) {
-          const response = await this.$axios.post(process.env.API_POST_REJECT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
+          await this.$axios.$post(process.env.API_POST_REJECT_FRIENDSHIP_ID.replace(':friendshipId', requestId))
           this.friendRequests = this.friendRequests.filter(r => r._id !== requestId)
-
-          if (response.status === 'success') {
-            await this.$swal({
-              title: 'สำเร็จ!',
-              text: 'คุณได้ทำการปฏิเสธคำขอเรียบร้อย',
-              icon: 'success'
-            })
-            window.location.reload()
-          }
+          await this.$swal({
+            title: 'สำเร็จ!',
+            text: 'คุณได้ทำการปฏิเสธคำขอเรียบร้อย',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          })
         }
       } catch (err) {
         this.$swal({
@@ -1254,17 +1550,16 @@ export default {
           confirmButtonColor: '#28a745'
         })
         if (confirmResult.isConfirmed) {
-          const response = await this.$axios.delete(process.env.API_DELETE_REMOVE_FRIENDSHIP_ID.replace(':friendId', friendId))
-          this.onlineFriends = this.onlineFriends.filter(f => f._id !== friendId)
-          this.offlineFriends = this.offlineFriends.filter(f => f._id !== friendId)
-          if (response.status === 'success') {
-            await this.$swal({
-              title: 'สำเร็จ!',
-              text: 'คุณได้ทำการลบเพื่อนของคุณเรียบร้อย',
-              icon: 'success'
-            })
-            window.location.reload()
-          }
+          await this.$axios.$delete(process.env.API_DELETE_REMOVE_FRIENDSHIP_ID.replace(':friendId', friendId))
+          this.friends = this.friends.filter(f => f.friendId !== friendId)
+          this.updateFriendLists()
+          await this.$swal({
+            title: 'สำเร็จ!',
+            text: 'คุณได้ทำการลบเพื่อนของคุณเรียบร้อย',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          })
         }
       } catch (err) {
         this.$swal({
@@ -1505,6 +1800,15 @@ export default {
 .friends-list {
   padding: 0 12px;
 }
+
+.friends-empty {
+  padding: 12px 14px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.friends-empty i { color: var(--coral); }
 
 .channel-item,
 .friend-item {
@@ -1922,6 +2226,178 @@ export default {
   cursor: not-allowed;
 }
 
+/* ---------- Add Friend overlay ---------- */
+.af-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 5, 10, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.af-panel {
+  width: 100%;
+  max-width: 460px;
+  max-height: min(82vh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hair);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.af-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, var(--coral), var(--violet));
+}
+
+.af-title {
+  margin: 0;
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-black);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.af-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.af-close:hover { background: rgba(255, 255, 255, 0.35); transform: rotate(90deg); }
+
+.af-search-row {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-hair);
+}
+
+.af-search-box {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.af-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.af-search-box input {
+  width: 100%;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-pill);
+  color: var(--text-cream);
+  font-size: var(--fs-body);
+  padding: 11px 36px 11px 38px;
+  outline: none;
+}
+
+.af-search-box input::placeholder { color: var(--text-muted); }
+.af-search-box input:focus { border-color: var(--coral); }
+
+.af-clear {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.af-search-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: linear-gradient(135deg, var(--coral), var(--coral-dark));
+  color: #fff;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.af-search-btn:not(:disabled):hover { filter: brightness(1.08); }
+.af-search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.af-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+}
+
+.af-state {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.af-state i { font-size: 34px; opacity: 0.7; }
+.af-state p { margin: 0; font-size: var(--fs-body); }
+
+.af-fade-enter-active,
+.af-fade-leave-active { transition: opacity 0.18s ease; }
+.af-fade-enter,
+.af-fade-leave-to { opacity: 0; }
+.af-fade-enter .af-panel,
+.af-fade-leave-to .af-panel { transform: scale(0.96); }
+.af-panel { transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@media (max-width: 520px) {
+  .af-overlay { padding: 0; align-items: flex-end; }
+  .af-panel { max-width: 100%; max-height: 90vh; border-radius: 18px 18px 0 0; }
+  .af-search-row { flex-wrap: wrap; }
+  .af-search-btn { width: 100%; justify-content: center; padding: 10px; }
+}
+
 /* ---------- Modals ---------- */
 .modal-header-bar {
   display: flex;
@@ -2042,47 +2518,115 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 320px;
+  max-height: 340px;
   overflow-y: auto;
+  padding-right: 2px;
 }
 
 .user-result {
   display: flex;
   align-items: center;
-  padding: 14px;
+  padding: 12px 14px;
   background: var(--bg-panel-raised);
   border-radius: var(--radius-md);
-  gap: 14px;
+  gap: 12px;
   border: 1px solid var(--border-hair);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
-.user-result:hover { border-color: rgba(255, 90, 69, 0.3); }
+.user-result:hover { border-color: rgba(255, 90, 69, 0.35); }
 
-.user-info h4 { margin: 0 0 4px 0; font-size: var(--fs-h3); font-weight: var(--fw-black); color: var(--text-cream); }
-.user-info p { margin: 0; font-size: var(--fs-small); color: var(--text-muted); }
+.user-result .user-avatar { position: relative; margin: 0; flex-shrink: 0; }
+.user-result .user-avatar img,
+.user-result .avatar-placeholder { width: 42px; height: 42px; font-size: var(--fs-small); }
 
-.friend-action-btn {
-  padding: 9px 15px;
-  border-radius: var(--radius-sm);
-  border: none;
-  font-size: var(--fs-eyebrow);
-  font-weight: var(--fw-black);
-  cursor: pointer;
-  transition: all 0.2s ease;
+.user-online-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg-panel-raised);
+}
+
+.user-result .user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-result .user-info h4 {
+  margin: 0 0 2px;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  color: var(--text-cream);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.user-result .user-info p {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.friend-add-btn {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
   white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
 }
 
-.friend-action-btn.primary { background: linear-gradient(135deg, var(--coral), var(--coral-dark)); color: white; }
-.friend-action-btn.secondary { background: rgba(255, 255, 255, 0.06); color: var(--text-body); border: 1px solid var(--border-hair); }
-.friend-action-btn.success { background: var(--green); color: white; }
-.friend-action-btn.warning { background: var(--amber); color: #2a1c00; }
-.friend-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.friend-add-btn:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.08); }
+.friend-add-btn:not(:disabled):active { transform: translateY(0); }
+
+.friend-add-btn.is-add {
+  background: linear-gradient(135deg, var(--coral), var(--coral-dark));
+  color: #fff;
+}
+
+.friend-add-btn.is-accept {
+  background: var(--green);
+  color: #fff;
+}
+
+.friend-add-btn.is-pending {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  border-color: var(--border-hair);
+  cursor: default;
+}
+
+.friend-add-btn.is-friend {
+  background: rgba(55, 200, 113, 0.14);
+  color: var(--green);
+  border-color: rgba(55, 200, 113, 0.35);
+  cursor: default;
+}
+
+@media (max-width: 480px) {
+  .user-result { flex-wrap: wrap; }
+  .user-result .user-info { flex-basis: calc(100% - 54px); }
+  .friend-add-btn { width: 100%; justify-content: center; margin-top: 4px; }
+}
 
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
@@ -2200,7 +2744,7 @@ export default {
 @media (max-width: 640px) {
   .workspace-icon { width: 38px; height: 38px; font-size: 16px; }
   .workspace-details h4 { font-size: 14px; }
-  .main-header { padding: 14px 16px; }
+  .main-header { padding: 72px 16px 14px; }
   .header-left h1 { font-size: 20px; }
   .rooms-container { padding: 12px 14px; }
   .room-card { padding: 20px; }
@@ -2269,53 +2813,71 @@ export default {
 .game-btn-sub { font-size: var(--fs-eyebrow); color: rgba(55, 200, 113, 0.75); text-transform: uppercase; letter-spacing: 0.04em; }
 .game-btn-arrow { color: rgba(55, 200, 113, 0.5); font-size: 11px; }
 
-.friend-actions { display: flex; align-items: center; justify-content: center; }
+.friend-actions { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-.friend-actions .btn-link {
+.friend-menu-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
   color: var(--text-muted);
-  text-decoration: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.friend-actions .btn-link:hover,
-.friend-actions .btn-link:focus {
-  color: #ffffff;
-  background: rgba(124, 108, 245, 0.22);
-  box-shadow: none;
-  outline: none;
-}
-
-.friend-actions .dropdown-menu {
-  background: var(--bg-panel-raised);
-  border: 1px solid var(--border-hair);
-  border-radius: var(--radius-md);
-  padding: 6px;
-  min-width: 170px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
-}
-
-.friend-actions .dropdown-item {
-  color: var(--text-cream);
-  border-radius: 10px;
-  padding: 9px 12px;
-  font-size: var(--fs-small) !important;
-  font-weight: var(--fw-medium);
-  display: flex;
-  align-items: center;
-  gap: 9px;
+  font-size: 13px;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.friend-actions .dropdown-item:hover { background: rgba(124, 108, 245, 0.18); color: #ffffff; }
-.friend-actions .dropdown-item i { width: 15px; text-align: center; font-size: 13px; opacity: 0.8; }
-.friend-actions .dropdown-item.text-danger { color: var(--coral) !important; }
-.friend-actions .dropdown-item.text-danger:hover { background: rgba(255, 90, 69, 0.16); color: #ff8a76 !important; }
+.friend-item:hover .friend-menu-btn { color: var(--text-body); }
+.friend-menu-btn:hover { background: rgba(124, 108, 245, 0.25); color: #fff; }
+
+.friend-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+}
+
+.friend-menu {
+  position: fixed;
+  min-width: 180px;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-hair);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: fm-pop 0.12s ease-out;
+}
+
+@keyframes fm-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.friend-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-cream);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  text-align: left;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.friend-menu button i { width: 15px; text-align: center; font-size: 13px; opacity: 0.85; }
+.friend-menu button:hover { background: rgba(124, 108, 245, 0.2); color: #fff; }
+.friend-menu button.danger { color: var(--coral); }
+.friend-menu button.danger:hover { background: rgba(255, 90, 69, 0.16); color: #ff8a76; }
 
 .dm-list { padding: 0 12px; }
 
@@ -2335,6 +2897,7 @@ export default {
 .dm-item {
   display: flex;
   align-items: center;
+  gap: 10px;
   padding: 8px 12px;
   margin: 2px 0;
   border-radius: 10px;
@@ -2344,31 +2907,33 @@ export default {
 
 .dm-item:hover { background: rgba(255, 255, 255, 0.06); }
 .dm-item.active { background: rgba(124, 108, 245, 0.2); }
+.dm-item.unread { background: rgba(255, 90, 69, 0.08); }
 
 .dm-avatar {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  overflow: hidden;
   flex-shrink: 0;
-  margin-right: 10px;
 }
 
-.dm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dm-avatar img,
+.dm-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
-.dm-unread-badge {
+.dm-online-dot {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background: var(--coral);
-  color: white;
-  border-radius: 10px;
-  padding: 2px 6px;
-  font-size: 10px;
-  font-weight: var(--fw-black);
-  min-width: 16px;
-  text-align: center;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg-panel);
 }
 
 .dm-info { flex: 1; min-width: 0; }
@@ -2377,10 +2942,15 @@ export default {
   display: block;
   font-size: var(--fs-body);
   font-weight: var(--fw-semibold);
-  color: var(--text-cream);
+  color: var(--text-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.dm-item.unread .dm-name {
+  color: var(--text-cream);
+  font-weight: var(--fw-black);
 }
 
 .dm-last-message {
@@ -2391,5 +2961,46 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+}
+
+.dm-item.unread .dm-last-message {
+  color: var(--text-body);
+  font-weight: var(--fw-semibold);
+}
+
+.dm-you-icon { font-size: 9px; margin-right: 4px; opacity: 0.6; }
+
+.dm-count {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--coral);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: var(--fw-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px rgba(255, 90, 69, 0.18);
+}
+
+/* Section header count badge (DM unread total, friend requests) */
+.hdr-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--coral);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--fw-black);
+  letter-spacing: 0;
+  vertical-align: middle;
 }
 </style>

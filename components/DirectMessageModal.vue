@@ -68,10 +68,11 @@
           >
           <button
             class="send-btn"
-            :disabled="!newMessage.trim()"
+            :disabled="!newMessage.trim() || sending"
             @click="sendMessage"
           >
-            <i class="fas fa-paper-plane" />
+            <i v-if="sending" class="fas fa-spinner fa-spin" />
+            <i v-else class="fas fa-paper-plane" />
           </button>
         </div>
       </div>
@@ -97,7 +98,8 @@ export default {
       showModal: false,
       messages: [],
       newMessage: '',
-      loading: false
+      loading: false,
+      sending: false
     }
   },
   computed: {
@@ -107,92 +109,97 @@ export default {
   },
   watch: {
     friend (newFriend) {
-      if (newFriend) {
+      if (newFriend && this.showModal) {
         this.loadMessages()
       }
+    }
+  },
+  mounted () {
+    if (this.$socket) {
+      this.$socket.on('dm:new', this.onIncomingDM)
+    }
+  },
+  beforeDestroy () {
+    if (this.$socket) {
+      this.$socket.off('dm:new', this.onIncomingDM)
     }
   },
   methods: {
     open () {
       this.showModal = true
+      this.messages = []
       this.loadMessages()
-      this.$nextTick(() => {
-        this.scrollToBottom()
-      })
     },
     closeModal () {
       this.showModal = false
       this.messages = []
       this.newMessage = ''
     },
-    loadMessages () {
+    mapMessage (m) {
+      const mine = String(m.senderId) === String(this.currentUserId)
+      return {
+        _id: m._id,
+        content: m.content,
+        senderId: String(m.senderId),
+        senderName: mine ? 'คุณ' : (this.friend?.displayName || this.friend?.fullname || 'เพื่อน'),
+        senderAvatar: mine ? null : (this.friend?.avatar || null),
+        createdAt: m.createdAt
+      }
+    },
+    async loadMessages () {
       if (!this.friend) { return }
 
       this.loading = true
       try {
-        // TODO: Replace with actual API call
-        // const response = await this.$axios.$get(`/api/dm/messages/${this.friend.friendId}`)
-        // this.messages = response.result || []
-
-        // Mock data for now
-        this.messages = [
-          {
-            _id: '1',
-            content: 'สวัสดีครับ!',
-            senderId: this.currentUserId,
-            senderName: 'คุณ',
-            senderAvatar: null,
-            createdAt: new Date(Date.now() - 3600000)
-          },
-          {
-            _id: '2',
-            content: 'สวัสดี! มีอะไรให้ช่วยไหม?',
-            senderId: this.friend.friendId,
-            senderName: this.friend.displayName,
-            senderAvatar: this.friend.avatar,
-            createdAt: new Date(Date.now() - 1800000)
-          }
-        ]
+        const url = process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        const res = await this.$axios.$get(url, { params: { page: 1, limit: 50 } })
+        const list = res.result?.messages || []
+        this.messages = list.map(m => this.mapMessage(m))
+        this.$emit('read', this.friend.friendId)
       } catch (error) {
-        console.error('Error loading DM messages:', error)
+        this.$bvToast && this.$bvToast.toast('โหลดข้อความไม่สำเร็จ', { variant: 'danger', solid: true })
       } finally {
         this.loading = false
+        this.$nextTick(() => this.scrollToBottom())
       }
     },
-    sendMessage () {
-      if (!this.newMessage.trim() || !this.friend) { return }
+    async sendMessage () {
+      const text = this.newMessage.trim()
+      if (!text || !this.friend || this.sending) { return }
 
-      const messageData = {
-        content: this.newMessage.trim(),
-        receiverId: this.friend.friendId,
-        senderId: this.currentUserId,
-        createdAt: new Date()
-      }
-
+      this.sending = true
+      this.newMessage = ''
       try {
-        // TODO: Replace with actual API call
-        // const response = await this.$axios.$post('/api/dm/send', messageData)
-        // this.messages.push(response.result)
-
-        // Mock sending for now
-        const mockMessage = {
-          _id: Date.now().toString(),
-          ...messageData,
-          senderName: 'คุณ',
-          senderAvatar: null
+        const url = process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        const res = await this.$axios.$post(url, { content: text })
+        if (res.result) {
+          this.messages.push(this.mapMessage(res.result))
+          this.$emit('sent', { friendId: this.friend.friendId, content: text })
+          this.$nextTick(() => this.scrollToBottom())
         }
-        this.messages.push(mockMessage)
-        this.newMessage = ''
-
-        this.$nextTick(() => {
-          this.scrollToBottom()
-        })
-
-        // TODO: Emit socket event
-        // this.$socket.emit('dm-message', messageData)
       } catch (error) {
-        console.error('Error sending DM:', error)
+        this.newMessage = text
+        this.$bvToast && this.$bvToast.toast(
+          error.response?.data?.message || 'ส่งข้อความไม่สำเร็จ',
+          { variant: 'danger', solid: true }
+        )
+      } finally {
+        this.sending = false
       }
+    },
+    onIncomingDM (m) {
+      if (!this.showModal || !this.friend) { return }
+      if (String(m.friendId) !== String(this.friend.friendId)) { return }
+      this.messages.push(this.mapMessage({ ...m, senderId: m.senderId }))
+      this.$nextTick(() => this.scrollToBottom())
+      // เปิดอ่านอยู่ → mark read ทันที (server + local) เพื่อไม่ให้ badge เด้ง
+      this.markRead()
+      this.$emit('read', this.friend.friendId)
+    },
+    markRead () {
+      if (!this.friend || !process.env.API_DM_READ) { return }
+      const url = process.env.API_DM_READ.replace(':friendId', this.friend.friendId)
+      this.$axios.$post(url).catch(() => {})
     },
     scrollToBottom () {
       if (this.$refs.messagesContainer) {
@@ -200,6 +207,7 @@ export default {
       }
     },
     getInitials (name) {
+      if (!name) { return '?' }
       return name
         .split(' ')
         .map(n => n.charAt(0))

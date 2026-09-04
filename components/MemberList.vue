@@ -27,102 +27,104 @@
       </button>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="member-status-panel">
-      <b-spinner small class="mr-2" />
-      <span>กำลังโหลดสมาชิก...</span>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="member-status-panel error">
-      <i class="fas fa-exclamation-circle" />
-      <span>โหลดรายชื่อสมาชิกไม่สำเร็จ</span>
-      <button class="retry-btn" @click="fetchMembers">
-        ลองใหม่
-      </button>
-    </div>
-
-    <template v-else>
-      <!-- Online Members Section -->
-      <div v-if="onlineMembers.length" class="member-section">
-        <div class="section-header">
-          <span class="section-title">ออนไลน์</span>
-          <span class="section-count">{{ onlineMembers.length }}</span>
-        </div>
-        <div class="members-grid">
-          <div
-            v-for="member in onlineMembers"
-            :key="member._id"
-            :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
-            @click="$emit('select-member', member)"
-          >
-            <div class="member-avatar-wrapper">
-              <div class="member-avatar">
-                <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
-                <span v-else>{{ getInitials(member.username) }}</span>
-              </div>
-              <span class="online-status" />
-            </div>
-            <div class="member-info">
-              <div class="member-name-wrapper">
-                <span class="member-name">{{ member.username }}</span>
-                <span v-if="member.isYou" class="you-badge">คุณ</span>
-              </div>
-              <div class="member-status-text">
-                <span class="status-dot online" />
-                <span>ออนไลน์</span>
-              </div>
-            </div>
-            <div class="member-actions">
-              <button class="member-action-btn" title="ส่งข้อความ" @click.stop="$emit('message-member', member)">
-                <i class="fas fa-comment" />
-              </button>
-            </div>
-          </div>
-        </div>
+    <div class="member-list-body">
+      <!-- Loading State -->
+      <div v-if="loading" class="member-status-panel">
+        <b-spinner small class="mr-2" />
+        <span>กำลังโหลดสมาชิก...</span>
       </div>
 
-      <!-- Offline Members Section -->
-      <div v-if="offlineMembers.length" class="member-section">
-        <div class="section-header">
-          <span class="section-title">ออฟไลน์</span>
-          <span class="section-count">{{ offlineMembers.length }}</span>
-        </div>
-        <div class="members-grid">
-          <div
-            v-for="member in offlineMembers"
-            :key="member._id"
-            :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
-            @click="$emit('select-member', member)"
-          >
-            <div class="member-avatar-wrapper">
-              <div class="member-avatar offline">
-                <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
-                <span v-else>{{ getInitials(member.username) }}</span>
+      <!-- Error State -->
+      <div v-else-if="error" class="member-status-panel error">
+        <i class="fas fa-exclamation-circle" />
+        <span>โหลดรายชื่อสมาชิกไม่สำเร็จ</span>
+        <button class="retry-btn" @click="fetchMembers">
+          ลองใหม่
+        </button>
+      </div>
+
+      <template v-else>
+        <!-- Online Members Section -->
+        <div v-if="onlineMembers.length" class="member-section">
+          <div class="section-header">
+            <span class="section-title">ออนไลน์</span>
+            <span class="section-count">{{ onlineMembers.length }}</span>
+          </div>
+          <div class="members-grid">
+            <div
+              v-for="member in onlineMembers"
+              :key="member._id"
+              :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
+              @click="$emit('select-member', member)"
+            >
+              <div class="member-avatar-wrapper">
+                <div class="member-avatar">
+                  <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
+                  <span v-else>{{ getInitials(member.username) }}</span>
+                </div>
+                <span class="online-status" />
               </div>
-            </div>
-            <div class="member-info">
-              <div class="member-name-wrapper">
-                <span class="member-name">{{ member.username }}</span>
-                <span v-if="member.isYou" class="you-badge">คุณ</span>
+              <div class="member-info">
+                <div class="member-name-wrapper">
+                  <span class="member-name">{{ member.username }}</span>
+                  <span v-if="member.isYou" class="you-badge">คุณ</span>
+                </div>
+                <div class="member-status-text">
+                  <span class="status-dot online" />
+                  <span>ออนไลน์</span>
+                </div>
               </div>
-              <div class="member-status-text">
-                <span class="status-dot offline" />
-                <span>{{ member.lastSeen ? formatLastSeen(member.lastSeen) : 'ออฟไลน์' }}</span>
+              <div class="member-actions">
+                <button class="member-action-btn" title="ส่งข้อความ" @click.stop="$emit('message-member', member)">
+                  <i class="fas fa-comment" />
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- No Results -->
-      <div v-if="members.length === 0" class="no-members">
-        <div class="no-members-icon">
-          <i class="fas fa-user-slash" />
+        <!-- Offline Members Section -->
+        <div v-if="offlineMembers.length" class="member-section">
+          <div class="section-header">
+            <span class="section-title">ออฟไลน์</span>
+            <span class="section-count">{{ offlineMembers.length }}</span>
+          </div>
+          <div class="members-grid">
+            <div
+              v-for="member in offlineMembers"
+              :key="member._id"
+              :class="['member-item', { 'is-you': member.isYou, 'active': member.isActive }]"
+              @click="$emit('select-member', member)"
+            >
+              <div class="member-avatar-wrapper">
+                <div class="member-avatar offline">
+                  <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
+                  <span v-else>{{ getInitials(member.username) }}</span>
+                </div>
+              </div>
+              <div class="member-info">
+                <div class="member-name-wrapper">
+                  <span class="member-name">{{ member.username }}</span>
+                  <span v-if="member.isYou" class="you-badge">คุณ</span>
+                </div>
+                <div class="member-status-text">
+                  <span class="status-dot offline" />
+                  <span>{{ member.lastSeen ? formatLastSeen(member.lastSeen) : 'ออฟไลน์' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <p>{{ searchQuery ? 'ไม่พบสมาชิกที่ค้นหา' : 'ยังไม่มีสมาชิกในห้องนี้' }}</p>
-      </div>
-    </template>
+
+        <!-- No Results -->
+        <div v-if="members.length === 0" class="no-members">
+          <div class="no-members-icon">
+            <i class="fas fa-user-slash" />
+          </div>
+          <p>{{ searchQuery ? 'ไม่พบสมาชิกที่ค้นหา' : 'ยังไม่มีสมาชิกในห้องนี้' }}</p>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -264,7 +266,6 @@ export default {
           me.online = true
         }
       } catch (err) {
-        console.error('Failed to fetch members:', err)
         this.members = []
         this.error = true
       } finally {
@@ -410,7 +411,29 @@ export default {
   background: var(--bg);
   color: var(--text);
   width: 100%;
+  overflow: hidden;
 }
+
+/* จุดสำคัญ: ให้ส่วนรายชื่อ scroll ในตัวเอง ไม่งั้นเนื้อหาที่ยาวเกิน
+   จะล้นออกไปโชว์พื้นหลัง cream ของ .member-sidebar ใน room.vue */
+.member-list-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+}
+
+.member-list-body > .member-section { flex-shrink: 0; }
+.member-list-body > .member-status-panel,
+.member-list-body > .no-members { flex: 1 0 auto; }
+
+.member-list-body::-webkit-scrollbar { width: 6px; }
+.member-list-body::-webkit-scrollbar-track { background: transparent; }
+.member-list-body::-webkit-scrollbar-thumb { background: var(--surface-raised); border-radius: 3px; }
 
 .member-list-header {
   display: flex;

@@ -1,30 +1,38 @@
 import axios from 'axios'
 
 export default async ({ store }) => {
-  if (process.client) {
-    const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('userData')
+  if (!process.client) { return }
 
-    if (token && userData) {
-      const parsedUser = JSON.parse(userData)
+  const token = localStorage.getItem('token')
+  const userData = localStorage.getItem('userData')
+  if (!token || !userData) { return }
 
-      try {
-        const response = await axios.patch(
-          `${process.env.API_URL}/user/${parsedUser._id}/status`,
-          { status: 'online' },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
+  let parsedUser
+  try {
+    parsedUser = JSON.parse(userData)
+  } catch (e) {
+    localStorage.removeItem('userData')
+    return
+  }
 
-        if (response.data?.result) {
-          parsedUser.status = response.data.result.status
-          parsedUser.lastLogin = response.data.result.lastLogin
-          localStorage.setItem('userData', JSON.stringify(parsedUser))
-        }
+  // hydrate store ทันที ไม่ต้องรอ network
+  store.commit('setUserData', parsedUser)
 
-        store.commit('setUserData', parsedUser)
-      } catch (err) {
-        console.error('Update online status failed:', err)
-      }
+  // แล้วค่อยแจ้ง backend ว่าออนไลน์ (ล้มเหลวได้โดยไม่กระทบการใช้งาน)
+  try {
+    const url = process.env.API_PATCH_USER_STATUS.replace(':id', parsedUser._id)
+    const response = await axios.patch(
+      url,
+      { status: 'online' },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+
+    if (response.data?.result) {
+      parsedUser.status = response.data.result.status || 'online'
+      localStorage.setItem('userData', JSON.stringify(parsedUser))
+      store.commit('setUserData', parsedUser)
     }
+  } catch (err) {
+    // non-fatal
   }
 }

@@ -473,7 +473,6 @@ export default {
           this.profile = res.result
         }
       } catch (err) {
-        console.error(err)
         this.isLoading = false
       }
     },
@@ -522,7 +521,6 @@ export default {
           }
         }
       } catch (err) {
-        console.error('Error:', err.response || err.message)
         await this.$swal({
           title: 'เกิดข้อผิดพลาด',
           text: err.response?.data?.message || 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
@@ -554,8 +552,6 @@ export default {
             currentPassword: this.password.currentPassword,
             newPassword: this.password.newPassword
           }
-
-          console.log('payload', payload)
 
           const response = await this.$axios.$post(process.env.API_EDIT_PASSWORD_BY_ID, payload)
 

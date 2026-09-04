@@ -39,7 +39,7 @@
 
     <div class="mini-scoreboard">
       <div v-for="score in leaderboard" :key="score.playerId" class="sb-row" :class="{ 'sb-me': score.playerId === myId }">
-        <span class="sb-name">{{ getPlayerName(score.playerId) }}</span>
+        <span class="sb-name">{{ score.username || getPlayerName(score.playerId) }}</span>
         <span class="sb-score">{{ score.score }}</span>
         <span class="sb-kills">☠ {{ score.kills }}</span>
       </div>
@@ -88,9 +88,9 @@
               <span>คะแนน</span>
               <span>ฆ่า</span>
             </div>
-            <div v-for="(p, i) in leaderboard" :key="p.username" class="lb-row" :class="{ 'lb-first': i === 0 }">
+            <div v-for="(p, i) in leaderboard" :key="p.playerId || i" class="lb-row" :class="{ 'lb-first': i === 0 }">
               <span class="lb-rank">#{{ i + 1 }}</span>
-              <span class="lb-name">{{ p.username }}</span>
+              <span class="lb-name">{{ p.username || getPlayerName(p.playerId) }}</span>
               <span class="lb-score">{{ p.score }}</span>
               <span class="lb-kills">{{ p.kills }}</span>
             </div>
@@ -345,10 +345,13 @@ export default {
       })
 
       this.$socket.on('playerDied', ({ playerId }) => {
-        if (playerId === this.myId) { this.isDead = true }
+        // isDead เป็น computed ที่คำนวณจาก gameState อยู่แล้ว
+        if (playerId === this.myId) {
+          this.$nextTick(() => this.$forceUpdate())
+        }
       })
 
-      this.$socket.on('zombieKilled', ({ playerId, zombieId, score, kills, isCombo, comboCount }) => {
+      this.$socket.on('zombieKilled', ({ playerId, score, kills, isCombo }) => {
         if (playerId === this.myId) {
           const now = Date.now()
           if (isCombo || (now - this.lastKillTime < this.comboTimeWindow)) {
@@ -376,18 +379,22 @@ export default {
 
       this.$socket.on('gameRestarted', () => {
         this.gameOver = false
-        this.isDead = false
         this.wave = 0
+        this.combo = 0
+        this.maxCombo = 0
         this.players = []
         this.zombies = []
         this.bullets = []
+        this.leaderboard = []
       })
     },
 
     _offAll () {
-      ['gameJoined', 'gameState', 'waveStart', 'playerDied',
-        'playerHit', 'zombieKilled', 'zombieHit', 'gameOver', 'gameRestarted']
-        .forEach(ev => this.$socket.off(ev))
+      const events = [
+        'gameJoined', 'gameState', 'waveCountdown', 'waveStart',
+        'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted'
+      ]
+      events.forEach(ev => this.$socket.off(ev))
     },
 
     _startCountdown () {
@@ -400,10 +407,6 @@ export default {
 
       if (this.waveTimer > 0) {
         this.waveTimer--
-
-        if (this.waveTimer === 30) {
-          console.log('⚠️ เวลาเหลือ 30 วินาที!')
-        }
 
         if (this.waveTimer <= 0) {
           this.$socket.emit('waveTimeUp', { roomId: this.roomId, wave: this.wave })

@@ -7,6 +7,18 @@
         <span class="loading-text">กำลังโหลดข้อความ...</span>
       </div>
 
+      <div v-if="!messages.length && !loadingMore" class="empty-chat">
+        <div class="empty-chat-icon">
+          <i class="fas fa-comment-dots" />
+        </div>
+        <p class="empty-chat-title">
+          ยังไม่มีข้อความในห้องนี้
+        </p>
+        <p class="empty-chat-sub">
+          เริ่มบทสนทนาแรกได้เลย 👋
+        </p>
+      </div>
+
       <div v-for="(group, date) in groupedMessages" :key="date" class="message-group">
         <div class="date-separator text-center my-3">
           <small class="date-pill">{{ formatDate(date) }}</small>
@@ -29,11 +41,11 @@
             />
 
             <div class="message-main" @contextmenu.prevent="showContextMenu($event, message)">
-              <div v-if="message.replyTo" class="reply-preview-outside" @click="scrollToMessage(message.replyTo.messageId)">
+              <div v-if="message.replyTo" class="reply-preview-outside" @click="scrollToMessage(message.replyTo._id || message.replyTo.messageId)">
                 <div class="reply-line" />
                 <div class="reply-info">
                   <div class="reply-username-outside">
-                    {{ message.replyTo.username }}
+                    <i class="fas fa-reply mr-1" />{{ message.replyTo.username }}
                   </div>
                   <div class="reply-text-outside">
                     {{ truncateText(message.replyTo.content, 60) }}
@@ -47,15 +59,11 @@
                 </div>
 
                 <div class="message-content">
-                  <div v-if="message.type === 'text'" class="message-text">
-                    {{ message.content }}
-                  </div>
+                  <div v-if="message.type === 'text'" class="message-text" v-text="message.content" />
 
                   <div v-else-if="message.type === 'image'" class="message-image">
                     <img :src="message.fileUrl" :alt="message.content" class="img-fluid rounded" @click="showImageModal(message.fileUrl)">
-                    <div v-if="message.content" class="image-caption mt-1">
-                      {{ message.content }}
-                    </div>
+                    <div v-if="message.content" class="image-caption mt-1" v-text="message.content" />
                   </div>
 
                   <div v-else-if="message.type === 'file'" class="message-file">
@@ -75,6 +83,7 @@
                 </div>
 
                 <div class="message-meta">
+                  <small v-if="message.edited" class="meta-edited">แก้ไขแล้ว</small>
                   <small class="meta-time">{{ formatMessageTime(message.createdAt) }}</small>
                   <span v-if="message.userId === currentUserId" class="message-status">
                     <i :class="getStatusIcon(message.status)" :title="getStatusTitle(message.status)" />
@@ -232,7 +241,7 @@ export default {
           if (!grouped[date]) { grouped[date] = [] }
           grouped[date].push(message)
         } catch (error) {
-          console.error('Error processing message date:', error, message)
+          // ข้อความรูปแบบวันที่ไม่ถูกต้อง — ข้ามการจัดกลุ่ม
         }
       })
       return grouped
@@ -310,7 +319,14 @@ export default {
       })
     },
     scrollToMessage (messageId) {
-      // Implement scroll to specific message
+      if (!messageId) { return }
+      const container = this.$refs.messageList
+      if (!container) { return }
+      const el = container.querySelector(`[data-message-id="${messageId}"]`)
+      if (!el) { return }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('flash-highlight')
+      setTimeout(() => el.classList.remove('flash-highlight'), 1600)
     },
     formatDate (dateString) {
       try {
@@ -498,6 +514,34 @@ export default {
 
 .loading-text { color: var(--text-muted); font-size: 0.85rem; }
 
+.empty-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 20px;
+  gap: 4px;
+}
+
+.empty-chat-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--violet);
+  margin-bottom: 10px;
+}
+
+.empty-chat-title { font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 0; }
+.empty-chat-sub { font-size: 0.85rem; margin: 0; }
+
 .date-pill {
   background: var(--surface-raised);
   color: var(--text-muted);
@@ -510,7 +554,7 @@ export default {
 }
 
 .message-wrapper {
-  margin-bottom: 8px;
+  margin-bottom: 18px;
   max-width: 100%;
 }
 
@@ -525,10 +569,11 @@ export default {
 }
 
 .message-main {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: min(58%, 380px);
+  max-width: min(64%, 420px);
 }
 
 .message-wrapper.own-message .message-bubble-container {
@@ -595,13 +640,9 @@ export default {
 .message-bubble {
   width: fit-content;
   max-width: 100%;
-  padding: 6px 10px;
-  line-height: 1;
+  padding: 8px 12px;
+  line-height: 1.45;
   box-shadow: var(--shadow-tight);
-}
-
-.message-bubble * {
-  line-height: 1.3;
 }
 
 .sender-name {
@@ -612,8 +653,8 @@ export default {
 }
 
 .message-text {
-  font-size: 0.82rem;
-  line-height: 0.55;
+  font-size: 0.9rem;
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -677,6 +718,18 @@ export default {
 .meta-time { opacity: 0.6; font-size: 0.68rem; line-height: 1; }
 .message-bubble.own .meta-time { color: rgba(255, 255, 255, 0.8); }
 
+.meta-edited { opacity: 0.55; font-size: 0.64rem; font-style: italic; margin-right: 2px; }
+.message-bubble.own .meta-edited { color: rgba(255, 255, 255, 0.75); }
+
+.flash-highlight {
+  animation: flash-highlight 1.6s ease-out;
+}
+
+@keyframes flash-highlight {
+  0%, 30% { background: rgba(139, 127, 251, 0.22); border-radius: 12px; }
+  100% { background: transparent; }
+}
+
 .message-status i { font-size: 0.72rem; opacity: 0.75; }
 .message-status i.read { color: var(--mint); opacity: 1; }
 
@@ -738,22 +791,50 @@ export default {
 
 .reaction-count { font-weight: 700; color: var(--text); }
 
+/* Floating hover toolbar — sits in the gap above the bubble, out of the way
+   of the message content, and takes no layout space so the list stays tight. */
 .quick-actions {
+  position: absolute;
+  top: -17px;
   display: flex;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-soft);
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transform: translateY(4px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 6;
 }
 
-.message-wrapper:hover .quick-actions { opacity: 1; }
+.message-main .quick-actions { right: 4px; }
+.message-wrapper.own-message .quick-actions { right: auto; left: 4px; }
+
+.message-wrapper:hover .quick-actions,
+.message-main:focus-within .quick-actions {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Touch devices have no hover — keep the actions reachable (subtle, always on) */
+@media (hover: none) {
+  .quick-actions {
+    opacity: 0.55;
+    transform: none;
+    pointer-events: auto;
+  }
+}
 
 .quick-action-btn {
   width: 26px;
   height: 26px;
   border-radius: 50%;
   border: none;
-  background: var(--surface-raised);
+  background: transparent;
   color: var(--text-muted);
   display: flex;
   align-items: center;

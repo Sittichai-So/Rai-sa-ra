@@ -447,18 +447,16 @@ export default {
       ]
     }
   },
-  computed: {
-    canJoin () {
-      return this.joinForm.username &&
-             this.joinForm.email &&
-             this.joinForm.agree
-    }
-  },
   mounted () {
     this.setupScrollAnimation()
     this.startChatAnimation()
-    this.updateOnlineUsers()
+    this.fetchStats()
+    this.statsInterval = setInterval(this.fetchStats, 30000)
     this.setupNavbarScroll()
+  },
+  beforeDestroy () {
+    clearInterval(this.statsInterval)
+    clearInterval(this.chatInterval)
   },
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
@@ -503,8 +501,35 @@ export default {
         }, 20)
       })
     },
+    async fetchStats () {
+      try {
+        const res = await this.$axios.$get(process.env.API_STATS)
+        const s = res.result
+        if (!s) { return }
+
+        this.onlineUsers = s.onlineUsers || 0
+
+        const next = [
+          { value: s.totalUsers || 0, label: 'สมาชิกทั้งหมด' },
+          { value: s.totalRooms || 0, label: 'ห้องแชท' },
+          { value: s.totalMessages || 0, label: 'ข้อความทั้งหมด' },
+          { value: s.onlineUsers || 0, label: 'ออนไลน์ตอนนี้' }
+        ]
+        this.stats = next
+
+        // ถ้า section สถิติถูก animate ไปแล้ว ให้ set ค่าจริงทันที
+        if (this.statsAnimated) {
+          next.forEach((stat, i) => {
+            this.$set(this.animatedStats, i, stat.value.toLocaleString())
+          })
+        }
+      } catch (err) {
+        // ใช้ค่า default ที่ตั้งไว้ต่อไป
+      }
+    },
+
     startChatAnimation () {
-      setInterval(() => {
+      this.chatInterval = setInterval(() => {
         if (this.chatMessages.length > 6) {
           this.chatMessages.shift()
         }
@@ -519,12 +544,6 @@ export default {
           }
         })
       }, 3000)
-    },
-    updateOnlineUsers () {
-      setInterval(() => {
-        const variation = Math.floor(Math.random() * 20) - 10
-        this.onlineUsers = Math.max(1200, Math.min(1300, this.onlineUsers + variation))
-      }, 5000)
     },
     scrollToSection (sectionId) {
       const element = document.getElementById(sectionId)

@@ -1,66 +1,52 @@
-<!-- eslint-disable vue/no-mutating-props -->
 <template>
-  <b-modal
-    id="room-settings-modal"
-    v-model="show"
-    title="ตั้งค่าห้องแชท"
-    size="md"
-    centered
-    hide-footer
-    modal-class="settings-modal"
-  >
-    <div class="settings-content">
-      <h6 class="settings-heading">
-        <i class="fas fa-palette mr-2" /> ธีมสีแชท
-      </h6>
-      <div class="theme-selector">
-        <div
-          v-for="theme in availableThemes"
-          :key="theme.id"
-          :class="['theme-option', { active: selectedTheme === theme.id }]"
-          @click="selectedTheme = theme.id"
-        >
-          <div class="theme-preview">
-            <div class="preview-bubble preview-own" :style="{ background: theme.ownBubble }" />
-            <div class="preview-bubble preview-other" :style="{ background: theme.otherBubble }" />
+  <transition name="rs-fade">
+    <div v-if="show" class="rs-overlay" @click.self="$emit('close')">
+      <div class="rs-panel" role="dialog" aria-modal="true">
+        <header class="rs-header">
+          <h3 class="rs-title">
+            <i class="fas fa-palette" /> ธีมสีแชท
+          </h3>
+          <button class="rs-close" type="button" aria-label="ปิด" @click="$emit('close')">
+            <i class="fas fa-times" />
+          </button>
+        </header>
+
+        <div class="rs-body">
+          <p class="rs-hint">
+            เลือกโทนสีของหน้าแชท — ตัวอย่างจะเปลี่ยนทันที
+          </p>
+          <div class="rs-theme-grid">
+            <button
+              v-for="theme in availableThemes"
+              :key="theme.id"
+              type="button"
+              :class="['rs-theme', { active: selectedTheme === theme.id }]"
+              @click="selectedTheme = theme.id"
+            >
+              <span class="rs-swatch">
+                <span class="rs-bubble own" :style="{ background: theme.ownBubble }" />
+                <span class="rs-bubble other" :style="{ background: theme.otherBubble }" />
+              </span>
+              <span class="rs-theme-text">
+                <span class="rs-theme-name">{{ theme.name }}</span>
+                <span class="rs-theme-desc">{{ theme.description }}</span>
+              </span>
+              <i class="fas fa-check-circle rs-check" />
+            </button>
           </div>
-          <div class="theme-info">
-            <div class="theme-name">
-              {{ theme.name }}
-            </div>
-            <div class="theme-description">
-              {{ theme.description }}
-            </div>
-          </div>
-          <i v-if="selectedTheme === theme.id" class="fas fa-check-circle theme-check" />
         </div>
-      </div>
 
-      <!-- <h6 class="settings-heading mt-4">
-        <i class="fas fa-image mr-2" /> พื้นหลังห้องแชท
-      </h6>
-      <div class="background-input">
-        <input
-          v-model="selectedBackground"
-          type="text"
-          class="bg-text-input"
-          placeholder="เช่น URL รูป หรือ #hex สีพื้นหลัง"
-        >
-        <small class="bg-hint">
-          รองรับทั้ง URL รูปภาพ และสี เช่น <code>#ffffff</code> หรือ <code>https://...jpg</code>
-        </small>
-      </div> -->
-
-      <div class="mt-4 d-flex justify-content-end action-row">
-        <button class="btn-ghost" @click="$emit('close')">
-          ปิด
-        </button>
-        <button class="btn-primary" @click="saveSettings">
-          บันทึก
-        </button>
+        <footer class="rs-footer">
+          <button class="rs-btn ghost" type="button" @click="$emit('close')">
+            ปิด
+          </button>
+          <button class="rs-btn primary" type="button" @click="saveSettings">
+            <i class="fas fa-check" /> บันทึก
+          </button>
+        </footer>
       </div>
     </div>
-  </b-modal>
+  </transition>
 </template>
 
 <script>
@@ -77,32 +63,41 @@ export default {
         return this.value?.theme || 'default'
       },
       set (val) {
-        const newValue = { ...(this.value || {}), theme: val }
-        this.$emit('input', newValue)
+        this.$emit('input', { ...(this.value || {}), theme: val })
       }
     },
-    selectedBackground: {
-      get () {
-        return this.value?.background || ''
-      },
-      set (val) {
-        const newValue = { ...(this.value || {}), background: val }
-        this.$emit('input', newValue)
-      }
+    selectedBackground () {
+      return this.value?.background || ''
     }
   },
+  watch: {
+    show (open) {
+      this.lockScroll(open)
+    }
+  },
+  mounted () {
+    this.lockScroll(this.show)
+  },
+  beforeDestroy () {
+    this.lockScroll(false)
+  },
   methods: {
+    lockScroll (locked) {
+      if (typeof document === 'undefined') { return }
+      document.body.style.overflow = locked ? 'hidden' : ''
+    },
     saveSettings () {
-      const settingsToSave = {
+      this.$emit('save', {
         theme: this.selectedTheme,
         background: this.selectedBackground
-      }
-      this.$emit('save', settingsToSave)
-      this.$bvToast.toast('บันทึกการตั้งค่าเรียบร้อยแล้ว', {
-        variant: 'success',
-        solid: true,
-        autoHideDelay: 2000
       })
+      if (this.$bvToast) {
+        this.$bvToast.toast('บันทึกธีมเรียบร้อยแล้ว', {
+          variant: 'success',
+          solid: true,
+          autoHideDelay: 2000
+        })
+      }
       this.$emit('close')
     }
   }
@@ -110,258 +105,222 @@ export default {
 </script>
 
 <style scoped>
-.settings-content {
+.rs-overlay {
   --ink: #101014;
-  --paper: #14141c;
   --cream: #f6f3ed;
+  --white: #ffffff;
   --coral: #ff5c4d;
   --violet: #7c6ff5;
   --violet-deep: #5b4fd6;
-  --yellow: #ffc94d;
-  --white: #ffffff;
-  --line: 3px;
-  --line-sm: 2px;
-  --shadow-sm: 4px 4px 0 var(--ink);
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --font-display: 'Kanit', sans-serif;
+  --line: 2px;
 
-  padding: 8px;
-  background: var(--cream);
+  /* !important: ต้องหลุดออกจากทุก container ของหน้า chat/room เสมอ */
+  position: fixed !important;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(16, 16, 20, 0.62);
+  backdrop-filter: blur(2px);
 }
 
-/* Modal Styling */
-:deep(.settings-modal .modal-content) {
-  background: var(--paper);
-  border: var(--line) solid var(--ink);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+.rs-panel {
+  width: 100%;
+  max-width: 440px;
+  max-height: min(84vh, 660px);
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 
-:deep(.settings-modal .modal-header) {
-  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
-  border-bottom: var(--line-sm) solid var(--ink);
-  padding: 18px 24px;
-}
-
-:deep(.settings-modal .modal-title) {
-  font-family: 'Kanit', sans-serif;
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: var(--white);
-}
-
-:deep(.settings-modal .modal-body) {
-  padding: 0;
-}
-
-.settings-heading {
-  font-family: 'Kanit', sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--ink);
+.rs-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: var(--line-sm) solid var(--ink);
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  border-bottom: 3px solid var(--ink);
 }
 
-.theme-selector {
+.rs-title {
+  margin: 0;
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--white);
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
-.theme-option {
+.rs-close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: var(--line) solid var(--ink);
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--white);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius-md);
-  background: var(--white);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 10px;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.theme-option:hover {
+.rs-close:hover { background: var(--coral); transform: rotate(90deg); }
+
+.rs-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px;
+}
+
+.rs-hint {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: rgba(16, 16, 20, 0.6);
+}
+
+.rs-theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.rs-theme {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  background: var(--white);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.rs-theme:hover {
   transform: translate(-2px, -2px);
   box-shadow: 3px 3px 0 var(--ink);
 }
 
-.theme-option.active {
+.rs-theme.active {
   background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
-  border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
-  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
-.theme-option.active .theme-name,
-.theme-option.active .theme-description {
-  color: var(--white);
-}
+.rs-theme.active .rs-theme-name,
+.rs-theme.active .rs-theme-desc { color: var(--white); }
 
-.theme-preview {
+.rs-swatch {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 3px;
 }
 
-.preview-bubble {
-  width: 30px;
-  height: 14px;
-  border-radius: 7px;
+.rs-bubble {
+  width: 26px;
+  height: 12px;
+  border-radius: 6px;
   border: 1.5px solid var(--ink);
 }
 
-.preview-own { align-self: flex-end; }
+.rs-bubble.own { align-self: flex-end; }
 
-.theme-info { flex: 1; min-width: 0; }
+.rs-theme-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
-.theme-name {
+.rs-theme-name {
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--ink);
-  font-family: 'Kanit', sans-serif;
-}
-
-.theme-description {
-  font-size: 0.8rem;
-  color: rgba(16, 16, 20, 0.65);
-}
-
-.theme-check {
-  color: var(--violet);
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.background-input { margin-top: 4px; }
-
-.bg-text-input {
-  width: 100%;
-  background: var(--white);
-  border: var(--line-sm) solid var(--ink);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-  font-size: 0.88rem;
-  color: var(--ink);
-  box-shadow: var(--shadow-xs);
-}
-
-.bg-text-input:focus { outline: none; border-color: var(--violet); }
-.bg-text-input::placeholder { color: rgba(16, 16, 20, 0.4); }
-
-.bg-hint {
-  display: block;
-  margin-top: 6px;
-  color: rgba(16, 16, 20, 0.55);
-  font-size: 0.76rem;
-}
-
-.bg-hint code {
-  background: var(--cream);
-  border: 1px solid var(--ink);
-  border-radius: 4px;
-  padding: 1px 5px;
-  color: var(--ink);
-}
-
-.action-row { gap: 10px; }
-
-.btn-ghost,
-.btn-primary {
-  font-family: 'Kanit', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  border-radius: 999px;
-  padding: 10px 24px;
-  border: 2px solid var(--ink);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-ghost {
-  background: var(--white);
-  color: var(--ink);
-}
-
-.btn-ghost:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
-  color: var(--white);
-}
-
-.btn-primary:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 var(--ink);
-}
-
-.btn-ghost:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: var(--shadow-xs);
-}
-
-.btn-primary {
-  background: var(--coral);
-  color: var(--white);
-  box-shadow: var(--shadow-xs);
-}
-
-.btn-primary:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary:active,
-.btn-ghost:active {
-  transform: translate(1px, 1px);
-  box-shadow: none;
-}
-</style>
-
-<style>
-.settings-modal .modal-content {
-  background: #f6f3ed;
-  border: 3px solid #101014;
-  border-radius: 20px;
-  box-shadow: 6px 6px 0 #101014;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.settings-modal .modal-header {
-  background: #7c6ff5;
-  border-bottom: 3px solid #101014;
-  padding: 16px 20px;
+.rs-theme-desc {
+  font-size: 0.72rem;
+  color: rgba(16, 16, 20, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.settings-modal .modal-title {
-  font-family: 'Space Grotesk', 'Noto Sans Thai', sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: #ffffff;
-  font-size: 1rem;
+.rs-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 0.9rem;
+  color: var(--white);
+  opacity: 0;
+  transition: opacity 0.12s ease;
 }
 
-.settings-modal .close {
-  color: #ffffff;
-  opacity: 0.9;
-  text-shadow: none;
+.rs-theme.active .rs-check { opacity: 1; }
+
+.rs-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--white);
+  border-top: 3px solid var(--ink);
 }
 
-.settings-modal .modal-body {
-  padding: 20px;
+.rs-btn {
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border-radius: 999px;
+  padding: 9px 22px;
+  border: var(--line) solid var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.settings-modal .modal-backdrop {
-  background: rgba(16, 16, 20, 0.6);
+.rs-btn.ghost { background: var(--cream); color: var(--ink); }
+.rs-btn.primary { background: var(--coral); color: var(--white); }
+
+.rs-btn:hover { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--ink); }
+.rs-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+
+.rs-fade-enter-active,
+.rs-fade-leave-active { transition: opacity 0.18s ease; }
+.rs-fade-enter,
+.rs-fade-leave-to { opacity: 0; }
+
+.rs-fade-enter .rs-panel,
+.rs-fade-leave-to .rs-panel { transform: scale(0.95); }
+.rs-panel { transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@media (max-width: 520px) {
+  .rs-overlay { padding: 10px; align-items: flex-end; }
+  .rs-panel { max-width: 100%; max-height: 88vh; border-radius: 18px; }
+  .rs-theme-grid { grid-template-columns: 1fr; gap: 8px; }
+  .rs-theme { padding: 10px; }
+  .rs-theme-desc { display: none; }
 }
 </style>
