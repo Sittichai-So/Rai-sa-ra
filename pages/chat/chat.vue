@@ -368,119 +368,144 @@
       </div>
     </main>
 
-    <b-modal
-      v-model="showCreateRoom"
-      hide-footer
-      size="lg"
-    >
-      <template #modal-header>
-        <div class="modal-header-bar">
-          <i class="fas fa-plus-circle mr-2" />
-          <h5 class="mb-0">
-            สร้างห้องแชทใหม่
-          </h5>
+    <transition name="af-fade">
+      <div v-if="showCreateRoom" class="cr-overlay" @click.self="closeCreateRoom">
+        <div class="cr-panel" role="dialog" aria-modal="true">
+          <header class="cr-header">
+            <h3 class="cr-title">
+              <i class="fas fa-plus-circle" /> สร้างห้องแชทใหม่
+            </h3>
+            <button class="af-close" type="button" aria-label="ปิด" @click="closeCreateRoom">
+              <i class="fas fa-times" />
+            </button>
+          </header>
+
+          <form class="cr-body" @submit.prevent="createRoom">
+            <div class="cr-field">
+              <label for="roomName">ชื่อห้อง</label>
+              <input
+                id="roomName"
+                v-model="newRoom.name"
+                type="text"
+                class="cr-input"
+                placeholder="เช่น คุยเรื่องเกม, ห้องรวมพล..."
+                maxlength="60"
+              >
+            </div>
+
+            <div class="cr-field">
+              <label for="roomCategory">หมวดหมู่</label>
+              <select id="roomCategory" v-model="newRoom.category" class="cr-input">
+                <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.text }}
+                </option>
+              </select>
+            </div>
+
+            <div class="cr-field">
+              <label>ประเภทห้อง</label>
+              <div class="cr-type-grid">
+                <button
+                  type="button"
+                  class="cr-type"
+                  :class="{ active: newRoom.type === 'public' }"
+                  @click="newRoom.type = 'public'"
+                >
+                  <i class="fas fa-globe-asia" />
+                  <span class="cr-type-name">สาธารณะ</span>
+                  <span class="cr-type-desc">ใครก็เข้าได้</span>
+                </button>
+                <button
+                  type="button"
+                  class="cr-type"
+                  :class="{ active: newRoom.type === 'private' }"
+                  @click="newRoom.type = 'private'"
+                >
+                  <i class="fas fa-lock" />
+                  <span class="cr-type-name">ส่วนตัว</span>
+                  <span class="cr-type-desc">ต้องมีรหัสผ่าน</span>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="newRoom.type === 'private'" class="cr-field">
+              <label for="roomPassword">รหัสผ่านห้อง</label>
+              <input
+                id="roomPassword"
+                v-model="newRoom.password"
+                type="password"
+                class="cr-input"
+                placeholder="ตั้งรหัสผ่านให้สมาชิกใช้เข้าห้อง"
+              >
+            </div>
+
+            <div class="cr-field">
+              <label for="roomTags">แท็ก <span class="cr-hint">(สูงสุด {{ limit }})</span></label>
+              <div class="cr-tags">
+                <span v-for="(tag, i) in newRoom.tags" :key="i" class="cr-tag">
+                  {{ tag }}
+                  <button type="button" aria-label="ลบแท็ก" @click="removeTag(i)"><i class="fas fa-times" /></button>
+                </span>
+                <input
+                  v-if="newRoom.tags.length < limit"
+                  id="roomTags"
+                  v-model="tagInput"
+                  type="text"
+                  class="cr-tag-input"
+                  placeholder="พิมพ์แล้วกด Enter"
+                  @keydown.enter.prevent="addTag"
+                  @keydown.188.prevent="addTag"
+                >
+              </div>
+            </div>
+
+            <div class="cr-field">
+              <label for="roomDescription">คำอธิบาย</label>
+              <textarea
+                id="roomDescription"
+                v-model="newRoom.description"
+                class="cr-input"
+                rows="3"
+                maxlength="300"
+                placeholder="ห้องนี้เกี่ยวกับอะไร..."
+              />
+            </div>
+
+            <div class="cr-field">
+              <label>สีไอคอนห้อง</label>
+              <div class="cr-swatches">
+                <button
+                  v-for="(gradient, index) in gradients"
+                  :key="index"
+                  type="button"
+                  class="cr-swatch"
+                  :class="{ active: newRoom.iconGradient === gradient }"
+                  :style="{ background: gradient }"
+                  :aria-label="'สีที่ ' + (index + 1)"
+                  @click="newRoom.iconGradient = newRoom.iconGradient === gradient ? '' : gradient"
+                />
+              </div>
+              <small class="cr-hint">ปล่อยว่างให้ระบบเลือกสีตามหมวดหมู่ให้อัตโนมัติ</small>
+            </div>
+          </form>
+
+          <footer class="cr-footer">
+            <button type="button" class="cr-btn cr-btn-ghost" @click="closeCreateRoom">
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              class="cr-btn cr-btn-primary"
+              :disabled="creatingRoom || !newRoom.name.trim()"
+              @click="createRoom"
+            >
+              <i v-if="creatingRoom" class="fas fa-spinner fa-spin" />
+              {{ creatingRoom ? 'กำลังสร้าง...' : 'สร้างห้อง' }}
+            </button>
+          </footer>
         </div>
-      </template>
-
-      <b-form
-        class="create-room-form"
-        @submit.stop.prevent="createRoom"
-      >
-        <b-form-group label="ชื่อช่องทาง" label-for="roomName">
-          <b-form-input
-            id="roomName"
-            v-model="newRoom.name"
-            type="text"
-            placeholder="ระบุชื่อช่องทาง"
-            required
-          />
-        </b-form-group>
-
-        <b-form-group label="หมวดหมู่" label-for="roomCategory">
-          <b-form-select
-            id="roomCategory"
-            v-model="newRoom.category"
-            :options="categoryOptions"
-            required
-          />
-        </b-form-group>
-
-        <b-form-group label="ประเภทห้อง" label-for="roomType">
-          <b-form-radio-group
-            id="roomType"
-            v-model="newRoom.type"
-            :options="[
-              { text: 'สาธารณะ (Public)', value: 'public' },
-              { text: 'ส่วนตัว (Private)', value: 'private' }
-            ]"
-          />
-        </b-form-group>
-
-        <b-form-group
-          v-if="newRoom.type === 'private'"
-          label="รหัสผ่านห้อง"
-          label-for="roomPassword"
-        >
-          <b-form-input
-            id="roomPassword"
-            v-model="newRoom.password"
-            type="password"
-            placeholder="กรอกรหัสผ่านสำหรับห้อง"
-            required
-          />
-        </b-form-group>
-
-        <div class="mb-3">
-          <label for="tags-limit">เพิ่ม Tags</label>
-          <b-form-tags
-            v-model="newRoom.tags"
-            input-id="tags-limit"
-            :limit="limit"
-            remove-on-delete
-            placeholder="เพิ่ม tags"
-          />
-        </div>
-
-        <b-form-group label="คำอธิบาย" label-for="roomDescription">
-          <b-form-textarea
-            id="roomDescription"
-            v-model="newRoom.description"
-            placeholder="อธิบายเกี่ยวกับช่องทางนี้"
-            rows="3"
-          />
-        </b-form-group>
-
-        <b-form-group label="สีไอคอน">
-          <div class="d-flex flex-wrap" style="gap: 10px;">
-            <div
-              v-for="(gradient, index) in gradients"
-              :key="index"
-              class="swatch"
-              :style="{
-                background: gradient,
-                border: newRoom.iconGradient === gradient ? '3px solid #FF5A45' : '2px solid rgba(255,255,255,0.18)'
-              }"
-              @click="newRoom.iconGradient = gradient"
-            />
-          </div>
-          <small class="text-muted">
-            เลือกสีพื้นหลังของไอคอน หรือปล่อยว่างให้ระบบกำหนดอัตโนมัติ
-          </small>
-        </b-form-group>
-
-        <div class="d-flex justify-content-end" style="gap: 15px;">
-          <b-button
-            class="btn-secondary"
-            @click="showCreateRoom = false"
-          >
-            ยกเลิก
-          </b-button>
-          <b-button type="submit" class="btn-primary">
-            สร้างช่องทาง
-          </b-button>
-        </div>
-      </b-form>
-    </b-modal>
+      </div>
+    </transition>
 
     <!-- Add Friend -->
     <transition name="af-fade">
@@ -578,32 +603,42 @@
       </div>
     </transition>
 
-    <b-modal
-      v-model="showJoinPasswordModal"
-      title="เข้าร่วมห้องส่วนตัว"
-      centered
-      hide-footer
-    >
-      <b-form @submit.stop.prevent="confirmJoinPrivateRoom">
-        <b-form-group label="กรุณากรอกรหัสผ่าน" label-for="joinPassword">
-          <b-form-input
-            id="joinPassword"
-            v-model="joinPassword"
-            type="password"
-            placeholder="รหัสผ่านห้อง"
-            required
-          />
-        </b-form-group>
-        <div class="form-actions">
-          <b-button class="btn-secondary" @click="showJoinPasswordModal = false">
-            ยกเลิก
-          </b-button>
-          <b-button type="submit" class="btn-primary">
-            เข้าร่วมห้อง
-          </b-button>
+    <transition name="af-fade">
+      <div v-if="showJoinPasswordModal" class="cr-overlay" @click.self="showJoinPasswordModal = false">
+        <div class="cr-panel cr-panel-sm" role="dialog" aria-modal="true">
+          <header class="cr-header">
+            <h3 class="cr-title">
+              <i class="fas fa-lock" /> เข้าร่วมห้องส่วนตัว
+            </h3>
+            <button class="af-close" type="button" aria-label="ปิด" @click="showJoinPasswordModal = false">
+              <i class="fas fa-times" />
+            </button>
+          </header>
+
+          <form class="cr-body" @submit.prevent="confirmJoinPrivateRoom">
+            <div class="cr-field">
+              <label for="joinPassword">รหัสผ่านห้อง</label>
+              <input
+                id="joinPassword"
+                v-model="joinPassword"
+                type="password"
+                class="cr-input"
+                placeholder="กรอกรหัสผ่านที่ได้รับจากเจ้าของห้อง"
+              >
+            </div>
+          </form>
+
+          <footer class="cr-footer">
+            <button type="button" class="cr-btn cr-btn-ghost" @click="showJoinPasswordModal = false">
+              ยกเลิก
+            </button>
+            <button type="button" class="cr-btn cr-btn-primary" @click="confirmJoinPrivateRoom">
+              เข้าร่วมห้อง
+            </button>
+          </footer>
         </div>
-      </b-form>
-    </b-modal>
+      </div>
+    </transition>
 
     <!-- Direct Message Modal -->
     <DirectMessageModal
@@ -697,7 +732,9 @@ export default {
       idleTimer: null,
       verifyBannerDismissed: false,
       resendingVerify: false,
-      avatarBroken: false
+      avatarBroken: false,
+      tagInput: '',
+      creatingRoom: false
     }
   },
   computed: {
@@ -787,6 +824,12 @@ export default {
       if (open) {
         this.$nextTick(() => this.$refs.afSearch && this.$refs.afSearch.focus())
       }
+    },
+    showCreateRoom (open) {
+      document.body.style.overflow = open ? 'hidden' : ''
+    },
+    showJoinPasswordModal (open) {
+      document.body.style.overflow = open ? 'hidden' : ''
     },
     myAvatar () {
       // มีรูปใหม่เข้ามา → ลองโหลดใหม่
@@ -1295,14 +1338,40 @@ export default {
       return !!room?.members?.some(m => m.userId === this.user._id)
     },
 
+    resetNewRoom () {
+      this.newRoom = { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [], iconGradient: '' }
+      this.tagInput = ''
+    },
+
+    closeCreateRoom () {
+      this.showCreateRoom = false
+      this.resetNewRoom()
+    },
+
+    addTag () {
+      const t = this.tagInput.trim().replace(/,+$/, '')
+      if (!t) { return }
+      if (this.newRoom.tags.length >= this.limit) { return }
+      if (!this.newRoom.tags.includes(t)) { this.newRoom.tags.push(t) }
+      this.tagInput = ''
+    },
+
+    removeTag (i) {
+      this.newRoom.tags.splice(i, 1)
+    },
+
     async createRoom () {
+      if (this.creatingRoom) { return }
       if (!this.newRoom.name.trim()) {
-        return this.$swal({
-          icon: 'error',
-          title: 'ข้อผิดพลาด',
-          text: 'กรุณาระบุชื่อห้อง'
-        })
+        return this.friendToast('error', 'กรุณาระบุชื่อห้อง')
       }
+      if (this.newRoom.type === 'private' && !this.newRoom.password) {
+        return this.friendToast('error', 'ห้องส่วนตัวต้องตั้งรหัสผ่าน')
+      }
+
+      // เก็บแท็กที่ยังพิมพ์ค้างในช่องด้วย
+      this.addTag()
+      this.creatingRoom = true
 
       try {
         const token = localStorage.getItem('token')
@@ -1315,13 +1384,12 @@ export default {
         })
 
         if (response.status === 'success') {
-          await this.$swal({
-            icon: 'success',
-            title: '🎉 สำเร็จ',
-            text: `สร้างห้อง "${payload.name}" สำเร็จ!`
-          })
+          const createdName = payload.name
+          this.showCreateRoom = false
+          this.resetNewRoom()
+          await this.getRoom()
+          this.friendToast('success', `สร้างห้อง "${createdName}" สำเร็จ 🎉`)
         }
-        await this.getRoom()
       } catch (err) {
         this.$swal({
           icon: 'error',
@@ -1329,8 +1397,7 @@ export default {
           text: err.response?.data?.message || 'สร้างห้องไม่สำเร็จ'
         })
       } finally {
-        this.showCreateRoom = false
-        this.newRoom = { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [], iconGradient: '' }
+        this.creatingRoom = false
       }
     },
 
@@ -2518,8 +2585,11 @@ export default {
 .af-fade-enter,
 .af-fade-leave-to { opacity: 0; }
 .af-fade-enter .af-panel,
-.af-fade-leave-to .af-panel { transform: scale(0.96); }
-.af-panel { transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.af-fade-leave-to .af-panel,
+.af-fade-enter .cr-panel,
+.af-fade-leave-to .cr-panel { transform: scale(0.96); }
+.af-panel,
+.cr-panel { transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 @media (max-width: 520px) {
   .af-overlay { padding: 0; align-items: flex-end; }
@@ -2528,95 +2598,234 @@ export default {
   .af-search-btn { width: 100%; justify-content: center; padding: 10px; }
 }
 
-/* ---------- Modals ---------- */
-.modal-header-bar {
+/* ---------- Create-room overlay ---------- */
+.cr-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 5, 10, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.cr-panel {
   width: 100%;
-  background: linear-gradient(90deg, var(--coral), var(--violet));
-  border-radius: 8px 8px 0 0;
-  padding: 14px 18px;
-  color: white;
-}
-
-.modal-header-bar i { font-size: 18px; margin-right: 10px; }
-.modal-header-bar h5 { font-size: var(--fs-h2); font-weight: var(--fw-black); }
-
-.create-room-modal-body,
-.add-friend-modal-body {
+  max-width: 520px;
+  max-height: min(88vh, 720px);
+  display: flex;
+  flex-direction: column;
   background: var(--bg-panel);
-  color: var(--text-cream);
-  border-radius: 16px;
+  border: 1px solid var(--border-hair);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
 }
 
-.create-room-form,
-.add-friend-form {
+.cr-panel-sm { max-width: 400px; }
+
+.cr-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, var(--coral), var(--violet));
+}
+
+.cr-title {
+  margin: 0;
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-black);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.cr-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font-size: var(--fs-body);
 }
 
-.form-group { display: flex; flex-direction: column; gap: 8px; }
-.form-group label { font-size: var(--fs-small); font-weight: var(--fw-bold); color: var(--text-cream); }
+.cr-field { display: flex; flex-direction: column; gap: 7px; }
 
-.form-input,
-.form-select,
-.form-textarea {
+.cr-field > label {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  color: var(--text-cream);
+}
+
+.cr-hint { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+.cr-input {
+  width: 100%;
   background: var(--bg-panel-raised);
   border: 1px solid var(--border-hair);
-  border-radius: 14px;
+  border-radius: 12px;
   color: var(--text-cream);
   font-size: var(--fs-body);
-  padding: 13px 15px;
+  font-family: inherit;
+  padding: 11px 14px;
   outline: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.form-input::placeholder,
-.form-textarea::placeholder { color: var(--text-muted); }
+textarea.cr-input { resize: vertical; min-height: 76px; }
 
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
+.cr-input::placeholder { color: var(--text-muted); }
+.cr-input:focus { border-color: var(--coral); background: rgba(255, 255, 255, 0.06); }
+
+select.cr-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23999' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.cr-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cr-type {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border-hair);
+  background: var(--bg-panel-raised);
+  color: var(--text-cream);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  text-align: left;
+}
+
+.cr-type i { font-size: 16px; color: var(--text-muted); margin-bottom: 2px; }
+.cr-type-name { font-weight: var(--fw-black); font-size: var(--fs-body); }
+.cr-type-desc { font-size: 11px; color: var(--text-muted); }
+
+.cr-type.active {
   border-color: var(--coral);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 92, 77, 0.12);
+}
+.cr-type.active i { color: var(--coral); }
+
+.cr-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  min-height: 44px;
+  align-items: center;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-hair);
+  border-radius: 12px;
 }
 
-.swatch {
-  width: 38px;
-  height: 38px;
+.cr-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: rgba(124, 111, 245, 0.22);
+  color: var(--text-cream);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cr-tag button {
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cr-tag-input {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  background: transparent;
+  color: var(--text-cream);
+  font-size: var(--fs-body);
+  font-family: inherit;
+  outline: none;
+  padding: 4px;
+}
+.cr-tag-input::placeholder { color: var(--text-muted); }
+
+.cr-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.cr-swatch {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   cursor: pointer;
-  transition: 0.2s ease;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  padding: 0;
+}
+.cr-swatch:hover { transform: scale(1.08); }
+.cr-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--coral);
 }
 
-.form-actions,
-.modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+.cr-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border-hair);
+  background: var(--bg-panel);
+}
 
-.btn-primary,
-.btn-secondary {
-  padding: 11px 22px;
-  border-radius: 14px;
+.cr-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
   font-size: var(--fs-small);
   font-weight: var(--fw-black);
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
   border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter 0.15s ease, background 0.15s ease;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--coral), var(--coral-dark));
-  color: white;
-}
-.btn-primary:hover { background: linear-gradient(135deg, var(--coral-dark), #C82E1F); }
+.cr-btn-ghost { background: var(--bg-panel-raised); color: var(--text-cream); }
+.cr-btn-ghost:hover { background: rgba(255, 255, 255, 0.08); }
 
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-body);
-  border: 1px solid var(--border-hair);
+.cr-btn-primary { background: linear-gradient(135deg, var(--coral), var(--violet)); color: #fff; }
+.cr-btn-primary:not(:disabled):hover { filter: brightness(1.08); }
+.cr-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 520px) {
+  .cr-overlay { padding: 0; align-items: flex-end; }
+  .cr-panel { max-width: 100%; max-height: 92vh; border-radius: 18px 18px 0 0; }
 }
-.btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
 
 .loading-state,
 .empty-state {
