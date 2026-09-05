@@ -100,12 +100,17 @@ export default {
             const userData = login.result
 
             localStorage.setItem('token', token)
-            localStorage.setItem('userData', JSON.stringify(userData))
-
             userData.status = 'online'
             localStorage.setItem('userData', JSON.stringify(userData))
 
             this.$store.commit('setUserData', userData)
+
+            // reconnect socket เพื่อให้ handshake ส่ง token ใหม่ (server verify ที่ io.use)
+            if (this.$socket) {
+              this.$socket.disconnect()
+              this.$socket.connect()
+            }
+
             this.$router.push('/chat/chat')
           }, 1000)
         } else {

@@ -9,19 +9,20 @@ export default (ctx, inject) => {
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000
+    reconnectionDelayMax: 5000,
+    // ส่ง JWT ไปด้วยทุกครั้งที่ (re)connect — server verify ที่ io.use()
+    auth: (setAuth) => {
+      let token = null
+      try {
+        token = localStorage.getItem('token')
+      } catch (e) {}
+      setAuth({ token })
+    }
   })
 
-  // ประกาศตัวตนใหม่ทุกครั้งที่ (re)connect เพื่อให้ server ผูก socket กับ userId
+  // ประกาศตัวตนใหม่ทุกครั้งที่ (re)connect
   const identify = () => {
-    try {
-      const raw = localStorage.getItem('userData')
-      if (!raw) { return }
-      const user = JSON.parse(raw)
-      if (user && user._id) {
-        socket.emit('identify', { userId: user._id })
-      }
-    } catch (e) {}
+    socket.emit('identify')
   }
   socket.on('connect', identify)
 

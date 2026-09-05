@@ -1303,8 +1303,12 @@ export default {
       try {
         const result = await this.$swal({ title: 'ยืนยันการออกจากระบบ', text: 'คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', cancelButtonColor: '#6c757d', confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก' })
         if (result.isConfirmed) {
-          this.$socket?.emit('statusChanged', { userId: this.user._id, status: 'offline' });
+          this.$socket?.emit('statusChanged', { status: 'offline' });
           ['authPayrollToken', 'token', 'userData', 'userStatus'].forEach(key => localStorage.removeItem(key))
+          if (this.$socket) {
+            this.$socket.disconnect()
+            this.$socket.connect()
+          }
           this.$router.push('/')
         }
       } catch (err) {
