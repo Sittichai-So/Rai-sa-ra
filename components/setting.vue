@@ -57,13 +57,22 @@
               </div>
             </div>
 
+            <input
+              ref="avatarInput"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              hidden
+              @change="onAvatarSelected"
+            >
+
             <div v-if="!editingProfile" class="profile-view">
               <div class="profile-avatar">
                 <div class="avatar-circle">
-                  <i class="fas fa-user" />
+                  <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img">
+                  <i v-else class="fas fa-user" />
                 </div>
-                <b-button class="avatar-edit-btn">
-                  <i class="fas fa-camera" />
+                <b-button class="avatar-edit-btn" :disabled="uploadingAvatar" @click="pickAvatar">
+                  <i :class="uploadingAvatar ? 'fas fa-spinner fa-spin' : 'fas fa-camera'" />
                 </b-button>
               </div>
 
@@ -83,6 +92,10 @@
                 <div class="info-card">
                   <label>เบอร์โทรศัพท์</label>
                   <p>{{ profile.phoneNumber }}</p>
+                </div>
+                <div class="info-card info-card-wide">
+                  <label>แนะนำตัว</label>
+                  <p>{{ profile.bio || '— ยังไม่ได้เพิ่มคำแนะนำตัว —' }}</p>
                 </div>
               </div>
 
@@ -200,6 +213,26 @@
                         placeholder="กรอกอีเมล"
                       />
                     </b-input-group>
+                  </b-form-group>
+                </b-col>
+
+                <b-col cols="12">
+                  <b-form-group
+                    label="แนะนำตัว (bio)"
+                    label-for="input-bio"
+                    class="mb-4"
+                  >
+                    <b-form-textarea
+                      id="input-bio"
+                      v-model="profile.bio"
+                      placeholder="เล่าเกี่ยวกับตัวคุณสั้น ๆ..."
+                      rows="3"
+                      max-rows="6"
+                      :state="bioState"
+                    />
+                    <small class="form-text text-muted">
+                      {{ (profile.bio || '').length }}/500 ตัวอักษร
+                    </small>
                   </b-form-group>
                 </b-col>
               </b-row>
@@ -413,6 +446,7 @@ export default {
         text: 'รหัสผ่านอ่อนแอ'
       },
       profile: [],
+      uploadingAvatar: false,
       showPassword: false,
       showConfirmPassword: false,
       password: {
@@ -423,6 +457,17 @@ export default {
     }
   },
   computed: {
+    avatarUrl () {
+      const a = this.profile && this.profile.avatar
+      if (!a) {
+        return ''
+      }
+      return /^https?:\/\//.test(a) ? a : (process.env.API_FILE_BASE || '') + a
+    },
+    bioState () {
+      const len = (this.profile && this.profile.bio ? this.profile.bio : '').length
+      return len > 500 ? false : null
+    },
     isPasswordValid () {
       const { currentPassword, newPassword, passwordConfirm } = this.password
       if (!currentPassword || !newPassword || !passwordConfirm) {
@@ -480,6 +525,60 @@ export default {
       this.activeMenu = menu
       this.resetForms()
     },
+    pickAvatar () {
+      this.$refs.avatarInput.click()
+    },
+    async onAvatarSelected (e) {
+      const file = e.target.files && e.target.files[0]
+      e.target.value = ''
+      if (!file) {
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        this.$swal({ icon: 'error', title: 'ไฟล์ไม่ถูกต้อง', text: 'กรุณาเลือกไฟล์รูปภาพ' })
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        this.$swal({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'รูปโปรไฟล์ต้องไม่เกิน 5MB' })
+        return
+      }
+
+      this.uploadingAvatar = true
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const up = await this.$axios.$post(process.env.API_UPLOAD_FILE, fd)
+        const url = up.result && up.result.url
+        if (!url) {
+          throw new Error('ไม่ได้รับ URL รูปจากเซิร์ฟเวอร์')
+        }
+
+        await this.$axios.$post(process.env.API_EDIT_PROFILE_BY_ID, { avatar: url })
+        this.$set(this.profile, 'avatar', url)
+        this.syncAvatarToSession(url)
+        this.$swal({ icon: 'success', title: 'อัปเดตรูปโปรไฟล์แล้ว', timer: 1600, showConfirmButton: false })
+      } catch (err) {
+        this.$swal({
+          icon: 'error',
+          title: 'อัปโหลดไม่สำเร็จ',
+          text: err.response?.data?.message || err.message || 'ลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.uploadingAvatar = false
+      }
+    },
+    syncAvatarToSession (url) {
+      try {
+        const raw = localStorage.getItem('userData')
+        if (!raw) {
+          return
+        }
+        const data = JSON.parse(raw)
+        data.avatar = url
+        localStorage.setItem('userData', JSON.stringify(data))
+        this.$store.commit('setUserData', data)
+      } catch (e) {}
+    },
     resetForms () {
       this.editingProfile = false
       this.editingPassword = false
@@ -504,6 +603,7 @@ export default {
           })
 
           if (response.status === 'success') {
+            this.syncAvatarToSession(this.profile.avatar || null)
             await this.$swal({
               title: 'แก้ไขข้อมูลสำเร็จ',
               text: 'ข้อมูลของคุณแก้ไขเรียบร้อยแล้ว',
@@ -846,6 +946,22 @@ export default {
   font-size: 48px;
   color: white;
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info-card-wide {
+  grid-column: 1 / -1;
+}
+
+.info-card-wide p {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .avatar-edit-btn {
