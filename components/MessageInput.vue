@@ -198,11 +198,13 @@ export default {
 .message-input-container {
   --ink: #101014;
   --paper-soft: #1b1b25;
+  --surface-raised: #262636;
   --cream: #f6f3ed;
   --coral: #ff5c4d;
   --violet: #7c6ff5;
   --yellow: #ffc94d;
   --white: #ffffff;
+  --field-text: #f3f1ec;
   --line: 3px;
   --line-sm: 2px;
   --shadow-sm: 4px 4px 0 var(--ink);
@@ -222,12 +224,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--cream);
-  border: var(--line-sm) solid var(--ink);
+  background: var(--surface-raised);
+  border: var(--line-sm) solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
   padding: 8px 10px 8px 12px;
   margin-bottom: 10px;
-  box-shadow: var(--shadow-xs);
   overflow: hidden;
 }
 
@@ -261,7 +262,7 @@ export default {
 
 .reply-snippet {
   font-size: 0.8rem;
-  color: rgba(16, 16, 20, 0.62);
+  color: rgba(243, 241, 236, 0.6);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -304,17 +305,15 @@ export default {
 .input-wrapper {
   display: flex;
   align-items: flex-end;
-  background: var(--white);
-  border: var(--line) solid var(--ink);
+  background: var(--surface-raised);
+  border: var(--line-sm) solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-pill);
   padding: 6px 8px 6px 18px;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .input-wrapper:focus-within {
-  box-shadow: 6px 6px 0 var(--violet);
-  transform: translate(-1px, -1px);
+  border-color: var(--violet);
 }
 
 .has-reply .input-wrapper {
@@ -337,7 +336,7 @@ export default {
   max-height: 120px;
   overflow-y: auto;
   flex: 1;
-  color: var(--ink);
+  color: var(--field-text);
   font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
   box-shadow: none !important;
 }
@@ -348,7 +347,7 @@ export default {
 }
 
 .message-input::placeholder {
-  color: rgba(16, 16, 20, 0.4);
+  color: rgba(243, 241, 236, 0.4);
 }
 
 .message-input::-webkit-scrollbar { width: 4px; }
@@ -380,65 +379,59 @@ export default {
 }
 
 .action-btn.attach-btn {
-  background: var(--cream);
-  border: var(--line-sm) solid var(--ink);
-  color: var(--ink);
+  background: transparent;
+  border: none;
+  color: rgba(243, 241, 236, 0.55);
   cursor: pointer;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  margin-right: 6px;
   flex-shrink: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .action-btn.attach-btn:hover:not(:disabled) {
-  background: var(--yellow);
-  transform: translate(-1px, -1px);
-  box-shadow: var(--shadow-xs);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--field-text);
 }
 
 .action-btn.attach-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .send-btn {
-  background: var(--cream);
-  border: var(--line-sm) solid var(--ink);
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(243, 241, 236, 0.5);
   cursor: pointer;
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 8px;
+  margin-left: 6px;
   flex-shrink: 0;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .send-btn.active {
   background: var(--coral);
   color: var(--white);
-  box-shadow: var(--shadow-sm);
 }
 
 .send-btn.active:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 var(--ink);
+  transform: scale(1.06);
 }
 
 .send-btn.active:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+  transform: scale(0.96);
 }
 
 .send-btn:disabled {
-  opacity: 0.55;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .send-btn i { font-size: 1.05rem; }

@@ -5,7 +5,7 @@
     centered
     hide-footer
     hide-header
-    size="xl"
+    size="lg"
     modal-class="modern-settings-modal"
     body-class="p-0"
   >
@@ -776,14 +776,15 @@ export default {
 
 .settings-body {
   display: flex;
-  min-height: 550px;
+  min-height: 440px;
   background: var(--cream);
 }
 
 .settings-sidebar {
-  width: 300px;
+  width: 240px;
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.5);
-  padding: 20px 16px;
+  padding: 18px 14px;
   border-right: var(--line-sm) solid var(--ink);
 }
 
@@ -796,8 +797,8 @@ export default {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 11px 12px;
   background: var(--white);
   border: 2px solid var(--ink);
   border-radius: var(--radius-md);
@@ -805,7 +806,7 @@ export default {
   transition: all 0.2s ease;
   text-align: left;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .nav-item:hover {
@@ -821,15 +822,15 @@ export default {
 }
 
 .nav-icon {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--violet);
   border: 2px solid var(--ink);
-  border-radius: 12px;
-  font-size: 1.2rem;
+  border-radius: 10px;
+  font-size: 1rem;
   flex-shrink: 0;
   color: white;
   box-shadow: 2px 2px 0 var(--ink);
@@ -849,12 +850,12 @@ export default {
 
 .nav-label {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-family: 'Kanit', sans-serif;
 }
 
 .nav-desc {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   opacity: 0.75;
 }
 
@@ -871,9 +872,10 @@ export default {
 
 .settings-content {
   flex: 1;
-  padding: 28px;
+  min-width: 0;
+  padding: 22px 24px;
   overflow-y: auto;
-  max-height: 620px;
+  max-height: 74vh;
   background: var(--cream);
 }
 
@@ -901,29 +903,29 @@ export default {
 }
 
 .icon-wrapper {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   border: 2px solid var(--ink);
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   flex-shrink: 0;
   box-shadow: 3px 3px 0 var(--ink);
 }
 
 .section-header h4 {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px 0;
   color: #111827;
 }
 
 .section-header p {
-  font-size: 18px;
+  font-size: 13px;
   color: #6b7280;
   margin: 0;
 }
@@ -989,30 +991,30 @@ export default {
 
 .profile-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .info-card {
   background: #f9fafb;
-  padding: 20px;
+  padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
 }
 
 .info-card label {
   display: block;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: #6b7280;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .info-card p {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 500;
   color: #111827;
   margin: 0;

@@ -20,7 +20,7 @@ export default {
 <style>
 
 html {
-  font-size: 22px !important;
+  font-size: 16px;
   word-spacing: 1px;
   -ms-text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
@@ -34,7 +34,7 @@ body{
   position: relative;
   font-family: 'thai_sans_literegular';
   background-color: #f5f8fa;
-  font-size: 22px !important;
+  font-size: 1rem;
   min-height:100vh;
 }
 
@@ -49,19 +49,19 @@ body{
 }
 
 .invalid-feedback{
-  font-size: 20px;
+  font-size: 0.875rem;
 }
 
 .custom-select {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .form-control {
-  font-size: 22px;
+  font-size: 1rem;
 }
 
 .container {
-  max-width: 85%;
+  max-width: 1200px;
 }
 
 .zoom {

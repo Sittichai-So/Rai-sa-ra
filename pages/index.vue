@@ -85,7 +85,6 @@
             <span class="hero-stat-badge">
               <span class="live-dot" />ออนไลน์ตอนนี้
             </span>
-            <span class="arrow-btn">↗</span>
           </div>
           <div class="hero-stat-value">
             {{ onlineUsers.toLocaleString() }} คน
@@ -120,7 +119,6 @@
                   <div class="feature-icon">
                     <i :class="feature.icon" />
                   </div>
-                  <span class="arrow-btn">↗</span>
                 </div>
                 <b-card-title class="feature-title">
                   {{ feature.title }}
@@ -228,7 +226,6 @@
             class="mb-4"
           >
             <div class="stat-item" :class="'tone-' + (index % 4)">
-              <span class="arrow-btn stat-arrow">↗</span>
               <span
                 class="stat-number d-block"
                 :data-target="stat.value"
@@ -887,20 +884,6 @@ i.fa-solid {
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
 }
 
-.arrow-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #121218;
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  border: 2px solid #000;
-}
-
 .hero-stat-value {
   font-size: 28px;
   font-weight: 800;
@@ -1168,15 +1151,6 @@ i.fa-solid {
   background: #1c1c26 !important;
   color: #f6f3ed !important;
   border-color: rgba(255, 255, 255, 0.2);
-}
-
-.stat-arrow {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 30px;
-  height: 30px;
-  font-size: 14px;
 }
 
 .stat-number {
