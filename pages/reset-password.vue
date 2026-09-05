@@ -89,7 +89,6 @@ export default {
   head () {
     return {
       link: [
-        { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap' }
       ]
     }
@@ -126,7 +125,18 @@ export default {
 </script>
 
 <style scoped>
-* {
+/* ตั้งฟอนต์ที่คอนเทนต์ ไม่ใช้ `*` เพื่อไม่ให้ทับ font-family ของไอคอน Font Awesome (โหลดจาก CSS กลาง) */
+.auth-page,
+.auth-page h1,
+.auth-page h2,
+.auth-page h3,
+.auth-page p,
+.auth-page span,
+.auth-page label,
+.auth-page input,
+.auth-page button,
+.auth-page a,
+.auth-page small {
   font-family: 'Kanit', sans-serif;
 }
 

@@ -42,7 +42,7 @@
             </h4>
 
             <b-row>
-              <b-col>
+              <b-col cols="12" sm="6">
                 <validation-provider v-slot="validationContext" name="firstName" :rules="{ required: true }">
                   <b-form-group label="ชื่อ" label-for="regFirstName">
                     <b-form-input
@@ -56,7 +56,7 @@
                 </validation-provider>
               </b-col>
 
-              <b-col>
+              <b-col cols="12" sm="6">
                 <validation-provider v-slot="validationContext" name="lastName" :rules="{ required: true }">
                   <b-form-group label="นามสกุล" label-for="regLastName">
                     <b-form-input
@@ -72,7 +72,7 @@
             </b-row>
 
             <b-row>
-              <b-col>
+              <b-col cols="12" sm="6">
                 <validation-provider v-slot="validationContext" name="phoneNumber" :rules="{ required: true, min: 10, max: 10, MobileValidate:true}">
                   <b-form-group label="เบอร์โทรศัพท์" label-for="regPhoneNumber">
                     <b-form-input
@@ -88,7 +88,7 @@
                 </validation-provider>
               </b-col>
 
-              <b-col>
+              <b-col cols="12" sm="6">
                 <validation-provider v-slot="validationContext" name="email" :rules="{ required: true, email: true }">
                   <b-form-group label="อีเมล" label-for="regEmail">
                     <b-form-input
@@ -143,7 +143,7 @@
             </validation-provider>
 
             <b-row>
-              <b-col>
+              <b-col cols="12" sm="6">
                 <validation-provider v-slot="validationContext" name="password" :rules="{ required: true, min: 8, regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/ }">
                   <b-form-group label="Password" label-for="regPass">
                     <b-input-group>
@@ -178,7 +178,7 @@
                 </validation-provider>
               </b-col>
 
-              <b-col>
+              <b-col cols="12" sm="6">
                 <validation-provider
                   v-slot="validationContext"
                   name="confirmPassword"
@@ -466,26 +466,19 @@ export default {
 </script>
 
 <style scoped>
-* {
+/* ตั้งฟอนต์ที่ตัวการ์ด ไม่ใช้ `*` เพื่อไม่ให้ทับ family ของไอคอน Font Awesome */
+.auth-page,
+.auth-page h1,
+.auth-page h2,
+.auth-page h3,
+.auth-page p,
+.auth-page span,
+.auth-page label,
+.auth-page input,
+.auth-page button,
+.auth-page a,
+.auth-page small {
   font-family: 'Kanit', sans-serif;
-}
-
-.fas,
-.far,
-.fal,
-.fab,
-.fa {
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
-}
-
-.fab {
-  font-family: "Font Awesome 6 Brands" !important;
-  font-weight: 400 !important;
-}
-
-.fas,
-.fa {
-  font-weight: 900 !important;
 }
 
 .auth-page {
@@ -651,13 +644,19 @@ export default {
   color: #ff5c4d;
 }
 
-.form-group label {
+/* ::v-deep เพื่อให้ทะลุเข้าไปที่ <label> ภายใน <b-form-group> */
+.form-group label,
+::v-deep .form-group > label,
+::v-deep .col-form-label,
+::v-deep legend.col-form-label {
   font-weight: 600;
   margin-bottom: 8px;
   color: #f6f3ed;
-  font-size: 15px;
+  font-size: 15px !important;
+  line-height: 1.4;
 }
 
+::v-deep .form-control,
 .form-control {
   border-radius: 12px !important;
   padding: 12px 16px !important;
@@ -668,8 +667,15 @@ export default {
   height: auto !important;
 }
 
+::v-deep .form-control::placeholder,
 .form-control::placeholder {
   color: rgba(246, 243, 237, 0.4);
+  font-size: 15px;
+}
+
+::v-deep .form-text,
+::v-deep small.text-muted {
+  font-size: 13px !important;
 }
 
 .form-control:focus {
@@ -814,14 +820,11 @@ export default {
   }
 
   .progress-steps {
-    flex-direction: column;
-    gap: 4px;
+    gap: 8px;
   }
 
-  .step-divider {
-    width: 2px;
-    height: 24px;
-    margin: 6px 0;
+  .step span {
+    font-size: 12px;
   }
 
   .form-section {

@@ -160,9 +160,9 @@ export default {
       hasMore: true,
 
       showSettingsModal: false,
-      chatTheme: 'minimal',
+      chatTheme: 'purple',
       chatBackground: '#0f0f23',
-      roomSettings: { theme: 'minimal', background: '#0f0f23' },
+      roomSettings: { theme: 'purple', background: '#0f0f23' },
       // เดสก์ท็อปเปิดค้างไว้ได้, มือถือเริ่มด้วยปิด (ไม่งั้นบังครึ่งจอ)
       showMemberSidebar: typeof window !== 'undefined' ? window.innerWidth > 992 : true,
 
@@ -334,13 +334,13 @@ export default {
         const settings = localStorage.getItem(`room_settings_${this.roomId}`)
         if (settings) {
           const parsed = JSON.parse(settings)
-          this.chatTheme = parsed.theme || 'minimal'
-          this.chatBackground = parsed.background || '#ffffff'
+          this.chatTheme = parsed.theme || 'purple'
+          this.chatBackground = parsed.background || '#0f0f23'
           this.roomSettings = { theme: this.chatTheme, background: this.chatBackground }
         } else {
-          this.chatTheme = 'minimal'
-          this.chatBackground = '#ffffff'
-          this.roomSettings = { theme: 'minimal', background: '#ffffff' }
+          this.chatTheme = 'purple'
+          this.chatBackground = '#0f0f23'
+          this.roomSettings = { theme: 'purple', background: '#0f0f23' }
         }
       }
     },
@@ -805,26 +805,25 @@ export default {
   background: linear-gradient(135deg, #434343 0%, #000000 100%);
 }
 
+/* พื้นที่ข้อความเป็นโทนมืดเสมอ (ดู MessageList.vue) — หัวห้องธีม minimal
+   จึงใช้พื้นเข้มโปร่งแทนสีเทาอ่อน เพื่อไม่ให้ตัดกับส่วนอื่นจนดูแปลกตา */
 .chat-room-page[data-theme="minimal"] .chat-header {
-  background: #f4f4f6;
+  background: #22222c;
 }
 
 .chat-room-page[data-theme="default"] .chat-header {
   background: #0084ff;
 }
 
-/* ธีมพื้นสว่าง (minimal / orange) — ใช้ตัวอักษรสีเข้มไม่งั้นอ่านไม่ออก */
-.chat-room-page[data-theme="minimal"] .room-name,
+/* ธีม orange พื้นหัวสว่าง — ใช้ตัวอักษรสีเข้มไม่งั้นอ่านไม่ออก */
 .chat-room-page[data-theme="orange"] .room-name {
   color: var(--ink);
 }
 
-.chat-room-page[data-theme="minimal"] .room-status,
 .chat-room-page[data-theme="orange"] .room-status {
   color: rgba(16, 16, 20, 0.62);
 }
 
-.chat-room-page[data-theme="minimal"] .status-dot,
 .chat-room-page[data-theme="orange"] .status-dot {
   background: rgba(16, 16, 20, 0.3);
 }

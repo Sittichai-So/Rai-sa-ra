@@ -72,7 +72,6 @@ export default {
   head () {
     return {
       link: [
-        { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap' }
       ]
     }
@@ -102,26 +101,19 @@ export default {
 </script>
 
 <style scoped>
-* {
+/* ตั้งฟอนต์ที่คอนเทนต์ ไม่ใช้ `*` เพื่อไม่ให้ทับ font-family ของไอคอน Font Awesome (โหลดจาก CSS กลาง) */
+.auth-page,
+.auth-page h1,
+.auth-page h2,
+.auth-page h3,
+.auth-page p,
+.auth-page span,
+.auth-page label,
+.auth-page input,
+.auth-page button,
+.auth-page a,
+.auth-page small {
   font-family: 'Kanit', sans-serif;
-}
-
-.fas,
-.far,
-.fal,
-.fab,
-.fa {
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
-}
-
-.fab {
-  font-family: "Font Awesome 6 Brands" !important;
-  font-weight: 400 !important;
-}
-
-.fas,
-.fa {
-  font-weight: 900 !important;
 }
 
 .auth-page {
@@ -214,13 +206,18 @@ export default {
   margin-bottom: 8px;
 }
 
-.form-group label {
+.form-group label,
+::v-deep .form-group > label,
+::v-deep .col-form-label,
+::v-deep legend.col-form-label {
   color: #f6f3ed;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 15px !important;
+  line-height: 1.4;
   margin-bottom: 6px;
 }
 
+::v-deep .form-control,
 .form-control {
   background: #121218 !important;
   border: 2px solid rgba(246, 243, 237, 0.2) !important;
@@ -231,8 +228,10 @@ export default {
   height: auto !important;
 }
 
+::v-deep .form-control::placeholder,
 .form-control::placeholder {
   color: rgba(246, 243, 237, 0.4);
+  font-size: 15px;
 }
 
 .form-control:focus {

@@ -442,7 +442,6 @@ export default {
         { property: 'og:description', content: 'ชุมชนแชทที่ดีที่สุดสำหรับคนไทย พร้อมพูดคุยทุกเรื่องที่คุณสนใจ' }
       ],
       link: [
-        { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap' }
       ]
     }
@@ -577,21 +576,25 @@ export default {
   font-family: 'Kanit', sans-serif;
 }
 
-.fas,
-.far,
-.fal,
-.fab,
-.fa {
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+/* คืน font-family ของไอคอนให้ Font Awesome (CSS กลาง จาก fontawesome-free) หลังโดน `*` ทับ */
+i.fas,
+i.far,
+i.fal,
+i.fab,
+i.fa,
+i[class*="fa-"] {
+  font-family: 'Font Awesome 7 Free', 'Font Awesome 7 Brands', 'Font Awesome 6 Free', 'Font Awesome 5 Free' !important;
 }
 
-.fab {
-  font-family: "Font Awesome 6 Brands" !important;
+i.fab,
+i.fa-brands {
+  font-family: 'Font Awesome 7 Brands', 'Font Awesome 6 Brands', 'Font Awesome 5 Brands' !important;
   font-weight: 400 !important;
 }
 
-.fas,
-.fa {
+i.fas,
+i.fa,
+i.fa-solid {
   font-weight: 900 !important;
 }
 
