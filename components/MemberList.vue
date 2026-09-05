@@ -59,7 +59,7 @@
             >
               <div class="member-avatar-wrapper">
                 <div class="member-avatar">
-                  <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
+                  <img v-if="member.avatar" :src="member.avatar" :alt="member.username" @error="member.avatar = null">
                   <span v-else>{{ getInitials(member.username) }}</span>
                 </div>
                 <span class="online-status" />
@@ -98,7 +98,7 @@
             >
               <div class="member-avatar-wrapper">
                 <div class="member-avatar offline">
-                  <img v-if="member.avatar" :src="member.avatar" :alt="member.username">
+                  <img v-if="member.avatar" :src="member.avatar" :alt="member.username" @error="member.avatar = null">
                   <span v-else>{{ getInitials(member.username) }}</span>
                 </div>
               </div>
@@ -215,11 +215,17 @@ export default {
       return {
         _id: id,
         username: m.username || m.fullname || m.displayName || m.name || 'Unknown',
-        avatar: m.avatar || null,
+        avatar: this.resolveAsset(m.avatar),
         online: m.online === true || m.status === 'online' || m.isOnline === true,
         lastSeen: m.lastSeen || null,
         isYou: String(id) === String(this.currentUserId)
       }
+    },
+
+    // backend เก็บ avatar เป็น path สั้น (/uploads/xxx) → ต้องเติม host ของ API
+    resolveAsset (url) {
+      if (!url) { return null }
+      return /^https?:\/\//.test(url) ? url : (process.env.API_FILE_BASE || '') + url
     },
 
     getInitials (username) {
@@ -631,7 +637,7 @@ export default {
   overflow: hidden;
 }
 
-.member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.member-avatar img { width: 100%; height: 100%; object-fit: cover; color: transparent; font-size: 0; }
 
 .member-avatar.offline { background: var(--surface-raised); color: var(--text-muted); }
 

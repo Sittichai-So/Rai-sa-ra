@@ -204,7 +204,12 @@
       <div class="user-profile">
         <div class="user-info">
           <div class="user-avatar">
-            <img v-if="user?.avatar" :src="user.avatar" :alt="userName">
+            <img
+              v-if="myAvatar && !avatarBroken"
+              :src="myAvatar"
+              :alt="userName"
+              @error="avatarBroken = true"
+            >
             <div v-else class="avatar-placeholder">
               {{ userInitials }}
             </div>
@@ -691,7 +696,8 @@ export default {
       dmConversations: [],
       idleTimer: null,
       verifyBannerDismissed: false,
-      resendingVerify: false
+      resendingVerify: false,
+      avatarBroken: false
     }
   },
   computed: {
@@ -720,6 +726,16 @@ export default {
         .map(n => n.charAt(0))
         .join('')
         .toUpperCase()
+    },
+    // avatar ของตัวเอง — โปรไฟล์ที่โหลดจาก API สดที่สุด, รองด้วย store (อัปเดตทันทีหลังอัปโหลด)
+    // แล้วค่อย localStorage — ต้องผ่าน resolveAsset เพราะ backend เก็บเป็น path สั้น (/uploads/xxx.png)
+    myAvatar () {
+      const src =
+        (this.profile && this.profile.avatar) ||
+        (this.$store.state.user && this.$store.state.user.avatar) ||
+        (this.user && this.user.avatar) ||
+        null
+      return this.resolveAsset(src)
     },
     categoryOptions () {
       return this.categories
@@ -771,6 +787,10 @@ export default {
       if (open) {
         this.$nextTick(() => this.$refs.afSearch && this.$refs.afSearch.focus())
       }
+    },
+    myAvatar () {
+      // มีรูปใหม่เข้ามา → ลองโหลดใหม่
+      this.avatarBroken = false
     }
   },
   async mounted () {
@@ -1906,6 +1926,13 @@ export default {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 90, 69, 0.3);
+}
+
+/* กันข้อความ alt ของรูปที่โหลดไม่ขึ้นล้นออกนอกวงกลม */
+.user-avatar img {
+  overflow: hidden;
+  color: transparent;
+  font-size: 0;
 }
 
 .avatar-placeholder {
