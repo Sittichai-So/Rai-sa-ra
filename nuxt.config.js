@@ -80,6 +80,10 @@ export default {
     API_LOGIN: currentEnv.api + '/auth/login',
     API_REGISTER_USER: currentEnv.api + '/auth/register',
     API_CHECK_USERNAME: currentEnv.api + '/auth/check-username',
+    API_FORGOT_PASSWORD: currentEnv.api + '/auth/forgot-password',
+    API_RESET_PASSWORD: currentEnv.api + '/auth/reset-password',
+    API_VERIFY_EMAIL: currentEnv.api + '/auth/verify-email',
+    API_RESEND_VERIFICATION: currentEnv.api + '/auth/resend-verification',
 
     // getCategories
     API_GET_CATEGORIES_ROOM: currentEnv.api + '/categories/getCategories',

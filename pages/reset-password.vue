@@ -10,45 +10,60 @@
       <div class="auth-header text-center">
         <span class="auth-eyebrow">RAI-SA-RA</span>
         <h2 class="title">
-          Forgot Password 🔑
+          ตั้งรหัสผ่านใหม่ 🔐
         </h2>
         <p class="subtitle">
-          กรอกอีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
+          กรอกรหัสผ่านใหม่ของคุณ (อย่างน้อย 8 ตัวอักษร)
         </p>
       </div>
 
-      <div v-if="sent" class="sent-box text-center">
-        <i class="fas fa-envelope-circle-check sent-icon" />
-        <p class="sent-text">
-          ถ้าอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปให้แล้ว<br>
-          กรุณาตรวจสอบกล่องจดหมาย (รวมถึงโฟลเดอร์สแปม)
-        </p>
+      <div v-if="!token" class="notice notice-error text-center">
+        <i class="fas fa-triangle-exclamation" />
+        ลิงก์ไม่ถูกต้อง — ไม่พบ token กรุณาขอลิงก์รีเซ็ตใหม่อีกครั้ง
+      </div>
+
+      <div v-else-if="done" class="notice notice-ok text-center">
+        <i class="fas fa-circle-check" />
+        ตั้งรหัสผ่านใหม่สำเร็จ กำลังพาไปหน้าเข้าสู่ระบบ...
       </div>
 
       <validation-observer v-else ref="observer" v-slot="{ handleSubmit }">
-        <b-form @submit.stop.prevent="handleSubmit(onForgotPassword)">
-          <validation-provider v-slot="ctx" name="Email" :rules="{ required: true, email: true }">
-            <b-form-group label="อีเมล" label-for="fpEmail">
+        <b-form @submit.stop.prevent="handleSubmit(onReset)">
+          <validation-provider v-slot="ctx" name="password" :rules="{ required: true, min: 8 }">
+            <b-form-group label="รหัสผ่านใหม่" label-for="rpPass">
               <b-form-input
-                id="fpEmail"
-                v-model="form.Email"
-                type="email"
+                id="rpPass"
+                v-model="form.password"
+                type="password"
                 :state="getValidationState(ctx)"
-                placeholder="example@email.com"
+                placeholder="••••••••"
+              />
+              <b-form-invalid-feedback>{{ ctx.errors[0] }}</b-form-invalid-feedback>
+            </b-form-group>
+          </validation-provider>
+
+          <validation-provider v-slot="ctx" name="confirmPassword" :rules="{ required: true, confirmed: 'password' }">
+            <b-form-group label="ยืนยันรหัสผ่านใหม่" label-for="rpConfirm">
+              <b-form-input
+                id="rpConfirm"
+                v-model="form.confirm"
+                type="password"
+                :state="getValidationState(ctx)"
+                placeholder="••••••••"
               />
               <b-form-invalid-feedback>{{ ctx.errors[0] }}</b-form-invalid-feedback>
             </b-form-group>
           </validation-provider>
 
           <b-button type="submit" block size="lg" class="submit-btn mt-3" :disabled="loading">
-            <i class="fas fa-paper-plane" /> {{ loading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน' }}
+            {{ loading ? 'กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่' }}
           </b-button>
         </b-form>
       </validation-observer>
 
       <div class="auth-footer text-center mt-4">
         <p>
-          นึกออกแล้ว? <b-link to="/login">
+          <b-link to="/login">
             <i class="fas fa-arrow-left" /> กลับไปเข้าสู่ระบบ
           </b-link>
         </p>
@@ -62,11 +77,13 @@ export default {
   layout: 'login',
   data () {
     return {
+      token: '',
       form: {
-        Email: ''
+        password: '',
+        confirm: ''
       },
       loading: false,
-      sent: false
+      done: false
     }
   },
   head () {
@@ -77,21 +94,28 @@ export default {
       ]
     }
   },
+  mounted () {
+    this.token = this.$route.query.token || ''
+  },
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
     },
-    async onForgotPassword () {
+    async onReset () {
       this.loading = true
       try {
-        await this.$axios.$post(process.env.API_FORGOT_PASSWORD, { email: this.form.Email })
-        this.sent = true
+        await this.$axios.$post(process.env.API_RESET_PASSWORD, {
+          token: this.token,
+          password: this.form.password
+        })
+        this.done = true
+        setTimeout(() => this.$router.push('/login'), 1800)
       } catch (error) {
         const resData = error.response?.data || {}
         await this.$swal({
           icon: 'error',
-          title: 'ส่งอีเมลไม่สำเร็จ',
-          text: resData.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+          title: 'รีเซ็ตรหัสผ่านไม่สำเร็จ',
+          text: resData.message || 'ลิงก์อาจหมดอายุแล้ว กรุณาขอลิงก์ใหม่'
         })
       } finally {
         this.loading = false
@@ -104,24 +128,6 @@ export default {
 <style scoped>
 * {
   font-family: 'Kanit', sans-serif;
-}
-
-.fas,
-.far,
-.fal,
-.fab,
-.fa {
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
-}
-
-.fab {
-  font-family: "Font Awesome 6 Brands" !important;
-  font-weight: 400 !important;
-}
-
-.fas,
-.fa {
-  font-weight: 900 !important;
 }
 
 .auth-page {
@@ -214,14 +220,14 @@ export default {
   margin-bottom: 8px;
 }
 
-.form-group label {
-  color: #f6f3ed;
+::v-deep .col-form-label {
+  color: #f6f3ed !important;
   font-weight: 600;
   font-size: 15px;
   margin-bottom: 6px;
 }
 
-.form-control {
+::v-deep .form-control {
   background: #121218 !important;
   border: 2px solid rgba(246, 243, 237, 0.2) !important;
   border-radius: 12px !important;
@@ -231,22 +237,22 @@ export default {
   height: auto !important;
 }
 
-.form-control::placeholder {
+::v-deep .form-control::placeholder {
   color: rgba(246, 243, 237, 0.4);
 }
 
-.form-control:focus {
+::v-deep .form-control:focus {
   background: #121218 !important;
   border-color: #ff5c4d !important;
   box-shadow: 0 0 0 3px rgba(255, 92, 77, 0.25) !important;
   color: #f6f3ed !important;
 }
 
-.form-control.is-invalid {
+::v-deep .form-control.is-invalid {
   border-color: #ff5c4d !important;
 }
 
-.invalid-feedback {
+::v-deep .invalid-feedback {
   color: #ff8f84;
   font-size: 14px;
   font-weight: 500;
@@ -277,6 +283,30 @@ export default {
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.9);
 }
 
+.notice {
+  border-radius: 14px;
+  padding: 18px 16px;
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 500;
+}
+
+.notice i {
+  display: block;
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.notice-ok {
+  background: rgba(77, 208, 122, 0.12);
+  color: #8be0a6;
+}
+
+.notice-error {
+  background: rgba(255, 92, 77, 0.12);
+  color: #ff8f84;
+}
+
 .auth-footer p {
   font-size: 15px;
   color: rgba(246, 243, 237, 0.75);
@@ -292,22 +322,6 @@ export default {
 .auth-footer a:hover {
   color: #ff5c4d;
   text-decoration: underline;
-}
-
-.sent-box {
-  padding: 12px 0 4px;
-}
-
-.sent-icon {
-  font-size: 48px;
-  color: #4dd07a;
-  margin-bottom: 14px;
-}
-
-.sent-text {
-  font-size: 15px;
-  line-height: 1.7;
-  color: rgba(246, 243, 237, 0.8);
 }
 
 @media (max-width: 480px) {

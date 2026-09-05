@@ -228,6 +228,19 @@
     </aside>
 
     <main class="main-content">
+      <div v-if="showVerifyBanner" class="verify-banner">
+        <i class="fas fa-envelope" />
+        <span class="verify-banner-text">
+          อีเมลของคุณยังไม่ได้ยืนยัน — ยืนยันเพื่อความปลอดภัยของบัญชี
+        </span>
+        <button class="verify-banner-btn" :disabled="resendingVerify" @click="resendVerifyEmail">
+          {{ resendingVerify ? 'กำลังส่ง...' : 'ส่งอีเมลยืนยันอีกครั้ง' }}
+        </button>
+        <button class="verify-banner-close" aria-label="ปิด" @click="verifyBannerDismissed = true">
+          <i class="fas fa-times" />
+        </button>
+      </div>
+
       <header class="main-header">
         <div class="header-left">
           <span class="eyebrow">Community</span>
@@ -676,13 +689,23 @@ export default {
       joinRoomIdPending: null,
       selectedFriend: null,
       dmConversations: [],
-      idleTimer: null
+      idleTimer: null,
+      verifyBannerDismissed: false,
+      resendingVerify: false
     }
   },
   computed: {
     userStatus () {
       const user = JSON.parse(localStorage.getItem('userData') || '{}')
       return user.status || 'offline'
+    },
+    showVerifyBanner () {
+      if (this.verifyBannerDismissed) {
+        return false
+      }
+      const u = this.user || {}
+      // แสดงเฉพาะเมื่อรู้แน่ชัดว่ายังไม่ยืนยัน (ผู้ใช้เก่าถูก grandfather เป็น true แล้ว)
+      return u.emailVerified === false
     },
     joinedRooms () {
       return this.rooms.filter(room => this.isUserInRoom(room._id))
@@ -1460,6 +1483,23 @@ export default {
       })
     },
 
+    async resendVerifyEmail () {
+      const email = (this.user && this.user.email) || ''
+      if (!email) {
+        this.friendToast('error', 'ไม่พบอีเมลของบัญชี')
+        return
+      }
+      this.resendingVerify = true
+      try {
+        await this.$axios.$post(process.env.API_RESEND_VERIFICATION, { email })
+        this.friendToast('success', 'ส่งลิงก์ยืนยันไปที่อีเมลของคุณแล้ว')
+      } catch (err) {
+        this.friendToast('error', err.response?.data?.message || 'ส่งอีเมลไม่สำเร็จ')
+      } finally {
+        this.resendingVerify = false
+      }
+    },
+
     async acceptFriendFromSearch (u) {
       if (!u.friendshipId) {
         this.friendToast('info', 'ตอบรับคำขอนี้ได้จากช่อง "เพื่อนของฉัน"')
@@ -2002,6 +2042,58 @@ export default {
   height: 100vh;
   overflow-y: auto;
   z-index: 1;
+}
+
+.verify-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: rgba(255, 201, 77, 0.14);
+  border-bottom: 1px solid rgba(255, 201, 77, 0.3);
+  color: #b9852a;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.verify-banner > .fas.fa-envelope {
+  color: #e0a12e;
+}
+
+.verify-banner-text {
+  flex: 1;
+  min-width: 180px;
+  font-weight: 600;
+}
+
+.verify-banner-btn {
+  border: 1px solid #e0a12e;
+  background: #e0a12e;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.verify-banner-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.verify-banner-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.verify-banner-close {
+  border: none;
+  background: transparent;
+  color: #b9852a;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 0.9rem;
 }
 
 .main-header {

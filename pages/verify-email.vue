@@ -10,46 +10,56 @@
       <div class="auth-header text-center">
         <span class="auth-eyebrow">RAI-SA-RA</span>
         <h2 class="title">
-          Forgot Password 🔑
+          ยืนยันอีเมล ✉️
         </h2>
-        <p class="subtitle">
-          กรอกอีเมลของคุณเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
-        </p>
       </div>
 
-      <div v-if="sent" class="sent-box text-center">
-        <i class="fas fa-envelope-circle-check sent-icon" />
-        <p class="sent-text">
-          ถ้าอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปให้แล้ว<br>
-          กรุณาตรวจสอบกล่องจดหมาย (รวมถึงโฟลเดอร์สแปม)
-        </p>
+      <div v-if="state === 'verifying'" class="notice text-center">
+        <i class="fas fa-spinner fa-spin" />
+        กำลังตรวจสอบลิงก์ยืนยัน...
       </div>
 
-      <validation-observer v-else ref="observer" v-slot="{ handleSubmit }">
-        <b-form @submit.stop.prevent="handleSubmit(onForgotPassword)">
-          <validation-provider v-slot="ctx" name="Email" :rules="{ required: true, email: true }">
-            <b-form-group label="อีเมล" label-for="fpEmail">
-              <b-form-input
-                id="fpEmail"
-                v-model="form.Email"
-                type="email"
-                :state="getValidationState(ctx)"
-                placeholder="example@email.com"
-              />
-              <b-form-invalid-feedback>{{ ctx.errors[0] }}</b-form-invalid-feedback>
-            </b-form-group>
-          </validation-provider>
+      <div v-else-if="state === 'success'" class="notice notice-ok text-center">
+        <i class="fas fa-circle-check" />
+        ยืนยันอีเมลสำเร็จ! ตอนนี้บัญชีของคุณพร้อมใช้งานเต็มรูปแบบแล้ว
+      </div>
 
-          <b-button type="submit" block size="lg" class="submit-btn mt-3" :disabled="loading">
-            <i class="fas fa-paper-plane" /> {{ loading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน' }}
-          </b-button>
-        </b-form>
-      </validation-observer>
+      <template v-else>
+        <div class="notice notice-error text-center">
+          <i class="fas fa-triangle-exclamation" />
+          {{ errorMessage || 'ลิงก์ยืนยันไม่ถูกต้องหรือหมดอายุแล้ว' }}
+        </div>
+
+        <div v-if="resent" class="resent-hint text-center">
+          <i class="fas fa-paper-plane" /> ส่งลิงก์ยืนยันใหม่ไปที่อีเมลของคุณแล้ว
+        </div>
+
+        <validation-observer v-else ref="observer" v-slot="{ handleSubmit }">
+          <b-form @submit.stop.prevent="handleSubmit(onResend)">
+            <validation-provider v-slot="ctx" name="Email" :rules="{ required: true, email: true }">
+              <b-form-group label="ขอลิงก์ยืนยันใหม่" label-for="veEmail">
+                <b-form-input
+                  id="veEmail"
+                  v-model="email"
+                  type="email"
+                  :state="getValidationState(ctx)"
+                  placeholder="example@email.com"
+                />
+                <b-form-invalid-feedback>{{ ctx.errors[0] }}</b-form-invalid-feedback>
+              </b-form-group>
+            </validation-provider>
+
+            <b-button type="submit" block size="lg" class="submit-btn mt-3" :disabled="loading">
+              {{ loading ? 'กำลังส่ง...' : 'ส่งลิงก์ยืนยันใหม่' }}
+            </b-button>
+          </b-form>
+        </validation-observer>
+      </template>
 
       <div class="auth-footer text-center mt-4">
         <p>
-          นึกออกแล้ว? <b-link to="/login">
-            <i class="fas fa-arrow-left" /> กลับไปเข้าสู่ระบบ
+          <b-link to="/login">
+            <i class="fas fa-arrow-left" /> ไปหน้าเข้าสู่ระบบ
           </b-link>
         </p>
       </div>
@@ -62,11 +72,11 @@ export default {
   layout: 'login',
   data () {
     return {
-      form: {
-        Email: ''
-      },
+      state: 'verifying', // verifying | success | error
+      errorMessage: '',
+      email: '',
       loading: false,
-      sent: false
+      resent: false
     }
   },
   head () {
@@ -77,20 +87,40 @@ export default {
       ]
     }
   },
+  mounted () {
+    this.verify()
+  },
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
     },
-    async onForgotPassword () {
+    async verify () {
+      const token = this.$route.query.token
+      if (!token) {
+        this.state = 'error'
+        this.errorMessage = 'ไม่พบ token ในลิงก์'
+        return
+      }
+      try {
+        await this.$axios.$post(process.env.API_VERIFY_EMAIL, { token })
+        this.state = 'success'
+        setTimeout(() => this.$router.push('/login'), 2500)
+      } catch (error) {
+        const resData = error.response?.data || {}
+        this.state = 'error'
+        this.errorMessage = resData.message || ''
+      }
+    },
+    async onResend () {
       this.loading = true
       try {
-        await this.$axios.$post(process.env.API_FORGOT_PASSWORD, { email: this.form.Email })
-        this.sent = true
+        await this.$axios.$post(process.env.API_RESEND_VERIFICATION, { email: this.email })
+        this.resent = true
       } catch (error) {
         const resData = error.response?.data || {}
         await this.$swal({
           icon: 'error',
-          title: 'ส่งอีเมลไม่สำเร็จ',
+          title: 'ส่งไม่สำเร็จ',
           text: resData.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่'
         })
       } finally {
@@ -104,24 +134,6 @@ export default {
 <style scoped>
 * {
   font-family: 'Kanit', sans-serif;
-}
-
-.fas,
-.far,
-.fal,
-.fab,
-.fa {
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
-}
-
-.fab {
-  font-family: "Font Awesome 6 Brands" !important;
-  font-weight: 400 !important;
-}
-
-.fas,
-.fa {
-  font-weight: 900 !important;
 }
 
 .auth-page {
@@ -207,21 +219,46 @@ export default {
   margin-bottom: 10px;
 }
 
-.auth-header .subtitle {
-  font-size: 16px;
-  line-height: 1.6;
-  color: rgba(246, 243, 237, 0.72);
-  margin-bottom: 8px;
+.notice {
+  border-radius: 14px;
+  padding: 18px 16px;
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 500;
+  color: rgba(246, 243, 237, 0.85);
+  background: rgba(246, 243, 237, 0.06);
 }
 
-.form-group label {
-  color: #f6f3ed;
+.notice i {
+  display: block;
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.notice-ok {
+  background: rgba(77, 208, 122, 0.12);
+  color: #8be0a6;
+}
+
+.notice-error {
+  background: rgba(255, 92, 77, 0.12);
+  color: #ff8f84;
+}
+
+.resent-hint {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #8be0a6;
+}
+
+::v-deep .col-form-label {
+  color: #f6f3ed !important;
   font-weight: 600;
   font-size: 15px;
-  margin-bottom: 6px;
+  margin: 18px 0 6px;
 }
 
-.form-control {
+::v-deep .form-control {
   background: #121218 !important;
   border: 2px solid rgba(246, 243, 237, 0.2) !important;
   border-radius: 12px !important;
@@ -231,22 +268,14 @@ export default {
   height: auto !important;
 }
 
-.form-control::placeholder {
-  color: rgba(246, 243, 237, 0.4);
-}
-
-.form-control:focus {
+::v-deep .form-control:focus {
   background: #121218 !important;
   border-color: #ff5c4d !important;
   box-shadow: 0 0 0 3px rgba(255, 92, 77, 0.25) !important;
   color: #f6f3ed !important;
 }
 
-.form-control.is-invalid {
-  border-color: #ff5c4d !important;
-}
-
-.invalid-feedback {
+::v-deep .invalid-feedback {
   color: #ff8f84;
   font-size: 14px;
   font-weight: 500;
@@ -272,11 +301,6 @@ export default {
   box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.9);
 }
 
-.submit-btn:active {
-  transform: translate(0, 0);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.9);
-}
-
 .auth-footer p {
   font-size: 15px;
   color: rgba(246, 243, 237, 0.75);
@@ -292,22 +316,6 @@ export default {
 .auth-footer a:hover {
   color: #ff5c4d;
   text-decoration: underline;
-}
-
-.sent-box {
-  padding: 12px 0 4px;
-}
-
-.sent-icon {
-  font-size: 48px;
-  color: #4dd07a;
-  margin-bottom: 14px;
-}
-
-.sent-text {
-  font-size: 15px;
-  line-height: 1.7;
-  color: rgba(246, 243, 237, 0.8);
 }
 
 @media (max-width: 480px) {
