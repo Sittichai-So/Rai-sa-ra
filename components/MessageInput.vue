@@ -31,7 +31,7 @@
           ref="fileInput"
           type="file"
           class="d-none"
-          accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.doc,.docx,.txt,.zip"
           @change="onFileSelected"
         >
 

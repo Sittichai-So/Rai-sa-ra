@@ -903,15 +903,22 @@ export default {
       if (f) { this.removeFriend(f.friendId) }
     },
 
+    escapeHtml (s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]))
+    },
+
     async viewFriendProfile (friend) {
       const statusText = friend.isOnline ? 'ออนไลน์' : 'ออฟไลน์'
+      const esc = this.escapeHtml
       await this.$swal({
         title: friend.displayName || friend.fullname || 'โปรไฟล์เพื่อน',
         html: `
           <div style="text-align:left;line-height:1.9">
             <div><b>สถานะ:</b> ${statusText}</div>
-            ${friend.email ? `<div><b>อีเมล:</b> ${friend.email}</div>` : ''}
-            ${friend.username ? `<div><b>ชื่อผู้ใช้:</b> ${friend.username}</div>` : ''}
+            ${friend.email ? `<div><b>อีเมล:</b> ${esc(friend.email)}</div>` : ''}
+            ${friend.username ? `<div><b>ชื่อผู้ใช้:</b> ${esc(friend.username)}</div>` : ''}
           </div>`,
         confirmButtonText: 'ส่งข้อความ',
         showCancelButton: true,
