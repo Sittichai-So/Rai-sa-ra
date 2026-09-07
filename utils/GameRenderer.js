@@ -12,6 +12,28 @@ const ZOMBIE_STYLE = {
 
 const BLOOD = ['#8a1f1f', '#a82727', '#6d1616']
 
+// สไปรต์ผู้เล่นแบบ 8-bit (ยืนหันหน้าเข้าหากล้อง — ปืนหมุนแยก)
+const PLAYER_SPRITE = [
+  ' HHHHH ',
+  ' HSSSH ',
+  ' SESES ',
+  ' SSSSS ',
+  'BBBBBBB',
+  'DBBBBBD',
+  'BBBBBBB',
+  ' PPPPP ',
+  ' K   K '
+]
+
+function shade (hex, f) {
+  const h = hex.replace('#', '')
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
+  const r = Math.max(0, Math.min(255, Math.round(((n >> 16) & 255) * f)))
+  const g = Math.max(0, Math.min(255, Math.round(((n >> 8) & 255) * f)))
+  const b = Math.max(0, Math.min(255, Math.round((n & 255) * f)))
+  return `rgb(${r},${g},${b})`
+}
+
 export default class GameRenderer {
   constructor (canvas) {
     this.canvas = canvas
@@ -273,71 +295,84 @@ export default class GameRenderer {
       const rad = z.radius || style.radius
       const hpPct = z.maxHp ? z.hp / z.maxHp : 1
       const flashing = z.hitFlash > 0
-      const wob = Math.sin(now / 120 + z.id * 1.7) * 0.14
+      const bob = Math.round(Math.sin(now / 130 + z.id * 1.7) * 2)
 
       ctx.save()
-      ctx.translate(z.x, z.y)
+      ctx.translate(Math.round(z.x), Math.round(z.y))
 
       // ground shadow
       ctx.beginPath()
-      ctx.ellipse(0, rad * 0.5, rad * 0.9, rad * 0.4, 0, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(0,0,0,0.25)'
+      ctx.ellipse(0, rad * 0.55, rad * 0.85, rad * 0.35, 0, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(0,0,0,0.28)'
       ctx.fill()
 
-      ctx.rotate(z.angle + Math.PI / 2 + wob)
-
       if (z.type === 'boss') {
-        const pulse = 1 + Math.sin(now / 200) * 0.05
+        const pulse = 1 + Math.sin(now / 200) * 0.06
         ctx.beginPath()
-        ctx.arc(0, 0, rad * 1.35 * pulse, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,32,32,0.12)'
+        ctx.arc(0, 0, rad * 1.3 * pulse, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,32,32,0.13)'
+        ctx.fill()
+      } else if (z.elite) {
+        const pulse = 1 + Math.sin(now / 160 + z.id) * 0.09
+        ctx.beginPath()
+        ctx.arc(0, 0, rad * 1.24 * pulse, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,180,40,0.18)'
         ctx.fill()
       }
 
-      // irregular body
-      ctx.beginPath()
-      const lobes = z.type === 'boss' ? 9 : 7
-      for (let i = 0; i <= lobes; i++) {
-        const a = (i / lobes) * Math.PI * 2
-        const rr = rad * (0.86 + 0.14 * Math.sin(a * 3 + z.id + now / 300))
-        const px = Math.cos(a) * rr
-        const py = Math.sin(a) * rr
-        if (i === 0) { ctx.moveTo(px, py) } else { ctx.lineTo(px, py) }
-      }
-      ctx.closePath()
-      ctx.fillStyle = flashing ? '#ffffff' : style.color
-      ctx.strokeStyle = flashing ? '#ffffff' : style.dark
-      ctx.lineWidth = z.type === 'boss' ? 3 : 2
-      ctx.fill()
-      ctx.stroke()
-
-      if (z.type === 'tank') {
-        ctx.beginPath()
-        ctx.arc(0, 0, rad * 0.62, 0, Math.PI * 2)
-        ctx.strokeStyle = flashing ? '#fff' : 'rgba(0,0,0,0.35)'
-        ctx.lineWidth = 3
-        ctx.stroke()
+      // ── ตัวซอมบี้แบบพิกเซล ──
+      const base = flashing ? '#ffffff' : style.color
+      const dark = flashing ? '#dddddd' : style.dark
+      const u = Math.max(3, Math.round(rad / 3.6))
+      const R = Math.ceil(rad / u)
+      for (let gy = -R; gy <= R; gy++) {
+        for (let gx = -R; gx <= R; gx++) {
+          const d = Math.hypot(gx, gy)
+          const edge = R - 0.15 + 0.85 * Math.sin(gx * 1.6 + gy * 2.2 + z.id + now / 380)
+          if (d <= edge) {
+            ctx.fillStyle = d > edge - 1 ? dark : base
+            ctx.fillRect(gx * u - (u >> 1), gy * u - (u >> 1) + bob, u, u)
+          }
+        }
       }
 
-      // eyes
-      const eyeOff = rad * 0.32
-      ctx.fillStyle = flashing ? '#000' : (z.type === 'spitter' ? '#c9b8ff' : '#ff2626')
-      ctx.shadowColor = '#ff2020'
-      ctx.shadowBlur = flashing ? 0 : 5
-      ctx.beginPath(); ctx.arc(-eyeOff, -rad * 0.38, rad * 0.15, 0, Math.PI * 2); ctx.fill()
-      ctx.beginPath(); ctx.arc(eyeOff, -rad * 0.38, rad * 0.15, 0, Math.PI * 2); ctx.fill()
-      ctx.shadowBlur = 0
+      if (z.type === 'tank' && !flashing) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)'
+        ctx.lineWidth = Math.max(2, u * 0.7)
+        ctx.strokeRect(-rad * 0.5, -rad * 0.5 + bob, rad, rad)
+      }
+
+      // ตา (ด้านที่หันเข้าหาเป้า)
+      const ex = Math.round(Math.cos(z.angle) * rad * 0.4)
+      const ey = Math.round(Math.sin(z.angle) * rad * 0.4) + bob
+      const perpX = Math.round(-Math.sin(z.angle) * rad * 0.28)
+      const perpY = Math.round(Math.cos(z.angle) * rad * 0.28)
+      ctx.fillStyle = flashing ? '#000' : (z.type === 'spitter' ? '#d8ccff' : '#ff2020')
+      ctx.fillRect(ex + perpX - u, ey + perpY - u, u * 1.4, u * 1.4)
+      ctx.fillRect(ex - perpX - u, ey - perpY - u, u * 1.4, u * 1.4)
 
       ctx.restore()
 
-      const barW = Math.max(30, rad * 1.9)
+      const barW = Math.max(28, rad * 1.9)
       const barH = z.type === 'boss' ? 6 : 4
-      const bx = z.x - barW / 2
-      const by = z.y - rad - 12
-      ctx.fillStyle = 'rgba(0,0,0,0.55)'
+      const bx = Math.round(z.x - barW / 2)
+      const by = Math.round(z.y - rad - 12)
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'
       ctx.fillRect(bx - 1, by - 1, barW + 2, barH + 2)
       ctx.fillStyle = hpPct > 0.5 ? '#40ff40' : hpPct > 0.25 ? '#ffcc00' : '#ff4040'
-      ctx.fillRect(bx, by, barW * hpPct, barH)
+      ctx.fillRect(bx, by, Math.round(barW * hpPct), barH)
+    }
+  }
+
+  _drawPixelSprite (ctx, rows, pal, u, oy) {
+    const w = rows[0].length
+    for (let r = 0; r < rows.length; r++) {
+      for (let c = 0; c < w; c++) {
+        const col = pal[rows[r][c]]
+        if (!col) { continue }
+        ctx.fillStyle = col
+        ctx.fillRect((c - w / 2) * u, oy + r * u, u, u)
+      }
     }
   }
 
@@ -395,48 +430,54 @@ export default class GameRenderer {
       const isMe = p.id === myId
       const flashing = p.hitFlash > 0
       const moving = Math.hypot(p.vx || 0, p.vy || 0) > 1
-      const bob = moving ? Math.sin(now / 70) * 1.6 : 0
+      const step = moving ? Math.round(Math.sin(now / 90)) : 0
 
       ctx.save()
-      ctx.translate(p.x, p.y)
+      ctx.translate(Math.round(p.x), Math.round(p.y))
 
       // shadow
       ctx.beginPath()
-      ctx.ellipse(0, rad * 0.55, rad * 0.85, rad * 0.35, 0, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(0,0,0,0.3)'
+      ctx.ellipse(0, rad * 0.7, rad * 0.9, rad * 0.34, 0, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(0,0,0,0.32)'
       ctx.fill()
 
       if (isMe) {
         ctx.beginPath()
-        ctx.arc(0, 0, rad + 7, 0, Math.PI * 2)
+        ctx.arc(0, 0, rad + 8, 0, Math.PI * 2)
         ctx.strokeStyle = color
-        ctx.globalAlpha = 0.28
+        ctx.globalAlpha = 0.3
         ctx.lineWidth = 2
         ctx.stroke()
         ctx.globalAlpha = 1
       }
 
+      // ── gun (หมุนตามทิศเล็ง) ──
+      ctx.save()
       ctx.rotate(p.angle)
-      ctx.translate(0, bob)
+      const gu = Math.max(2, Math.round(rad / 5))
+      ctx.fillStyle = flashing ? '#ffb0b0' : '#2b2f38'
+      ctx.fillRect(rad * 0.15, -gu, gu * 4.5, gu * 2)
+      ctx.fillStyle = flashing ? '#ff9090' : '#3d434f'
+      ctx.fillRect(rad * 0.15, -gu * 1.6, gu * 1.6, gu * 3.2)
+      ctx.fillStyle = '#e8b88a'
+      ctx.fillRect(rad * 0.05, -gu * 1.2, gu * 1.6, gu * 2.4)
+      ctx.restore()
 
-      // gun
-      ctx.fillStyle = flashing ? '#ff8f8f' : '#20242c'
-      ctx.fillRect(rad - 3, -3.5, 15, 7)
-
-      // body
-      ctx.beginPath()
-      ctx.arc(0, 0, rad, 0, Math.PI * 2)
-      ctx.fillStyle = flashing ? '#ff6b6b' : (isMe ? color : `${color}bb`)
-      ctx.strokeStyle = isMe ? '#ffffff' : color
-      ctx.lineWidth = isMe ? 2.5 : 1.5
-      ctx.fill()
-      ctx.stroke()
-
-      // head (offset toward facing)
-      ctx.beginPath()
-      ctx.arc(rad * 0.36, 0, rad * 0.5, 0, Math.PI * 2)
-      ctx.fillStyle = flashing ? '#ffcaca' : '#e9e4d6'
-      ctx.fill()
+      // ── ตัวละครแบบพิกเซล (ยืนหันหน้าเข้าหากล้อง) ──
+      const u = Math.max(2, Math.round((rad * 2) / PLAYER_SPRITE[0].length))
+      const pal = {
+        H: '#3a2c22',
+        S: flashing ? '#ffcaca' : '#e8b88a',
+        E: '#1a1a1a',
+        B: flashing ? '#ff6b6b' : (isMe ? color : shade(color, 0.85)),
+        D: flashing ? '#e05555' : shade(color, 0.6),
+        P: '#2f3a4c',
+        K: '#15171c'
+      }
+      const spr = step
+        ? PLAYER_SPRITE.map((r, i) => (i === 8 ? (step > 0 ? ' K  K  ' : '  K  K ') : r))
+        : PLAYER_SPRITE
+      this._drawPixelSprite(ctx, spr, pal, u, -Math.round(PLAYER_SPRITE.length * u * 0.5))
 
       ctx.restore()
 
@@ -492,6 +533,9 @@ export default class GameRenderer {
       if (z.type === 'boss') {
         ctx.fillStyle = '#ff2020'
         ctx.fillRect(mmX + z.x * scX - 2, mmY + z.y * scY - 2, 5, 5)
+      } else if (z.elite) {
+        ctx.fillStyle = '#ffb028'
+        ctx.fillRect(mmX + z.x * scX - 1.5, mmY + z.y * scY - 1.5, 3, 3)
       } else {
         ctx.fillStyle = z.type === 'spitter' ? '#9d6bff' : '#ff4020'
         ctx.fillRect(mmX + z.x * scX - 1, mmY + z.y * scY - 1, 2, 2)

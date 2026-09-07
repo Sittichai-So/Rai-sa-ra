@@ -109,13 +109,14 @@
         <div class="upgrade-panel">
           <div class="upgrade-head">
             <span class="uh-tag">LEVEL UP</span>
-            <h3>เลือกอัปเกรด</h3>
+            <h3>เลือกอัปเกรด<span v-if="upgradeOffer.picks > 1"> ({{ upgradeOffer.picks }})</span></h3>
           </div>
-          <div class="upgrade-cards">
+          <div class="upgrade-cards" :class="{ busy: upgradeBusy }">
             <button
               v-for="c in upgradeOffer.choices"
               :key="c.key"
               class="upgrade-card"
+              :disabled="upgradeBusy"
               @click="pickUpgrade(c.key)"
             >
               <span class="uc-name">{{ c.name }}</span>
@@ -145,12 +146,13 @@
 
     <transition name="wave-fade">
       <div v-if="waveAnnounce" class="wave-announce">
-        <div class="wave-announce-inner" :class="{ 'wa-boss': waveIsBoss }">
-          <span class="wa-tag">{{ waveIsBoss ? 'BOSS WAVE' : 'INCOMING' }}</span>
+        <div class="wave-announce-inner" :class="{ 'wa-boss': waveIsBoss, 'wa-brute': waveIsBrute }">
+          <span class="wa-tag">{{ waveTag }}</span>
           <h2>WAVE {{ wave }}</h2>
           <span class="wa-sub">
-            {{ waveIsBoss ? 'ระวังบอส!' : announceCount + ' ซอมบี้' }}
+            {{ waveSubText }}
           </span>
+          <span v-if="waveTier > 0" class="wa-diff">ความยาก ×{{ diffLabel }}</span>
         </div>
       </div>
     </transition>
@@ -241,6 +243,8 @@ export default {
       waveActive: false,
       waveAnnounce: false,
       waveIsBoss: false,
+      waveIsBrute: false,
+      waveTier: 0,
       waveCountdown: 0,
       announceCount: 0,
       waveTimer: 0,
@@ -249,6 +253,7 @@ export default {
       maxCombo: 0,
       reinforceMsg: '',
       upgradeOffer: null,
+      upgradeBusy: false,
       myUpgrades: [],
       scoreMultiplier: 1,
       lastKillTime: 0,
@@ -318,6 +323,19 @@ export default {
     reviveProgressPct () {
       const p = this.myPlayer
       return p && p.reviveProgress ? Math.round(p.reviveProgress * 100) : 0
+    },
+    waveTag () {
+      if (this.waveIsBoss) { return 'BOSS WAVE' }
+      if (this.waveIsBrute) { return 'BRUTE WAVE' }
+      return 'INCOMING'
+    },
+    waveSubText () {
+      if (this.waveIsBoss) { return 'ระวังบอส!' }
+      if (this.waveIsBrute) { return 'ตัวถังหนักบุกหนัก!' }
+      return this.announceCount + ' ซอมบี้'
+    },
+    diffLabel () {
+      return Math.pow(1.42, this.waveTier).toFixed(1)
     },
     myAmmo () {
       return this.myPlayer ? this.myPlayer.ammo : 0
@@ -496,8 +514,9 @@ export default {
     },
 
     pickUpgrade (key) {
+      if (this.upgradeBusy) { return }
+      this.upgradeBusy = true
       this.$socket.emit('upgradePick', { key })
-      this.upgradeOffer = null
       this.clearKeys()
       this.$nextTick(() => {
         if (this.$refs.gamePage) { this.$refs.gamePage.focus() }
@@ -653,10 +672,12 @@ export default {
         }
       })
 
-      this.$socket.on('waveStart', ({ wave, count, timeLimit, boss }) => {
+      this.$socket.on('waveStart', ({ wave, count, timeLimit, boss, brute, tier }) => {
         this.wave = wave
         this.announceCount = count
         this.waveIsBoss = !!boss
+        this.waveIsBrute = !!brute
+        this.waveTier = tier || 0
         this.waveAnnounce = true
         this.waveTimeLimit = timeLimit || 120
         this.waveTimer = this.waveTimeLimit
@@ -756,12 +777,14 @@ export default {
         this._reinforceT = setTimeout(() => { this.reinforceMsg = '' }, 3000)
       })
 
-      this.$socket.on('upgradeOffer', ({ choices }) => {
-        this.upgradeOffer = { choices }
+      this.$socket.on('upgradeOffer', ({ choices, picks }) => {
+        this.upgradeOffer = { choices, picks }
+        this.upgradeBusy = false
       })
 
       this.$socket.on('upgradeApplied', ({ upgrades, picksLeft, auto }) => {
         this.myUpgrades = upgrades || []
+        this.upgradeBusy = false
         if (picksLeft <= 0) { this.upgradeOffer = null }
         if (auto && this.renderer && this.myPlayer) {
           this.renderer.floatText(this.myPlayer.x, this.myPlayer.y - 30, 'AUTO UPGRADE', '#ffcc40')
@@ -1163,6 +1186,19 @@ export default {
 .wa-boss .wa-tag { color: #ff2020; letter-spacing: 6px; }
 .wa-boss h2 { color: #ff5050; text-shadow: 0 0 24px rgba(255,40,40,0.7); }
 
+.wave-announce-inner.wa-brute { border-color: rgba(255,160,40,0.55); }
+.wa-brute .wa-tag { color: #ff9028; letter-spacing: 5px; }
+.wa-brute h2 { color: #ffb040; }
+
+.wa-diff {
+  display: block;
+  margin-top: 6px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #ff6040;
+}
+
 .reinforce-toast {
   position: absolute;
   top: 100px;
@@ -1209,6 +1245,7 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
 }
+.upgrade-cards.busy { opacity: 0.5; pointer-events: none; }
 .upgrade-card {
   width: 200px;
   min-height: 130px;
