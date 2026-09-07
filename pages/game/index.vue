@@ -117,6 +117,12 @@
           </div>
           <div class="ctrl-item">
             <div class="ctrl-key">
+              R
+            </div>
+            <span>รีโหลด (เติมเองอัตโนมัติเมื่อหมดแม็ก)</span>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-key">
               <i class="fas fa-mobile-screen" />
             </div>
             <span>มือถือ: จอยซ้ายเดิน จอยขวาเล็ง+ยิง</span>

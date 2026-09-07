@@ -9,6 +9,11 @@
           </div>
           <span class="hp-num">{{ myPlayer ? myPlayer.hp : 0 }}</span>
         </div>
+        <div class="ammo-wrap" :class="{ reloading: myReloading, low: !myReloading && myAmmo <= myMag * 0.25 }">
+          <i class="fas fa-bolt" />
+          <span v-if="myReloading" class="ammo-num">รีโหลด...</span>
+          <span v-else class="ammo-num">{{ myAmmo }}<small>/{{ myMag }}</small></span>
+        </div>
       </div>
       <div class="hud-center">
         <div class="wave-display">
@@ -72,6 +77,13 @@
         </div>
         <div class="joystick-knob aim-knob" :style="knobStyle(aimStick)" />
       </div>
+      <button
+        class="reload-btn"
+        :class="{ active: myReloading }"
+        @touchstart.prevent="$socket.emit('playerReload')"
+      >
+        <i class="fas fa-rotate" />
+      </button>
     </div>
 
     <transition name="fade">
@@ -233,6 +245,15 @@ export default {
     isDead () {
       return this.myPlayer ? !this.myPlayer.alive : false
     },
+    myAmmo () {
+      return this.myPlayer ? this.myPlayer.ammo : 0
+    },
+    myMag () {
+      return this.myPlayer ? this.myPlayer.magSize : 30
+    },
+    myReloading () {
+      return this.myPlayer ? this.myPlayer.reloading : false
+    },
     bossZombie () {
       return this.zombies.find(z => z.type === 'boss') || null
     },
@@ -343,8 +364,10 @@ export default {
     },
 
     onKeyDown (e) {
-      this.keys[e.key.toLowerCase()] = true
+      const k = e.key.toLowerCase()
+      this.keys[k] = true
       if (e.key === 'Escape') { this.confirmLeave() }
+      if (k === 'r') { this.$socket.emit('playerReload') }
       e.preventDefault()
     },
     onKeyUp (e) {
@@ -674,6 +697,20 @@ export default {
 }
 
 .hp-bar-wrap { display: flex; align-items: center; gap: 8px; }
+
+.ammo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffcc40;
+}
+.ammo-wrap i { font-size: 11px; opacity: 0.8; }
+.ammo-num small { font-size: 10px; opacity: 0.55; }
+.ammo-wrap.low { color: #ff6040; animation: pulse-warning 0.8s infinite; }
+.ammo-wrap.reloading { color: rgba(255,204,64,0.6); font-size: 12px; }
 .hp-bar {
   width: 140px;
   height: 8px;
@@ -859,6 +896,24 @@ export default {
 .aim-knob {
   background: rgba(255, 80, 80, 0.35);
   border-color: rgba(255, 80, 80, 0.7);
+}
+
+.reload-btn {
+  position: absolute;
+  right: 168px;
+  bottom: 40px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 204, 64, 0.2);
+  border: 2px solid rgba(255, 204, 64, 0.6);
+  color: #ffcc40;
+  font-size: 20px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.reload-btn.active {
+  animation: pulse-warning 0.6s infinite;
 }
 
 .reconnect-overlay {
