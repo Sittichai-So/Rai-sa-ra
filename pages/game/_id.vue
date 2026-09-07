@@ -1,5 +1,5 @@
 <template>
-  <div ref="gamePage" class="game-page" tabindex="0" @keydown="onKeyDown" @keyup="onKeyUp">
+  <div ref="gamePage" class="game-page" tabindex="0">
     <div class="hud">
       <div class="hud-left">
         <div class="hp-bar-wrap">
@@ -392,6 +392,9 @@ export default {
     this.renderLoop()
 
     window.addEventListener('resize', this.setupCanvas)
+    window.addEventListener('keydown', this.onKeyDown)
+    window.addEventListener('keyup', this.onKeyUp)
+    window.addEventListener('blur', this.clearKeys)
 
     if (this.isTouch) {
       window.addEventListener('touchmove', this.onStickMove, { passive: false })
@@ -408,6 +411,9 @@ export default {
     clearInterval(this.timerInterval)
     clearTimeout(this._reinforceT)
     window.removeEventListener('resize', this.setupCanvas)
+    window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('keyup', this.onKeyUp)
+    window.removeEventListener('blur', this.clearKeys)
     window.removeEventListener('touchmove', this.onStickMove)
     window.removeEventListener('touchend', this.onStickEnd)
     window.removeEventListener('touchcancel', this.onStickEnd)
@@ -458,13 +464,18 @@ export default {
 
     onKeyDown (e) {
       const k = e.key.toLowerCase()
+      const gameKeys = ['w', 'a', 's', 'd', 'r', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ']
+      if (e.key === 'Escape') { this.confirmLeave(); return }
+      if (!gameKeys.includes(k)) { return }
       this.keys[k] = true
-      if (e.key === 'Escape') { this.confirmLeave() }
       if (k === 'r') { this.$socket.emit('playerReload') }
       e.preventDefault()
     },
     onKeyUp (e) {
       this.keys[e.key.toLowerCase()] = false
+    },
+    clearKeys () {
+      this.keys = {}
     },
     onMouseMove (e) {
       this.mouseX = e.clientX
@@ -487,6 +498,10 @@ export default {
     pickUpgrade (key) {
       this.$socket.emit('upgradePick', { key })
       this.upgradeOffer = null
+      this.clearKeys()
+      this.$nextTick(() => {
+        if (this.$refs.gamePage) { this.$refs.gamePage.focus() }
+      })
     },
 
     sendInput () {
