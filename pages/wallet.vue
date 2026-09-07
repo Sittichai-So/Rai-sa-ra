@@ -6,15 +6,26 @@
       </button>
       <h1>กระเป๋าเหรียญ</h1>
       <div class="w-balance">
-        <i class="fas fa-coins" />
+        <CoinIcon :size="20" />
         <span>{{ coins }}</span>
       </div>
     </header>
 
     <div class="w-body">
+      <!-- ── ยอดคงเหลือ ── -->
+      <section v-if="stage === 'packages'" class="w-hero">
+        <CoinIcon :size="64" large />
+        <div class="w-hero-num">
+          {{ coins }}
+        </div>
+        <div class="w-hero-label">
+          เหรียญที่มี
+        </div>
+      </section>
+
       <!-- ── เลือกแพ็กเกจ ── -->
       <section v-if="stage === 'packages'" class="w-section">
-        <h2>เติมเหรียญ</h2>
+        <h2><i class="fas fa-bolt" /> เติมแพ็กเกจ</h2>
         <p v-if="!promptpayReady" class="w-warn">
           <i class="fas fa-triangle-exclamation" /> ระบบยังไม่ได้ตั้งค่าบัญชีรับเงิน — ติดต่อผู้ดูแล
         </p>
@@ -26,7 +37,8 @@
             :disabled="!promptpayReady || busy"
             @click="startTopup(p)"
           >
-            <span class="pkg-coins"><i class="fas fa-coins" /> {{ p.coins }}</span>
+            <CoinIcon :size="34" large />
+            <span class="pkg-coins">{{ p.coins }}</span>
             <span class="pkg-price">฿{{ p.thb }}</span>
             <span v-if="bonus(p) > 0" class="pkg-bonus">+{{ bonus(p) }} โบนัส</span>
           </button>
@@ -42,7 +54,7 @@
         </p>
         <p class="pay-hint">
           โอนตามยอดให้ตรงเป๊ะ ({{ topup.amountTHB }} บาท) แล้วอัปโหลดสลิป<br>
-          จะได้รับ <b>{{ topup.coins }} เหรียญ</b>
+          จะได้รับ <b><CoinIcon :size="15" /> {{ topup.coins }} เหรียญ</b>
         </p>
 
         <input ref="slipInput" type="file" accept="image/jpeg,image/png,image/webp" hidden @change="onSlip">
@@ -67,7 +79,7 @@
 
       <!-- ── ประวัติ ── -->
       <section v-if="stage === 'packages'" class="w-section">
-        <h2>ประวัติ</h2>
+        <h2><i class="fas fa-clock-rotate-left" /> ประวัติ</h2>
         <div v-if="!history.length" class="w-empty">
           ยังไม่มีรายการ
         </div>
@@ -237,12 +249,21 @@ export default {
   font-weight: 800;
   font-size: 17px;
 }
-.w-balance .fa-coins { color: #ffc94d; }
-
 .w-body { max-width: 560px; margin: 0 auto; padding: 20px 16px; }
 
+.w-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 0 26px;
+}
+.w-hero-num { font-size: 40px; font-weight: 800; line-height: 1.1; margin-top: 6px; }
+.w-hero-label { font-size: 13px; color: rgba(246, 243, 237, 0.55); }
+
 .w-section { margin-bottom: 26px; }
-.w-section h2 { font-size: 16px; font-weight: 700; margin: 0 0 12px; }
+.w-section h2 { font-size: 16px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.w-section h2 > .fas { color: #ffc94d; font-size: 13px; }
 
 .w-warn {
   background: rgba(255, 201, 77, 0.14);
@@ -256,8 +277,9 @@ export default {
 .pkg {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
-  padding: 18px 14px;
+  padding: 20px 14px 16px;
   border-radius: 16px;
   border: 2px solid rgba(255, 255, 255, 0.12);
   background: #1c1c26;
@@ -265,19 +287,18 @@ export default {
   cursor: pointer;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.pkg:hover:not(:disabled) { border-color: #ff5c4d; transform: translateY(-2px); }
+.pkg:hover:not(:disabled) { border-color: #ffc94d; transform: translateY(-2px); }
 .pkg:disabled { opacity: 0.5; cursor: not-allowed; }
-.pkg-coins { font-size: 22px; font-weight: 800; }
-.pkg-coins .fa-coins { color: #ffc94d; font-size: 16px; }
+.pkg-coins { font-size: 22px; font-weight: 800; margin-top: 4px; }
 .pkg-price { font-size: 14px; color: rgba(246, 243, 237, 0.7); }
 .pkg-bonus {
-  align-self: flex-start;
   font-size: 11px;
   font-weight: 700;
   color: #4dd07a;
   background: rgba(77, 208, 122, 0.14);
   padding: 2px 8px;
   border-radius: 999px;
+  margin-top: 2px;
 }
 
 .w-pay { text-align: center; }

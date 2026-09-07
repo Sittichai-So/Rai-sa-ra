@@ -203,7 +203,7 @@
         <div class="section">
           <div style="padding: 0 12px;">
             <nuxt-link to="/wallet" class="wallet-sidebar-btn">
-              <i class="fas fa-coins wallet-btn-icon" />
+              <span class="wallet-btn-icon"><CoinIcon :size="22" large /></span>
               <div class="game-btn-text">
                 <span class="game-btn-title">{{ myCoins }} เหรียญ</span>
                 <span class="game-btn-sub">เติมเหรียญ</span>
@@ -266,6 +266,11 @@
           <p>เลือกช่องทางที่คุณสนใจเพื่อเริ่มการสนทนา</p>
         </div>
         <div class="header-right">
+          <nuxt-link to="/wallet" class="coin-pill" title="กระเป๋าเหรียญ">
+            <CoinIcon :size="18" />
+            <span>{{ myCoins }}</span>
+            <i class="fas fa-plus coin-pill-plus" />
+          </nuxt-link>
           <div class="search-container">
             <div class="search-input-wrapper">
               <i class="fas fa-search search-icon" />
@@ -438,7 +443,7 @@
                   <span class="cr-type-name">ส่วนตัว</span>
                   <span class="cr-type-desc">
                     <template v-if="privateRoomCost > 0">
-                      <i class="fas fa-coins" /> {{ privateRoomCost }} เหรียญ
+                      <CoinIcon :size="13" /> {{ privateRoomCost }} เหรียญ
                     </template>
                     <template v-else>ต้องมีรหัสผ่าน</template>
                   </span>
@@ -456,7 +461,7 @@
                 placeholder="ตั้งรหัสผ่านให้สมาชิกใช้เข้าห้อง"
               >
               <small v-if="privateRoomCost > 0" class="cr-hint">
-                <i class="fas fa-coins" /> สร้างห้องส่วนตัวใช้ {{ privateRoomCost }} เหรียญ (คุณมี {{ myCoins }})
+                <CoinIcon :size="12" /> สร้างห้องส่วนตัวใช้ {{ privateRoomCost }} เหรียญ (คุณมี {{ myCoins }})
               </small>
             </div>
 
@@ -2270,6 +2275,36 @@ export default {
   margin: 0;
   font-size: var(--fs-body);
   color: var(--text-muted);
+}
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+.coin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 201, 77, 0.12);
+  border: 1px solid rgba(255, 201, 77, 0.3);
+  color: var(--text-cream);
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+.coin-pill:hover { background: rgba(255, 201, 77, 0.2); }
+.coin-pill-plus {
+  font-size: 10px;
+  color: #ffc94d;
+  border: 1px solid rgba(255, 201, 77, 0.5);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-container { width: 400px; min-width: 220px; }
