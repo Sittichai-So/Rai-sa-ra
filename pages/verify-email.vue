@@ -72,7 +72,7 @@ export default {
   layout: 'login',
   data () {
     return {
-      state: 'verifying', // verifying | success | error
+      state: 'verifying',
       errorMessage: '',
       email: '',
       loading: false,
@@ -131,7 +131,6 @@ export default {
 </script>
 
 <style scoped>
-/* ตั้งฟอนต์ที่คอนเทนต์ ไม่ใช้ `*` เพื่อไม่ให้ทับ font-family ของไอคอน Font Awesome (โหลดจาก CSS กลาง) */
 .auth-page,
 .auth-page h1,
 .auth-page h2,

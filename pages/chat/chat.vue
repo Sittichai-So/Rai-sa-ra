@@ -34,7 +34,6 @@
               class="channel-item"
               :class="{ active: activeRoomId === room._id }"
             >
-              <!-- ส่วนกดเข้าห้อง -->
               <div
                 class="channel-main"
                 @click="goToRoom(room._id)"
@@ -141,7 +140,6 @@
           </div>
         </div>
 
-        <!-- Direct Messages Section -->
         <div class="section">
           <div class="section-header">
             <h6>
@@ -761,7 +759,6 @@ export default {
         return false
       }
       const u = this.user || {}
-      // แสดงเฉพาะเมื่อรู้แน่ชัดว่ายังไม่ยืนยัน (ผู้ใช้เก่าถูก grandfather เป็น true แล้ว)
       return u.emailVerified === false
     },
     joinedRooms () {
@@ -778,8 +775,6 @@ export default {
         .join('')
         .toUpperCase()
     },
-    // avatar ของตัวเอง — โปรไฟล์ที่โหลดจาก API สดที่สุด, รองด้วย store (อัปเดตทันทีหลังอัปโหลด)
-    // แล้วค่อย localStorage — ต้องผ่าน resolveAsset เพราะ backend เก็บเป็น path สั้น (/uploads/xxx.png)
     myAvatar () {
       const src =
         (this.profile && this.profile.avatar) ||
@@ -825,7 +820,6 @@ export default {
       return this.dmConversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
     },
     friendMenuStyle () {
-      // เมนูกว้าง ~180px — จัดให้ไม่ทะลุขอบจอ
       const W = 180
       const H = 148
       let left = this.friendMenu.x - W
@@ -851,12 +845,10 @@ export default {
       document.body.style.overflow = open ? 'hidden' : ''
     },
     myAvatar () {
-      // มีรูปใหม่เข้ามา → ลองโหลดใหม่
       this.avatarBroken = false
     }
   },
   async mounted () {
-    // layout เริ่มต้นตั้ง html{font-size:22px !important} — ปรับกลับเป็น 16px สำหรับหน้าแชท
     document.documentElement.style.setProperty('font-size', '16px', 'important')
 
     this.initialize()
@@ -882,7 +874,6 @@ export default {
     }
     window.addEventListener('resize', this._onResize)
 
-    // ปิดเมนูเพื่อนเมื่อ scroll (ตำแหน่งจะไม่ตรงแล้ว)
     this._onSidebarScroll = () => this.closeFriendMenu()
     this.$nextTick(() => {
       const sc = this.$el.querySelector('.sidebar-content')
@@ -941,7 +932,6 @@ export default {
       document.body.style.overflow = ''
     },
     openDirectMessage (friend) {
-      // รองรับทั้ง object เพื่อน และ object conversation (มี friendId เหมือนกัน)
       this.selectedFriend = {
         friendId: friend.friendId,
         displayName: friend.displayName || friend.fullname || 'เพื่อน',
@@ -953,7 +943,6 @@ export default {
           this.$refs.dmModal.open()
         }
       })
-      // เปิดแล้วถือว่าอ่านแล้ว
       const conv = this.dmConversations.find(c => c.friendId === friend.friendId)
       if (conv) { conv.unreadCount = 0 }
     },
@@ -973,7 +962,6 @@ export default {
 
     openFriendMenu (friend, event) {
       const rect = event.currentTarget.getBoundingClientRect()
-      // ถ้ากดปุ่มเดิมซ้ำ = ปิด
       if (this.friendMenu.open && this.friendMenu.friend &&
           this.friendMenu.friend.friendId === friend.friendId) {
         this.closeFriendMenu()
@@ -1082,7 +1070,6 @@ export default {
           }))
           .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0))
       } catch (err) {
-        // ไม่ critical
       }
     },
 
@@ -1093,7 +1080,6 @@ export default {
         this.selectedFriend &&
         this.selectedFriend.friendId === m.friendId
 
-      // อัปเดตทันที (optimistic) — เด้ง badge + ดันขึ้นบนสุด ไม่ต้องรอ server
       const idx = this.dmConversations.findIndex(c => c.friendId === m.friendId)
       const conv = idx > -1 ? this.dmConversations[idx] : null
       if (conv) {
@@ -1107,7 +1093,6 @@ export default {
         }
       }
 
-      // sync กับ server (ได้ชื่อ/avatar กรณีเป็นคนใหม่ที่ยังไม่มีในลิสต์)
       this.loadDMConversations()
 
       if (!isOpen) {
@@ -1142,7 +1127,6 @@ export default {
           this.dmConversations.unshift(conv)
         }
       } else {
-        // สนทนาใหม่ที่ยังไม่มีในลิสต์ — ดึงจาก server
         this.loadDMConversations()
       }
     },
@@ -1219,7 +1203,6 @@ export default {
         if (res.status === 'success') {
           this.rooms = res.result
           await this.getCountMessages()
-          // console.log('Rooms loaded:', this.rooms)
         }
       } catch (err) {
         this.isLoading = false
@@ -1396,7 +1379,6 @@ export default {
         return this.friendToast('error', 'ห้องส่วนตัวต้องตั้งรหัสผ่าน')
       }
 
-      // เก็บแท็กที่ยังพิมพ์ค้างในช่องด้วย
       this.addTag()
       this.creatingRoom = true
 
@@ -1415,7 +1397,7 @@ export default {
           this.showCreateRoom = false
           this.resetNewRoom()
           await this.getRoom()
-          if (payload.type === 'private') { this.getProfile() } // refresh ยอดเหรียญ
+          if (payload.type === 'private') { this.getProfile() }
           this.friendToast('success', `สร้างห้อง "${createdName}" สำเร็จ 🎉`)
         }
       } catch (err) {
@@ -1597,7 +1579,6 @@ export default {
       return this.sendFriendRequest(u)
     },
 
-    // toast แบบไม่บล็อก — ไม่ต้องกด OK, โผล่เหนือ overlay (z-index จาก main.css)
     friendToast (icon, title) {
       this.$swal({
         toast: true,
@@ -1782,14 +1763,13 @@ export default {
   --text-body: #C9C4D6;
   --text-muted: #8B879C;
 
-  /* Type scale — one scale, used everywhere. Nothing above 26px. */
-  --fs-display: 26px;   /* hero titles */
-  --fs-h1: 21px;        /* page headers */
-  --fs-h2: 16px;        /* card titles */
-  --fs-h3: 14px;        /* sub headers / workspace name */
-  --fs-body: 14px;      /* default copy */
-  --fs-small: 12.5px;   /* meta text */
-  --fs-eyebrow: 10.5px; /* uppercase labels */
+  --fs-display: 26px;
+  --fs-h1: 21px;
+  --fs-h2: 16px;
+  --fs-h3: 14px;
+  --fs-body: 14px;
+  --fs-small: 12.5px;
+  --fs-eyebrow: 10.5px;
 
   --fw-black: 800;
   --fw-bold: 700;
@@ -2035,7 +2015,6 @@ export default {
   border: 2px solid rgba(255, 90, 69, 0.3);
 }
 
-/* กันข้อความ alt ของรูปที่โหลดไม่ขึ้นล้นออกนอกวงกลม */
 .user-avatar img {
   overflow: hidden;
   color: transparent;
@@ -2368,7 +2347,6 @@ export default {
   margin: 0 auto;
 }
 
-/* "sticker card" — flat color, offset shadow, no gimmicky glow */
 .room-card {
   background: var(--bg-panel);
   border: 1px solid var(--border-hair);
@@ -2493,7 +2471,6 @@ export default {
   cursor: not-allowed;
 }
 
-/* ---------- Add Friend overlay ---------- */
 .af-overlay {
   position: fixed;
   inset: 0;
@@ -2668,7 +2645,6 @@ export default {
   .af-search-btn { width: 100%; justify-content: center; padding: 10px; }
 }
 
-/* ---------- Create-room overlay ---------- */
 .cr-overlay {
   position: fixed;
   inset: 0;
@@ -3042,7 +3018,6 @@ select.cr-input {
 ::-webkit-scrollbar-thumb { background: rgba(255, 90, 69, 0.4); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 90, 69, 0.6); }
 
-/* ---------- Hero block: flat coral card, big bold headline ---------- */
 .community-hero {
   background: linear-gradient(135deg, var(--coral), var(--coral-dark));
   text-align: center;
@@ -3395,7 +3370,6 @@ select.cr-input {
   box-shadow: 0 0 0 3px rgba(255, 90, 69, 0.18);
 }
 
-/* Section header count badge (DM unread total, friend requests) */
 .hdr-badge {
   display: inline-flex;
   align-items: center;

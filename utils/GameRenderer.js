@@ -1,6 +1,4 @@
 /* eslint-disable no-unused-vars */
-// utils/GameRenderer.js
-// Canvas 2D renderer — runs client-side at 60fps
 
 // eslint-disable-next-line no-unused-vars
 const MAP_W = 1600
@@ -15,7 +13,6 @@ export default class GameRenderer {
   }
 
   _buildMapPattern () {
-    // Offscreen tile for background grid
     const off = document.createElement('canvas')
     off.width = TILE
     off.height = TILE
@@ -34,7 +31,6 @@ export default class GameRenderer {
     const W = this.canvas.width
     const H = this.canvas.height
 
-    // Clear
     ctx.clearRect(0, 0, W, H)
     ctx.fillStyle = '#080c10'
     ctx.fillRect(0, 0, W, H)
@@ -42,32 +38,25 @@ export default class GameRenderer {
     ctx.save()
     ctx.translate(-Math.round(camX), -Math.round(camY))
 
-    // Map background
     ctx.fillStyle = this.mapPattern
     ctx.fillRect(0, 0, mapW, mapH)
 
-    // Map border
     ctx.strokeStyle = 'rgba(0,255,80,0.25)'
     ctx.lineWidth = 3
     ctx.strokeRect(0, 0, mapW, mapH)
 
-    // Danger zone (red flash near edges)
     ctx.strokeStyle = 'rgba(255,40,40,0.15)'
     ctx.lineWidth = 20
     ctx.strokeRect(10, 10, mapW - 20, mapH - 20)
 
-    // Bullets
     this._drawBullets(ctx, bullets)
 
-    // Zombies
     this._drawZombies(ctx, zombies)
 
-    // Players
     this._drawPlayers(ctx, players, myId)
 
     ctx.restore()
 
-    // World coordinates minimap
     this._drawMinimap(ctx, players, zombies, myId, camX, camY, W, H, mapW, mapH)
   }
 
@@ -91,7 +80,6 @@ export default class GameRenderer {
       ctx.translate(z.x, z.y)
       ctx.rotate(z.angle + Math.PI / 2)
 
-      // Body
       ctx.beginPath()
       ctx.arc(0, 0, 18, 0, Math.PI * 2)
       const hpPct = z.hp / z.maxHp
@@ -103,7 +91,6 @@ export default class GameRenderer {
       ctx.fill()
       ctx.stroke()
 
-      // Eyes
       ctx.fillStyle = '#ff2020'
       ctx.shadowColor = '#ff2020'
       ctx.shadowBlur = 4
@@ -113,7 +100,6 @@ export default class GameRenderer {
 
       ctx.restore()
 
-      // HP bar above zombie
       const barW = 36
       const barH = 4
       const bx = z.x - barW / 2
@@ -128,7 +114,6 @@ export default class GameRenderer {
   _drawPlayers (ctx, players, myId) {
     for (const p of players) {
       if (!p.alive) {
-        // Draw skull for dead player
         ctx.save()
         ctx.translate(p.x, p.y)
         ctx.globalAlpha = 0.3
@@ -146,7 +131,6 @@ export default class GameRenderer {
 
       const isMe = p.id === myId
 
-      // Outer ring for local player
       if (isMe) {
         ctx.beginPath()
         ctx.arc(0, 0, 24, 0, Math.PI * 2)
@@ -157,7 +141,6 @@ export default class GameRenderer {
         ctx.globalAlpha = 1
       }
 
-      // Body circle
       ctx.beginPath()
       ctx.arc(0, 0, 18, 0, Math.PI * 2)
       ctx.fillStyle = isMe ? p.color : `${p.color}cc`
@@ -166,14 +149,12 @@ export default class GameRenderer {
       ctx.fill()
       ctx.stroke()
 
-      // Gun direction indicator
       ctx.save()
       ctx.rotate(p.angle)
       ctx.fillStyle = isMe ? '#fff' : p.color
       ctx.fillRect(14, -3, 12, 6)
       ctx.restore()
 
-      // Username
       ctx.font = isMe ? 'bold 11px Share Tech Mono, monospace' : '10px Share Tech Mono, monospace'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
@@ -182,7 +163,6 @@ export default class GameRenderer {
 
       ctx.restore()
 
-      // HP bar
       const barW = 36
       const barH = 4
       const bx = p.x - barW / 2
@@ -203,14 +183,12 @@ export default class GameRenderer {
     const scX = mmW / mapW
     const scY = mmH / mapH
 
-    // Background
     ctx.fillStyle = 'rgba(0,0,0,0.7)'
     ctx.fillRect(mmX, mmY, mmW, mmH)
     ctx.strokeStyle = 'rgba(0,255,80,0.2)'
     ctx.lineWidth = 1
     ctx.strokeRect(mmX, mmY, mmW, mmH)
 
-    // Viewport rect
     const cvW = Math.min(this.canvas.width, mapW)
     const cvH = Math.min(this.canvas.height, mapH)
     ctx.strokeStyle = 'rgba(255,255,255,0.15)'
@@ -222,13 +200,11 @@ export default class GameRenderer {
       cvH * scY
     )
 
-    // Zombies
     ctx.fillStyle = '#ff4020'
     for (const z of zombies) {
       ctx.fillRect(mmX + z.x * scX - 1, mmY + z.y * scY - 1, 2, 2)
     }
 
-    // Players
     for (const p of players) {
       ctx.fillStyle = p.alive ? (p.id === myId ? '#fff' : p.color) : '#555'
       ctx.beginPath()
@@ -236,7 +212,6 @@ export default class GameRenderer {
       ctx.fill()
     }
 
-    // Label
     ctx.fillStyle = 'rgba(0,255,80,0.4)'
     ctx.font = '9px monospace'
     ctx.textAlign = 'left'

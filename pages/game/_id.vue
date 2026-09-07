@@ -237,7 +237,7 @@ export default {
       const canvas = this.$refs.canvas
       if (!canvas) { return }
       canvas.width = window.innerWidth
-      canvas.height = window.innerHeight - 60 // minus HUD
+      canvas.height = window.innerHeight - 60
       this.canvasW = canvas.width
       this.canvasH = canvas.height
     },
@@ -347,7 +347,6 @@ export default {
       })
 
       this.$socket.on('playerDied', ({ playerId }) => {
-        // isDead เป็น computed ที่คำนวณจาก gameState อยู่แล้ว
         if (playerId === this.myId) {
           this.$nextTick(() => this.$forceUpdate())
         }
@@ -465,7 +464,6 @@ export default {
   flex-direction: column;
 }
 
-/* HUD */
 .hud {
   height: 60px;
   background: rgba(0,0,0,0.85);
@@ -595,7 +593,6 @@ export default {
 }
 .escape-btn:hover { background: rgba(255,80,80,0.1); border-color: #ff5050; color: #ff5050; }
 
-/* Mini scoreboard */
 .mini-scoreboard {
   position: absolute;
   top: 70px;
@@ -624,14 +621,12 @@ export default {
 .sb-score { color: #00ff50; min-width: 40px; text-align: right; }
 .sb-kills { color: #ff8080; min-width: 40px; text-align: right; }
 
-/* Canvas */
 .game-canvas {
   display: block;
   flex: 1;
   cursor: crosshair;
 }
 
-/* Wave announce */
 .wave-announce {
   position: absolute;
   inset: 0;
@@ -664,7 +659,6 @@ export default {
 }
 .wa-sub { font-size: 14px; color: rgba(224,240,224,0.5); font-family: 'Share Tech Mono', monospace; }
 
-/* Dead overlay */
 .dead-overlay {
   position: absolute;
   inset: 0;
@@ -685,7 +679,6 @@ export default {
 .dead-box h2 { font-family: 'Orbitron', sans-serif; font-size: 22px; color: #ff5050; margin-bottom: 8px; }
 .dead-box p { font-size: 13px; color: rgba(224,240,224,0.4); font-family: 'Share Tech Mono', monospace; }
 
-/* Game over */
 .gameover-overlay {
   position: absolute;
   inset: 0;

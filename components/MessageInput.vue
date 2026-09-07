@@ -102,7 +102,6 @@ export default {
       textarea.style.height = 'auto'
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
 
-      // ส่งสัญญาณ "กำลังพิมพ์" แบบ debounce
       this.$emit('typing-start')
       clearTimeout(this._typingTimer)
       this._typingTimer = setTimeout(() => this.$emit('typing-stop'), 1500)
@@ -219,7 +218,6 @@ export default {
   padding: 14px 20px 18px;
 }
 
-/* ---------- Reply bar (compact, sits flush above the input pill) ---------- */
 .reply-bar {
   display: flex;
   align-items: center;
@@ -299,7 +297,6 @@ export default {
   margin-bottom: 0;
 }
 
-/* ---------- Input pill ---------- */
 .input-area { padding: 0; }
 
 .input-wrapper {

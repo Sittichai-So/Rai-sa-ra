@@ -1,4 +1,3 @@
-// components/MessageList.vue
 <template>
   <div class="message-list-container" :data-theme="chatTheme">
     <div ref="messageList" class="message-list" @scroll="handleScroll">
@@ -241,7 +240,6 @@ export default {
           if (!grouped[date]) { grouped[date] = [] }
           grouped[date].push(message)
         } catch (error) {
-          // ข้อความรูปแบบวันที่ไม่ถูกต้อง — ข้ามการจัดกลุ่ม
         }
       })
       return grouped
@@ -465,14 +463,6 @@ export default {
 </script>
 
 <style scoped>
-/*
-  Design tokens — one dark surface system shared with MemberList.vue.
-  Everything used to be bright-violet header + near-black chat + cream
-  sidebar, each with its own hard-edged brutalist border/shadow. That's
-  three unrelated moods stitched together. This version keeps a single
-  dark ink surface throughout and spends contrast only where it carries
-  meaning: who sent a message, and what's actionable.
-*/
 .message-list-container {
   --bg: #121218;
   --surface: #1c1c26;
@@ -584,8 +574,6 @@ export default {
   align-items: flex-end;
 }
 
-/* Other people's messages: neutral dark surface, left-aligned, always
-   paired with an avatar + name above so authorship reads instantly. */
 .message-bubble.other {
   background: var(--surface);
   color: var(--text);
@@ -593,46 +581,37 @@ export default {
   border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 4px;
 }
 
-/* Your own messages: violet fill, no border, opposite corner flattened —
-   the two shapes are mirror images of each other at a glance. */
 .message-bubble.own {
   background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   color: #ffffff;
   border-radius: var(--radius-md) var(--radius-md) 4px var(--radius-md);
 }
 
-/* Theme: Pink */
 .message-list-container[data-theme="pink"] .message-bubble.own {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-/* Theme: Purple */
 .message-list-container[data-theme="purple"] .message-bubble.own {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* Theme: Green */
 .message-list-container[data-theme="green"] .message-bubble.own {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
-/* Theme: Orange */
 .message-list-container[data-theme="orange"] .message-bubble.own {
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
 }
 
-/* Theme: Dark */
 .message-list-container[data-theme="dark"] .message-bubble.own {
   background: linear-gradient(135deg, #434343 0%, #000000 100%);
 }
 
-/* Theme: Minimal */
 .message-list-container[data-theme="minimal"] .message-bubble.own {
   background: #ffffff;
   color: #1a1a1a;
 }
 
-/* Theme: Default */
 .message-list-container[data-theme="default"] .message-bubble.own {
   background: #0084ff;
 }
@@ -791,8 +770,6 @@ export default {
 
 .reaction-count { font-weight: 700; color: var(--text); }
 
-/* Floating hover toolbar — sits in the gap above the bubble, out of the way
-   of the message content, and takes no layout space so the list stays tight. */
 .quick-actions {
   position: absolute;
   top: -17px;
@@ -820,7 +797,6 @@ export default {
   pointer-events: auto;
 }
 
-/* Touch devices have no hover — keep the actions reachable (subtle, always on) */
 @media (hover: none) {
   .quick-actions {
     opacity: 0.55;

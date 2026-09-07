@@ -12,7 +12,6 @@
     </header>
 
     <div class="w-body">
-      <!-- ── ยอดคงเหลือ ── -->
       <section v-if="stage === 'packages'" class="w-hero">
         <CoinIcon :size="64" large />
         <div class="w-hero-num">
@@ -23,7 +22,6 @@
         </div>
       </section>
 
-      <!-- ── เลือกแพ็กเกจ ── -->
       <section v-if="stage === 'packages'" class="w-section">
         <h2><i class="fas fa-bolt" /> เติมแพ็กเกจ</h2>
         <p v-if="!promptpayReady" class="w-warn">
@@ -45,7 +43,6 @@
         </div>
       </section>
 
-      <!-- ── จ่ายเงิน (QR) ── -->
       <section v-else-if="stage === 'pay'" class="w-section w-pay">
         <h2>สแกนจ่าย {{ topup.amountTHB }} บาท</h2>
         <img :src="topup.qrDataUrl" alt="PromptPay QR" class="qr">
@@ -67,7 +64,6 @@
         </button>
       </section>
 
-      <!-- ── ผลลัพธ์ ── -->
       <section v-else-if="stage === 'result'" class="w-section w-result">
         <i :class="result.icon" class="result-icon" />
         <h2>{{ result.title }}</h2>
@@ -77,7 +73,6 @@
         </button>
       </section>
 
-      <!-- ── ประวัติ ── -->
       <section v-if="stage === 'packages'" class="w-section">
         <h2><i class="fas fa-clock-rotate-left" /> ประวัติ</h2>
         <div v-if="!history.length" class="w-empty">
@@ -105,7 +100,7 @@ export default {
       history: [],
       promptpayReady: false,
       costs: {},
-      stage: 'packages', // packages | pay | result
+      stage: 'packages',
       topup: null,
       busy: false,
       result: {}
@@ -139,7 +134,6 @@ export default {
       } catch (e) {}
     },
     bonus (p) {
-      // โบนัส = เหรียญที่ได้ - (บาท x อัตราฐานของแพ็กเล็กสุด)
       const base = this.packages[0]
       if (!base) { return 0 }
       const rate = base.coins / base.thb

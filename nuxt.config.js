@@ -7,17 +7,13 @@ const environment = {
   test: { api: API_BASE }
 }
 
-// Fallback so a missing/unknown NODE_ENV never crashes config loading.
 const currentEnv = environment[process.env.NODE_ENV] || environment.development
 
 export default {
-  // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
 
-  // Target: https://go.nuxtjs.dev/config-target
   target: 'static',
 
-  // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: 'rai-sa-ra',
     htmlAttrs: {
@@ -35,7 +31,6 @@ export default {
     ]
   },
 
-  // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
     '@/assets/css/fonts.css',
     '@/assets/css/main.css',
@@ -43,7 +38,6 @@ export default {
     '@fortawesome/fontawesome-free/css/all.css'
   ],
 
-  // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
     { src: '~/plugins/axios.js' },
     { src: '~/plugins/socket.client.js', mode: 'client' },
@@ -53,20 +47,14 @@ export default {
     { src: '~/plugins/anime.js', mode: 'client' }
   ],
 
-  // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
 
-  // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
   buildModules: [
-    // https://go.nuxtjs.dev/eslint
     '@nuxtjs/eslint-module'
   ],
 
-  // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
-    // https://go.nuxtjs.dev/bootstrap
     'bootstrap-vue/nuxt',
-    // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
     'vue-sweetalert2/nuxt'
   ],
@@ -76,7 +64,6 @@ export default {
     API_BASE: currentEnv.api,
     API_FILE_BASE: FILE_BASE,
 
-    // auth
     API_LOGIN: currentEnv.api + '/auth/login',
     API_REGISTER_USER: currentEnv.api + '/auth/register',
     API_CHECK_USERNAME: currentEnv.api + '/auth/check-username',
@@ -85,36 +72,28 @@ export default {
     API_VERIFY_EMAIL: currentEnv.api + '/auth/verify-email',
     API_RESEND_VERIFICATION: currentEnv.api + '/auth/resend-verification',
 
-    // getCategories
     API_GET_CATEGORIES_ROOM: currentEnv.api + '/categories/getCategories',
 
-    // room
     API_GET_ROOM: currentEnv.api + '/room/getRoom',
     API_JOIN_ROOM_USERS: currentEnv.api + '/room/joinRoom',
     API_CREATE_ROOM: currentEnv.api + '/room/createRoom',
     API_LEAVE_ROOM_USERS: currentEnv.api + '/room/removeJoinRoom',
 
-    // chat
     API_GET_ROOM_MEMBER: currentEnv.api + '/chat/:roomId/members',
     API_GET_ROOM_BY_ID: currentEnv.api + '/chat/room/:roomId',
 
-    // chatLog (ข้อความในห้อง)
     API_GET_CHATLOG_ROOM_ID: currentEnv.api + '/chatLog',
     API_DELETE_CHATLOG_ROOM_ID: currentEnv.api + '/chatLog',
     API_SEARCH_MESSAGE: currentEnv.api + '/chatLog/:roomId/search',
 
-    // count
     API_GET_COUNT_ALL_CHAT_MESSAGES: currentEnv.api + '/chatLog/counts/all',
 
-    // upload
     API_UPLOAD_FILE: currentEnv.api + '/upload',
 
-    // direct messages
     API_DM_CONVERSATIONS: currentEnv.api + '/dm/conversations',
     API_DM_MESSAGES: currentEnv.api + '/dm/:friendId/messages',
     API_DM_READ: currentEnv.api + '/dm/:friendId/read',
 
-    // friends
     API_SEND_FRIEND: currentEnv.api + '/friends/send',
     API_POST_ACCEPT_FRIENDSHIP_ID: currentEnv.api + '/friends/accept/:friendshipId',
     API_POST_REJECT_FRIENDSHIP_ID: currentEnv.api + '/friends/reject/:friendshipId',
@@ -128,17 +107,14 @@ export default {
     API_STATS_FRIEND: currentEnv.api + '/friends/stats',
     API_PROFILE_FRIEND_ID: currentEnv.api + '/friends/profile/:friendId',
 
-    // users
     API_PATCH_USER_STATUS: currentEnv.api + '/user/:id/status',
     API_GET_USER_BY_ID: currentEnv.api + '/user/getByID',
     API_EDIT_PROFILE_BY_ID: currentEnv.api + '/user/editProfile',
     API_EDIT_PASSWORD_BY_ID: currentEnv.api + '/user/resetPassword',
     API_USER_AVATAR: currentEnv.api + '/user/avatar',
 
-    // landing stats
     API_STATS: currentEnv.api + '/stats',
 
-    // coins / เติมเงิน
     API_COINS_WALLET: currentEnv.api + '/coins/wallet',
     API_COINS_PACKAGES: currentEnv.api + '/coins/packages',
     API_COINS_TOPUP: currentEnv.api + '/coins/topup',
@@ -149,7 +125,6 @@ export default {
     API_COINS_ADMIN_REJECT: currentEnv.api + '/coins/admin/topups/:id/reject',
     API_ROOM_EXTEND_RETENTION: currentEnv.api + '/room/:id/extend-retention',
 
-    // socket
     SOCKET_URL: process.env.SOCKET_URL || FILE_BASE
   },
 
@@ -157,13 +132,10 @@ export default {
     icons: true
   },
 
-  // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
-    // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
     baseURL: '/'
   },
 
-  // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     transpile: [
       'vee-validate/dist/rules',

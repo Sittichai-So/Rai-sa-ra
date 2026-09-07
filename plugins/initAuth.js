@@ -15,10 +15,8 @@ export default async ({ store }) => {
     return
   }
 
-  // hydrate store ทันที ไม่ต้องรอ network
   store.commit('setUserData', parsedUser)
 
-  // แล้วค่อยแจ้ง backend ว่าออนไลน์ (ล้มเหลวได้โดยไม่กระทบการใช้งาน)
   try {
     const url = process.env.API_PATCH_USER_STATUS.replace(':id', parsedUser._id)
     const response = await axios.patch(
@@ -33,6 +31,5 @@ export default async ({ store }) => {
       store.commit('setUserData', parsedUser)
     }
   } catch (err) {
-    // non-fatal
   }
 }

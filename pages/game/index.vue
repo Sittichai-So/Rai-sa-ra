@@ -1,6 +1,5 @@
 <template>
   <div class="game-lobby">
-    <!-- bg grid -->
     <div class="grid-bg" />
     <div class="scanline" />
 
@@ -23,7 +22,6 @@
     </header>
 
     <main class="lobby-body">
-      <!-- Create room -->
       <section class="create-panel">
         <h2><i class="fas fa-plus-circle" /> สร้างห้องใหม่</h2>
         <div class="create-form">
@@ -41,7 +39,6 @@
         </div>
       </section>
 
-      <!-- Active rooms -->
       <section class="rooms-panel">
         <div class="rooms-header">
           <h2><i class="fas fa-broadcast-tower" /> ห้องที่กำลังเล่น</h2>
@@ -97,7 +94,6 @@
         </div>
       </section>
 
-      <!-- How to play -->
       <section class="howto-panel">
         <h2><i class="fas fa-gamepad" /> วิธีเล่น</h2>
         <div class="controls-grid">
@@ -155,14 +151,12 @@ export default {
   },
   mounted () {
     this.loadRooms()
-    // Listen for live room list from socket
     this.$socket.emit('gameRoomList')
     this.$socket.on('gameRoomListResult', ({ rooms }) => {
       this.rooms = rooms || []
       this.loading = false
       this.refreshing = false
     })
-    // Poll every 5s
     this.pollInterval = setInterval(() => {
       this.$socket.emit('gameRoomList')
     }, 5000)
@@ -328,7 +322,6 @@ section h2 {
   gap: 8px;
 }
 
-/* Create panel */
 .create-panel {
   background: rgba(0,255,80,0.03);
   border: 1px solid rgba(0,255,80,0.12);
@@ -374,7 +367,6 @@ section h2 {
 .create-btn:hover:not(:disabled) { background: #80ffb0; box-shadow: 0 0 20px rgba(0,255,80,0.3); }
 .create-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-/* Rooms panel */
 .rooms-panel {
   grid-column: 2;
   grid-row: 1 / 3;
@@ -495,7 +487,6 @@ section h2 {
 .join-btn:hover { background: rgba(0,255,80,0.1); border-color: #00ff50; }
 .ended-label { text-align: center; font-size: 12px; color: rgba(224,240,224,0.3); }
 
-/* How to play */
 .howto-panel {
   background: rgba(0,255,80,0.03);
   border: 1px solid rgba(0,255,80,0.12);

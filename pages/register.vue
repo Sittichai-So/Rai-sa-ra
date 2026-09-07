@@ -466,7 +466,6 @@ export default {
 </script>
 
 <style scoped>
-/* ตั้งฟอนต์ที่ตัวการ์ด ไม่ใช้ `*` เพื่อไม่ให้ทับ family ของไอคอน Font Awesome */
 .auth-page,
 .auth-page h1,
 .auth-page h2,
@@ -644,7 +643,6 @@ export default {
   color: #ff5c4d;
 }
 
-/* ::v-deep เพื่อให้ทะลุเข้าไปที่ <label> ภายใน <b-form-group> */
 .form-group label,
 ::v-deep .form-group > label,
 ::v-deep .col-form-label,

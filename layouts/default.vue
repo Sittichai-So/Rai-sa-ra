@@ -84,8 +84,6 @@ body{
   text-align: right;
 }
 
-/* //////////////////////////////////// */
-
 @media screen and (max-width: 600px) {
   #Col-MainContant {
     padding-top: 20px;

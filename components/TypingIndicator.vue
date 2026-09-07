@@ -1,4 +1,3 @@
-// components/TypingIndicator.vue
 <template>
   <transition name="typing-fade">
     <div v-if="isTyping" class="modern-typing-indicator">
@@ -101,7 +100,6 @@ export default {
   font-weight: 700;
 }
 
-/* Transitions */
 .typing-fade-enter-active,
 .typing-fade-leave-active {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -113,7 +111,6 @@ export default {
   transform: translateY(5px);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .modern-typing-indicator {
     padding: 5px 16px;

@@ -164,7 +164,6 @@ export default {
       chatTheme: 'purple',
       chatBackground: '#0f0f23',
       roomSettings: { theme: 'purple', background: '#0f0f23' },
-      // เดสก์ท็อปเปิดค้างไว้ได้, มือถือเริ่มด้วยปิด (ไม่งั้นบังครึ่งจอ)
       showMemberSidebar: typeof window !== 'undefined' ? window.innerWidth > 992 : true,
 
       availableThemes: [
@@ -238,8 +237,6 @@ export default {
     }
   },
   watch: {
-    // เมื่อกดตอบกลับ กล่อง input จะสูงขึ้น — เลื่อนแชทลงล่างสุดถ้าผู้ใช้อยู่ล่างอยู่แล้ว
-    // จะได้ไม่มีข้อความล่าสุดถูกกล่องตอบกลับบัง
     replyTo (val) {
       if (!val) { return }
       this.$nextTick(() => {
@@ -267,7 +264,6 @@ export default {
     }
   },
   async mounted () {
-    // layout เริ่มต้นตั้ง html{font-size:22px !important} ซึ่งทำให้ UI แชท (คิดจากฐาน 16px) ใหญ่เกิน
     document.documentElement.style.setProperty('font-size', '16px', 'important')
 
     this.loadUserData()
@@ -357,13 +353,11 @@ export default {
     },
 
     openSettings () {
-      // จำธีมเดิมไว้ เผื่อผู้ใช้กดปิดโดยไม่บันทึก
       this._themeSnapshot = this.roomSettings.theme
       this.showSettingsModal = true
     },
 
     closeSettings () {
-      // ยังไม่บันทึก → คืนค่าธีมเดิม
       if (this._themeSnapshot && this._themeSnapshot !== this.roomSettings.theme) {
         this.roomSettings = { ...this.roomSettings, theme: this._themeSnapshot }
       }
@@ -371,7 +365,6 @@ export default {
     },
 
     handleSettingsSave () {
-      // ค่าจาก v-model ถูก sync ผ่าน watcher แล้ว — บันทึกลง localStorage
       this._themeSnapshot = this.roomSettings.theme
       this.saveRoomSettings()
       this.showSettingsModal = false
@@ -397,7 +390,6 @@ export default {
           }
         }
       } catch (err) {
-        // ใช้ข้อมูลจาก query string ต่อไป
       }
     },
 
@@ -443,8 +435,6 @@ export default {
         this.page = nextPage
         this.hasMore = payload.hasMore || false
 
-        // คงตำแหน่ง scroll ไว้ที่เดิมหลังเติมข้อความเก่าด้านบน
-        // (รอ 2 รอบ ให้ MessageList render + auto-scroll ของมันทำงานก่อน แล้วค่อยแก้กลับ)
         this.$nextTick(() => {
           requestAnimationFrame(() => {
             if (container) {
@@ -455,7 +445,6 @@ export default {
           })
         })
       } catch (err) {
-        // เงียบไว้ — ไม่ critical
       } finally {
         this.loadingMore = false
       }
@@ -463,7 +452,6 @@ export default {
 
     onSocketConnect () {
       this.socketConnected = true
-      // re-join ห้องหลัง reconnect
       this.$socket.emit('joinRoom', { roomId: this.roomId, user: this.user })
     },
 
@@ -763,8 +751,6 @@ export default {
   z-index: 0;
 }
 
-/* ยกเฉพาะ layout หลักให้อยู่เหนือ ::before ที่เป็นลายจุด
-   (ไม่ใช้ `> *` เพราะจะไป override position ของ overlay ลูกคอมโพเนนต์ด้วย) */
 .chat-area,
 .member-sidebar,
 .sidebar-overlay { position: relative; z-index: 1; }
@@ -785,7 +771,6 @@ export default {
   flex-shrink: 0;
 }
 
-/* Theme colors for header */
 .chat-room-page[data-theme="pink"] .chat-header {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
@@ -806,8 +791,6 @@ export default {
   background: linear-gradient(135deg, #434343 0%, #000000 100%);
 }
 
-/* พื้นที่ข้อความเป็นโทนมืดเสมอ (ดู MessageList.vue) — หัวห้องธีม minimal
-   จึงใช้พื้นเข้มโปร่งแทนสีเทาอ่อน เพื่อไม่ให้ตัดกับส่วนอื่นจนดูแปลกตา */
 .chat-room-page[data-theme="minimal"] .chat-header {
   background: #22222c;
 }
@@ -816,7 +799,6 @@ export default {
   background: #0084ff;
 }
 
-/* ธีม orange พื้นหัวสว่าง — ใช้ตัวอักษรสีเข้มไม่งั้นอ่านไม่ออก */
 .chat-room-page[data-theme="orange"] .room-name {
   color: var(--ink);
 }
@@ -1189,7 +1171,6 @@ export default {
 
 .message-bubble.other { background: var(--white) !important; }
 
-/* Theme colors for own messages in room.vue */
 .chat-room-page[data-theme="pink"] .message-bubble.own-message {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
 }
@@ -1416,7 +1397,6 @@ export default {
   .close-picker { width: 26px; height: 26px; }
 }
 
-/* Landscape mode on mobile */
 @media (max-height: 500px) and (orientation: landscape) {
   .chat-room-page { flex-direction: column; }
   .member-sidebar {
@@ -1434,7 +1414,6 @@ export default {
   .reaction-picker-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
 }
 
-/* Very small screens */
 @media (max-width: 360px) {
   .chat-header { padding: 6px 10px; }
   .room-avatar { width: 28px; height: 28px; font-size: 12px; }

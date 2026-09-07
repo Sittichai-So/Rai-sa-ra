@@ -105,7 +105,6 @@ export default {
 
             this.$store.commit('setUserData', userData)
 
-            // reconnect socket เพื่อให้ handshake ส่ง token ใหม่ (server verify ที่ io.use)
             if (this.$socket) {
               this.$socket.disconnect()
               this.$socket.connect()
@@ -123,8 +122,6 @@ export default {
       } catch (error) {
         const resData = error.response?.data || {}
         const errorMessage = resData.cause || resData.message || 'เกิดข้อผิดพลาด'
-
-        console.log('errorMessage', errorMessage)
 
         await this.$swal({
           icon: 'error',

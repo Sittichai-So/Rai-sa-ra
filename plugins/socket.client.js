@@ -10,7 +10,6 @@ export default (ctx, inject) => {
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    // ส่ง JWT ไปด้วยทุกครั้งที่ (re)connect — server verify ที่ io.use()
     auth: (setAuth) => {
       let token = null
       try {
@@ -20,7 +19,6 @@ export default (ctx, inject) => {
     }
   })
 
-  // ประกาศตัวตนใหม่ทุกครั้งที่ (re)connect
   const identify = () => {
     socket.emit('identify')
   }

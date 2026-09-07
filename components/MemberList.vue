@@ -1,6 +1,5 @@
 <template>
   <div class="member-list-container" :data-theme="chatTheme">
-    <!-- Header -->
     <div class="member-list-header">
       <h3 class="member-list-title">
         <i class="fas fa-users" />
@@ -11,7 +10,6 @@
       </button>
     </div>
 
-    <!-- Search Box -->
     <div class="member-search-wrapper">
       <div class="search-icon">
         <i class="fas fa-search" />
@@ -28,13 +26,11 @@
     </div>
 
     <div class="member-list-body">
-      <!-- Loading State -->
       <div v-if="loading" class="member-status-panel">
         <b-spinner small class="mr-2" />
         <span>กำลังโหลดสมาชิก...</span>
       </div>
 
-      <!-- Error State -->
       <div v-else-if="error" class="member-status-panel error">
         <i class="fas fa-exclamation-circle" />
         <span>โหลดรายชื่อสมาชิกไม่สำเร็จ</span>
@@ -44,7 +40,6 @@
       </div>
 
       <template v-else>
-        <!-- Online Members Section -->
         <div v-if="onlineMembers.length" class="member-section">
           <div class="section-header">
             <span class="section-title">ออนไลน์</span>
@@ -83,7 +78,6 @@
           </div>
         </div>
 
-        <!-- Offline Members Section -->
         <div v-if="offlineMembers.length" class="member-section">
           <div class="section-header">
             <span class="section-title">ออฟไลน์</span>
@@ -116,7 +110,6 @@
           </div>
         </div>
 
-        <!-- No Results -->
         <div v-if="members.length === 0" class="no-members">
           <div class="no-members-icon">
             <i class="fas fa-user-slash" />
@@ -153,7 +146,6 @@ export default {
 
     sortedMembers () {
       return [...this.members].sort((a, b) => {
-        // ตัวเองขึ้นก่อนเสมอ ตามด้วยสถานะออนไลน์ ตามด้วยชื่อ
         if (a.isYou !== b.isYou) {
           return a.isYou ? -1 : 1
         }
@@ -185,7 +177,6 @@ export default {
     }
   },
   watch: {
-    // Re-fetch if the user switches rooms while this sidebar stays mounted
     roomId () {
       this.cleanupSocket()
       this.fetchMembers()
@@ -203,13 +194,6 @@ export default {
     }
   },
   methods: {
-    // ---------------------------------------------------------------
-    // จุดสำคัญ: ทุก path ที่เติมข้อมูลเข้า this.members (fetch, socket
-    // roomMembers, memberJoined) ต้องแปลงผ่าน helper ตัวเดียวกันนี้
-    // เพื่อให้ shape ตรงกันเสมอ (username / online / avatar / _id)
-    // ไม่งั้น template และ computed (onlineMembers/offlineMembers)
-    // จะอ่านค่าไม่ตรงกันระหว่างข้อมูลที่มาจาก HTTP กับจาก socket
-    // ---------------------------------------------------------------
     normalizeMember (m) {
       const id = m._id || m.id
       return {
@@ -222,7 +206,6 @@ export default {
       }
     },
 
-    // backend เก็บ avatar เป็น path สั้น (/uploads/xxx) → ต้องเติม host ของ API
     resolveAsset (url) {
       if (!url) { return null }
       return /^https?:\/\//.test(url) ? url : (process.env.API_FILE_BASE || '') + url
@@ -262,11 +245,6 @@ export default {
 
         this.members = data.map(member => this.normalizeMember(member))
 
-        // แก้ปัญหาหลัก: ตอน refresh หน้า component จะถูกสร้างใหม่และยิง
-        // fetch ทันที ซึ่งบางครั้ง backend อาจยังไม่ทันอัปเดตว่า
-        // connection/socket ใหม่ของเรา online แล้ว (race condition)
-        // เราจึงรู้ดีอยู่แล้วว่าตอนนี้หน้าจอ render ได้ = เราออนไลน์อยู่จริง
-        // เลย force สถานะของตัวเองเป็น online เสมอหลัง fetch เสร็จ
         const me = this.members.find(m => m.isYou)
         if (me) {
           me.online = true
@@ -286,8 +264,6 @@ export default {
 
       this.cleanupSocket()
 
-      // ไม่ต้อง emit joinRoom ที่นี่ เพราะ room.vue จัดการแล้ว
-      // เพียงแค่รอรับ event จาก server
       this.$socket.on('roomMembers', this.handleRoomMembers)
       this.$socket.on('statusChanged', this.handleStatusChanged)
       this.$socket.on('memberJoined', this.handleMemberJoined)
@@ -295,8 +271,6 @@ export default {
 
       this.socketListenersSetup = true
 
-      // ประกาศสถานะของตัวเองเป็น online ทันทีที่ setup เสร็จ เพื่อให้
-      // คนอื่นในห้องเห็นเราออนไลน์โดยไม่ต้องรอ action อื่น
       this.$socket.emit('statusChanged', {
         userId: this.currentUserId,
         status: 'online',
@@ -326,7 +300,6 @@ export default {
       this.socketListenersSetup = false
     },
 
-    // Socket event handlers (แยกออกมาเป็น methods เพื่อง่ายต่อการ cleanup)
     handleRoomMembers (members) {
       if (!Array.isArray(members)) { return }
 
@@ -420,8 +393,6 @@ export default {
   overflow: hidden;
 }
 
-/* จุดสำคัญ: ให้ส่วนรายชื่อ scroll ในตัวเอง ไม่งั้นเนื้อหาที่ยาวเกิน
-   จะล้นออกไปโชว์พื้นหลัง cream ของ .member-sidebar ใน room.vue */
 .member-list-body {
   flex: 1;
   min-height: 0;

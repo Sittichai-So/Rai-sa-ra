@@ -1,4 +1,3 @@
-// components/DirectMessageModal.vue
 <template>
   <b-modal
     v-model="showModal"
@@ -19,7 +18,6 @@
       </button>
     </div>
     <div class="dm-chat-container">
-      <!-- Messages Area -->
       <div ref="messagesContainer" class="dm-messages">
         <div
           v-for="message in messages"
@@ -44,19 +42,16 @@
           </div>
         </div>
 
-        <!-- Loading indicator -->
         <div v-if="loading" class="loading-messages">
           <i class="fas fa-spinner fa-spin" /> กำลังโหลดข้อความ...
         </div>
 
-        <!-- Empty state -->
         <div v-if="!loading && messages.length === 0" class="empty-messages">
           <i class="fas fa-comments" />
           <p>เริ่มการสนทนากับ {{ friendName }}</p>
         </div>
       </div>
 
-      <!-- Message Input -->
       <div class="dm-input-area">
         <div class="input-container">
           <input
@@ -194,7 +189,6 @@ export default {
       if (String(m.friendId) !== String(this.friend.friendId)) { return }
       this.messages.push(this.mapMessage({ ...m, senderId: m.senderId }))
       this.$nextTick(() => this.scrollToBottom())
-      // เปิดอ่านอยู่ → mark read ทันที (server + local) เพื่อไม่ให้ badge เด้ง
       this.markRead()
       this.$emit('read', this.friend.friendId)
     },
@@ -248,7 +242,6 @@ export default {
   height: 100%;
 }
 
-/* Modal Styling */
 :deep(.modern-dm-modal .modal-content) {
   background: var(--paper);
   border: 3px solid var(--ink);

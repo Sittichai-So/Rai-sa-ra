@@ -482,7 +482,6 @@ export default {
       const len = (this.profile && this.profile.bio ? this.profile.bio : '').length
       return len > 500 ? false : null
     },
-    // เปลี่ยนรูปได้เดือนละครั้ง — คำนวณว่าล็อกอยู่ไหม + เปลี่ยนได้อีกครั้งวันไหน
     avatarCooldown () {
       const last = this.profile && this.profile.avatarUpdatedAt
       if (!last) {
@@ -1251,7 +1250,6 @@ export default {
   background: #e5e7eb;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .settings-body {
     flex-direction: column;

@@ -1,4 +1,3 @@
-// components/EmojiPicker.vue
 <template>
   <div class="modern-emoji-picker" :data-theme="chatTheme">
     <div class="picker-header">

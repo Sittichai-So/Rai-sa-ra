@@ -513,14 +513,12 @@ export default {
         ]
         this.stats = next
 
-        // ถ้า section สถิติถูก animate ไปแล้ว ให้ set ค่าจริงทันที
         if (this.statsAnimated) {
           next.forEach((stat, i) => {
             this.$set(this.animatedStats, i, stat.value.toLocaleString())
           })
         }
       } catch (err) {
-        // ใช้ค่า default ที่ตั้งไว้ต่อไป
       }
     },
 
@@ -573,7 +571,6 @@ export default {
   font-family: 'Kanit', sans-serif;
 }
 
-/* คืน font-family ของไอคอนให้ Font Awesome (CSS กลาง จาก fontawesome-free) หลังโดน `*` ทับ */
 i.fas,
 i.far,
 i.fal,
@@ -1287,7 +1284,6 @@ i.fa-solid {
   }
 }
 
-/* Custom Modal Styling */
 :deep(.custom-modal .modal-content) {
   background: #1c1c26;
   border: 3px solid #000;
@@ -1340,7 +1336,6 @@ i.fa-solid {
   font-family: 'Kanit', sans-serif;
 }
 
-/* Tabs Styling */
 :deep(.nav-tabs) {
   border-bottom: 2px solid #000;
   margin-bottom: 24px;
@@ -1379,7 +1374,6 @@ i.fa-solid {
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.9);
 }
 
-/* List Group Styling */
 :deep(.list-group-item) {
   border: 2px solid #000;
   border-radius: 12px;
@@ -1407,7 +1401,6 @@ i.fa-solid {
   border-radius: 999px;
 }
 
-/* Styled Lists */
 .highlight-sub {
   font-family: 'Kanit', sans-serif;
   font-weight: 700;
