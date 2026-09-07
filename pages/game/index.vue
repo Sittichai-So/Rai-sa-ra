@@ -33,6 +33,15 @@
             class="room-input"
             @keyup.enter="createRoom"
           >
+          <div class="skin-pick">
+            <span>ตัวละคร</span>
+            <button :class="{ on: skin === 'm' }" @click="setSkin('m')">
+              ชาย
+            </button>
+            <button :class="{ on: skin === 'f' }" @click="setSkin('f')">
+              หญิง
+            </button>
+          </div>
           <button class="create-btn" :disabled="!newRoomName.trim()" @click="createRoom">
             <i class="fas fa-radiation" /> เริ่มเกม
           </button>
@@ -180,9 +189,12 @@ export default {
   data () {
     const stored = localStorage.getItem('userData')
     const user = stored ? JSON.parse(stored) : null
+    let skin = 'm'
+    try { skin = localStorage.getItem('gameSkin') === 'f' ? 'f' : 'm' } catch (e) {}
     return {
       user,
       newRoomName: '',
+      skin,
       rooms: [],
       loading: false,
       refreshing: false,
@@ -231,6 +243,11 @@ export default {
         this.myStats = stats.result?.summary || null
       } catch (err) {
       }
+    },
+
+    setSkin (s) {
+      this.skin = s
+      try { localStorage.setItem('gameSkin', s) } catch (e) {}
     },
 
     createRoom () {
@@ -427,6 +444,28 @@ section h2 {
 }
 .create-btn:hover:not(:disabled) { background: #80ffb0; box-shadow: 0 0 20px rgba(0,255,80,0.3); }
 .create-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.skin-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(224,240,224,0.6);
+}
+.skin-pick button {
+  flex: 1;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,255,80,0.2);
+  color: rgba(224,240,224,0.6);
+  font-family: 'Share Tech Mono', monospace;
+  padding: 7px;
+  cursor: pointer;
+}
+.skin-pick button.on {
+  background: rgba(0,255,80,0.15);
+  border-color: #00ff50;
+  color: #00ff50;
+}
 
 .rooms-panel {
   grid-column: 2;

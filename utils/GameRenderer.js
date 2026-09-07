@@ -12,19 +12,6 @@ const ZOMBIE_STYLE = {
 
 const BLOOD = ['#8a1f1f', '#a82727', '#6d1616']
 
-// สไปรต์ผู้เล่นแบบ 8-bit (ยืนหันหน้าเข้าหากล้อง — ปืนหมุนแยก)
-const PLAYER_SPRITE = [
-  ' HHHHH ',
-  ' HSSSH ',
-  ' SESES ',
-  ' SSSSS ',
-  'BBBBBBB',
-  'DBBBBBD',
-  'BBBBBBB',
-  ' PPPPP ',
-  ' K   K '
-]
-
 function shade (hex, f) {
   const h = hex.replace('#', '')
   const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
@@ -470,16 +457,60 @@ export default class GameRenderer {
     }
   }
 
-  _drawPixelSprite (ctx, rows, pal, u, oy) {
-    const w = rows[0].length
-    for (let r = 0; r < rows.length; r++) {
-      for (let c = 0; c < w; c++) {
-        const col = pal[rows[r][c]]
-        if (!col) { continue }
-        ctx.fillStyle = col
-        ctx.fillRect((c - w / 2) * u, oy + r * u, u, u)
-      }
+  // นักเอาชีวิตรอดมุมมองบน — อ้างอิง assets/images/charector.png
+  _drawSurvivor (ctx, { rad, angle, step, flashing, female, ring }) {
+    const P = female
+      ? { jacket: '#a83232', jacketD: '#7a2222', pack: '#5a4a30' }
+      : { jacket: '#5a5f3a', jacketD: '#3f4428', pack: '#6b5335' }
+    const skin = flashing ? '#ffcaca' : '#d9a97e'
+    const hair = female ? '#b5824a' : '#2e241c'
+    const s = rad / 15 // สเกลสไปรต์ (ใหญ่กว่า hitbox เล็กน้อย)
+
+    ctx.save()
+    ctx.rotate(angle)
+    const bob = step ? step * 0.8 * s : 0
+    ctx.translate(0, bob)
+
+    // เป้สะพายหลัง (อยู่ด้านหลัง = -x)
+    ctx.fillStyle = flashing ? '#e0b0b0' : P.pack
+    ctx.fillRect(-13 * s, -7 * s, 7 * s, 14 * s)
+    ctx.fillStyle = shade(P.pack, 0.7)
+    ctx.fillRect(-13 * s, -2 * s, 7 * s, 4 * s)
+
+    // ปืนไรเฟิล (ถือขวางด้านหน้า)
+    ctx.fillStyle = flashing ? '#ff9090' : '#23262d'
+    ctx.fillRect(2 * s, -2.3 * s, 20 * s, 4.6 * s)
+    ctx.fillStyle = flashing ? '#ffb0b0' : '#3a3f49'
+    ctx.fillRect(1 * s, -3.5 * s, 6 * s, 7 * s)
+    ctx.fillRect(-3 * s, -2 * s, 5 * s, 4 * s)
+
+    // ลำตัว (เสื้อแจ็คเก็ต)
+    ctx.fillStyle = flashing ? '#ff6b6b' : P.jacket
+    ctx.beginPath()
+    ctx.ellipse(0, 0, 10 * s, 8.5 * s, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = flashing ? '#e05555' : P.jacketD
+    ctx.fillRect(-2 * s, -8 * s, 4 * s, 16 * s) // ซิปกลาง
+
+    // แขนถือปืน
+    ctx.fillStyle = flashing ? '#ff8080' : P.jacketD
+    ctx.fillRect(2 * s, -5 * s, 8 * s, 3 * s)
+    ctx.fillRect(2 * s, 2 * s, 8 * s, 3 * s)
+    ctx.fillStyle = skin
+    ctx.fillRect(9 * s, -4 * s, 3 * s, 2.5 * s)
+    ctx.fillRect(9 * s, 2 * s, 3 * s, 2.5 * s)
+
+    // หัว (มองจากบน: ผม + หน้านิดหน่อยด้านหน้า)
+    ctx.fillStyle = skin
+    ctx.beginPath(); ctx.arc(3 * s, 0, 5 * s, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = flashing ? '#ffdede' : hair
+    ctx.beginPath(); ctx.arc(0.5 * s, 0, 5.4 * s, 0, Math.PI * 2); ctx.fill()
+    if (female) {
+      ctx.fillStyle = hair
+      ctx.fillRect(-6 * s, -2.5 * s, 5 * s, 5 * s) // หางม้า
     }
+
+    ctx.restore()
   }
 
   _drawPlayers (ctx, players, myId, now) {
@@ -557,33 +588,14 @@ export default class GameRenderer {
         ctx.globalAlpha = 1
       }
 
-      // ── gun (หมุนตามทิศเล็ง) ──
-      ctx.save()
-      ctx.rotate(p.angle)
-      const gu = Math.max(2, Math.round(rad / 5))
-      ctx.fillStyle = flashing ? '#ffb0b0' : '#2b2f38'
-      ctx.fillRect(rad * 0.15, -gu, gu * 4.5, gu * 2)
-      ctx.fillStyle = flashing ? '#ff9090' : '#3d434f'
-      ctx.fillRect(rad * 0.15, -gu * 1.6, gu * 1.6, gu * 3.2)
-      ctx.fillStyle = '#e8b88a'
-      ctx.fillRect(rad * 0.05, -gu * 1.2, gu * 1.6, gu * 2.4)
-      ctx.restore()
-
-      // ── ตัวละครแบบพิกเซล (ยืนหันหน้าเข้าหากล้อง) ──
-      const u = Math.max(2, Math.round((rad * 2) / PLAYER_SPRITE[0].length))
-      const pal = {
-        H: '#3a2c22',
-        S: flashing ? '#ffcaca' : '#e8b88a',
-        E: '#1a1a1a',
-        B: flashing ? '#ff6b6b' : (isMe ? color : shade(color, 0.85)),
-        D: flashing ? '#e05555' : shade(color, 0.6),
-        P: '#2f3a4c',
-        K: '#15171c'
-      }
-      const spr = step
-        ? PLAYER_SPRITE.map((r, i) => (i === 8 ? (step > 0 ? ' K  K  ' : '  K  K ') : r))
-        : PLAYER_SPRITE
-      this._drawPixelSprite(ctx, spr, pal, u, -Math.round(PLAYER_SPRITE.length * u * 0.5))
+      this._drawSurvivor(ctx, {
+        rad,
+        angle: p.angle,
+        step,
+        flashing,
+        female: p.skin === 'f',
+        ring: isMe ? color : null
+      })
 
       ctx.restore()
 

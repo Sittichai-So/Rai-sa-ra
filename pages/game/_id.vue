@@ -633,9 +633,11 @@ export default {
     },
 
     joinGame () {
+      let skin = null
+      try { skin = localStorage.getItem('gameSkin') } catch (e) {}
       this.$socket.emit('gameJoin', {
         roomId: this.roomId,
-        user: this.user
+        user: { ...this.user, skin: skin === 'f' ? 'f' : (skin === 'm' ? 'm' : undefined) }
       })
     },
 
