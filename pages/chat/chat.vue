@@ -199,19 +199,6 @@
             </nuxt-link>
           </div>
         </div>
-
-        <div class="section">
-          <div style="padding: 0 12px;">
-            <nuxt-link to="/wallet" class="wallet-sidebar-btn">
-              <span class="wallet-btn-icon"><CoinIcon :size="22" large /></span>
-              <div class="game-btn-text">
-                <span class="game-btn-title">{{ myCoins }} เหรียญ</span>
-                <span class="game-btn-sub">เติมเหรียญ</span>
-              </div>
-              <i class="fas fa-chevron-right game-btn-arrow" />
-            </nuxt-link>
-          </div>
-        </div>
       </div>
 
       <div class="user-profile">
@@ -3234,37 +3221,6 @@ select.cr-input {
 .game-btn-title { font-size: var(--fs-small); font-weight: var(--fw-bold); color: var(--text-cream); }
 .game-btn-sub { font-size: var(--fs-eyebrow); color: rgba(55, 200, 113, 0.75); text-transform: uppercase; letter-spacing: 0.04em; }
 .game-btn-arrow { color: rgba(55, 200, 113, 0.5); font-size: 11px; }
-
-.wallet-sidebar-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 201, 77, 0.07);
-  border: 1px solid rgba(255, 201, 77, 0.22);
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.wallet-sidebar-btn:hover {
-  background: rgba(255, 201, 77, 0.14);
-  border-color: rgba(255, 201, 77, 0.45);
-  transform: translateX(2px);
-}
-.wallet-btn-icon {
-  font-size: 16px;
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 201, 77, 0.14);
-  color: #ffc94d;
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-.wallet-sidebar-btn .game-btn-sub { color: rgba(255, 201, 77, 0.75); }
-.wallet-sidebar-btn .game-btn-arrow { color: rgba(255, 201, 77, 0.5); }
 
 .friend-actions { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
