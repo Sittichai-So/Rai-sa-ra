@@ -53,6 +53,36 @@
       @contextmenu.prevent
     />
 
+    <div v-if="isTouch" class="touch-controls">
+      <div
+        ref="movePad"
+        class="joystick-pad move-pad"
+        @touchstart.prevent="onStickStart($event, 'move')"
+      >
+        <div class="joystick-base" />
+        <div class="joystick-knob" :style="knobStyle(moveStick)" />
+      </div>
+      <div
+        ref="aimPad"
+        class="joystick-pad aim-pad"
+        @touchstart.prevent="onStickStart($event, 'aim')"
+      >
+        <div class="joystick-base">
+          <i class="fas fa-crosshairs" />
+        </div>
+        <div class="joystick-knob aim-knob" :style="knobStyle(aimStick)" />
+      </div>
+    </div>
+
+    <transition name="fade">
+      <div v-if="reconnecting" class="reconnect-overlay">
+        <div class="reconnect-box">
+          <i class="fas fa-wifi" />
+          <p>การเชื่อมต่อหลุด — กำลังเชื่อมต่อใหม่...</p>
+        </div>
+      </div>
+    </transition>
+
     <transition name="wave-fade">
       <div v-if="waveAnnounce" class="wave-announce">
         <div class="wave-announce-inner">
@@ -112,8 +142,9 @@
 <script>
 import GameRenderer from '~/utils/GameRenderer'
 
-// TODO: เล่นบนมือถือไม่ได้ — ต้องมี virtual joystick (เดิน) + ปุ่มยิง สำหรับจอสัมผัส
-// TODO: reconnect กลับเข้าเกมเมื่อ socket หลุด
+const STICK_RADIUS = 46
+const STICK_DEADZONE = 0.18
+
 export default {
   name: 'GameRoom',
   middleware: 'middlewareAuth',
@@ -152,7 +183,13 @@ export default {
       inputInterval: null,
       countdownInterval: null,
       timerInterval: null,
-      user: null
+      user: null,
+      isTouch: false,
+      reconnecting: false,
+      joined: false,
+      moveStick: { active: false, id: null, x: 0, y: 0, which: 'move' },
+      aimStick: { active: false, id: null, x: 0, y: 0, which: 'aim' },
+      lastTouchShot: 0
     }
   },
   computed: {
@@ -203,6 +240,9 @@ export default {
   mounted () {
     this.$refs.gamePage.focus()
 
+    this.isTouch = (typeof window !== 'undefined') &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+
     const stored = localStorage.getItem('userData')
     this.user = stored ? JSON.parse(stored) : { username: 'Guest', fullname: 'Guest' }
 
@@ -210,10 +250,7 @@ export default {
     this.setupSocketListeners()
     this.setupRenderer()
 
-    this.$socket.emit('gameJoin', {
-      roomId: this.roomId,
-      user: this.user
-    })
+    this.joinGame()
 
     this.inputInterval = setInterval(() => this.sendInput(), 50)
 
@@ -222,6 +259,12 @@ export default {
     this.renderLoop()
 
     window.addEventListener('resize', this.setupCanvas)
+
+    if (this.isTouch) {
+      window.addEventListener('touchmove', this.onStickMove, { passive: false })
+      window.addEventListener('touchend', this.onStickEnd)
+      window.addEventListener('touchcancel', this.onStickEnd)
+    }
   },
   beforeDestroy () {
     this.$socket.emit('gameLeave')
@@ -231,6 +274,9 @@ export default {
     clearInterval(this.countdownInterval)
     clearInterval(this.timerInterval)
     window.removeEventListener('resize', this.setupCanvas)
+    window.removeEventListener('touchmove', this.onStickMove)
+    window.removeEventListener('touchend', this.onStickEnd)
+    window.removeEventListener('touchcancel', this.onStickEnd)
   },
   methods: {
     setupCanvas () {
@@ -294,12 +340,102 @@ export default {
 
     sendInput () {
       if (!this.myId) { return }
-      const dx = (this.keys.d || this.keys.arrowright ? 1 : 0) -
-                 (this.keys.a || this.keys.arrowleft ? 1 : 0)
-      const dy = (this.keys.s || this.keys.arrowdown ? 1 : 0) -
-                 (this.keys.w || this.keys.arrowup ? 1 : 0)
-      const angle = this.getShootAngle()
+
+      let dx, dy, angle
+
+      if (this.isTouch) {
+        dx = this.moveStick.x
+        dy = this.moveStick.y
+        const aiming = this.aimStick.active && (this.aimStick.x || this.aimStick.y)
+        if (aiming) {
+          angle = Math.atan2(this.aimStick.y, this.aimStick.x)
+        } else if (dx || dy) {
+          angle = Math.atan2(dy, dx)
+        } else {
+          angle = this.myPlayer ? this.myPlayer.angle : 0
+        }
+        this.$socket.emit('playerMove', { dx, dy, angle })
+        if (aiming) {
+          const now = Date.now()
+          if (now - this.lastTouchShot > 140) {
+            this.lastTouchShot = now
+            this.$socket.emit('playerShoot', { angle })
+          }
+        }
+        return
+      }
+
+      dx = (this.keys.d || this.keys.arrowright ? 1 : 0) -
+           (this.keys.a || this.keys.arrowleft ? 1 : 0)
+      dy = (this.keys.s || this.keys.arrowdown ? 1 : 0) -
+           (this.keys.w || this.keys.arrowup ? 1 : 0)
+      angle = this.getShootAngle()
       this.$socket.emit('playerMove', { dx, dy, angle })
+    },
+
+    stickFor (which) {
+      return which === 'move' ? this.moveStick : this.aimStick
+    },
+
+    padRef (which) {
+      return which === 'move' ? this.$refs.movePad : this.$refs.aimPad
+    },
+
+    knobStyle (stick) {
+      return {
+        transform: `translate(${stick.x * STICK_RADIUS}px, ${stick.y * STICK_RADIUS}px)`
+      }
+    },
+
+    onStickStart (e, which) {
+      const touch = e.changedTouches[0]
+      const stick = this.stickFor(which)
+      stick.active = true
+      stick.id = touch.identifier
+      this.updateStick(stick, touch)
+    },
+
+    onStickMove (e) {
+      let handled = false
+      for (const stick of [this.moveStick, this.aimStick]) {
+        if (!stick.active) { continue }
+        for (const touch of e.changedTouches) {
+          if (touch.identifier === stick.id) {
+            this.updateStick(stick, touch)
+            handled = true
+          }
+        }
+      }
+      if (handled) { e.preventDefault() }
+    },
+
+    onStickEnd (e) {
+      for (const stick of [this.moveStick, this.aimStick]) {
+        if (!stick.active) { continue }
+        for (const touch of e.changedTouches) {
+          if (touch.identifier === stick.id) {
+            stick.active = false
+            stick.id = null
+            stick.x = 0
+            stick.y = 0
+          }
+        }
+      }
+    },
+
+    updateStick (stick, touch) {
+      const pad = this.padRef(stick.which)
+      if (!pad) { return }
+      const rect = pad.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      let nx = (touch.clientX - cx) / STICK_RADIUS
+      let ny = (touch.clientY - cy) / STICK_RADIUS
+      const len = Math.hypot(nx, ny)
+      if (len > 1) { nx /= len; ny /= len }
+      if (Math.hypot(nx, ny) < STICK_DEADZONE) { nx = 0; ny = 0 }
+      stick.x = nx
+      stick.y = ny
     },
 
     getShootAngle () {
@@ -310,9 +446,21 @@ export default {
       return Math.atan2(this.mouseY - py, this.mouseX - px)
     },
 
+    joinGame () {
+      this.$socket.emit('gameJoin', {
+        roomId: this.roomId,
+        user: this.user
+      })
+    },
+
     setupSocketListeners () {
+      this.$socket.on('connect', this.onSocketReconnect)
+      this.$socket.on('disconnect', this.onSocketDrop)
+
       this.$socket.on('gameJoined', ({ playerId, mapSize }) => {
         this.myId = playerId
+        this.joined = true
+        this.reconnecting = false
         if (mapSize) { this.mapW = mapSize.w; this.mapH = mapSize.h }
       })
 
@@ -396,6 +544,17 @@ export default {
         'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted'
       ]
       events.forEach(ev => this.$socket.off(ev))
+      this.$socket.off('connect', this.onSocketReconnect)
+      this.$socket.off('disconnect', this.onSocketDrop)
+    },
+
+    onSocketDrop () {
+      if (this.joined) { this.reconnecting = true }
+    },
+
+    onSocketReconnect () {
+      if (!this.joined) { return }
+      this.joinGame()
     },
 
     _startCountdown () {
@@ -625,6 +784,80 @@ export default {
   display: block;
   flex: 1;
   cursor: crosshair;
+}
+
+.touch-controls {
+  position: absolute;
+  inset: 60px 0 0 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.joystick-pad {
+  position: absolute;
+  bottom: 28px;
+  width: 132px;
+  height: 132px;
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.move-pad { left: 24px; }
+.aim-pad { right: 24px; }
+
+.joystick-base {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(0, 255, 80, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 80, 80, 0.5);
+  font-size: 22px;
+}
+
+.aim-pad .joystick-base { border-color: rgba(255, 80, 80, 0.3); }
+
+.joystick-knob {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 255, 80, 0.35);
+  border: 2px solid rgba(0, 255, 80, 0.7);
+  will-change: transform;
+}
+
+.aim-knob {
+  background: rgba(255, 80, 80, 0.35);
+  border-color: rgba(255, 80, 80, 0.7);
+}
+
+.reconnect-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.reconnect-box {
+  text-align: center;
+  color: #e0f0e0;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.reconnect-box i {
+  font-size: 40px;
+  color: #ffcc00;
+  margin-bottom: 12px;
+  animation: pulse-warning 1s infinite;
 }
 
 .wave-announce {

@@ -117,11 +117,51 @@
           </div>
           <div class="ctrl-item">
             <div class="ctrl-key">
-              ESC
+              <i class="fas fa-mobile-screen" />
             </div>
-            <span>หยุดชั่วคราว</span>
+            <span>มือถือ: จอยซ้ายเดิน จอยขวาเล็ง+ยิง</span>
           </div>
         </div>
+      </section>
+
+      <section class="leaderboard-panel">
+        <h2><i class="fas fa-trophy" /> กระดานผู้นำ</h2>
+
+        <div v-if="myStats && myStats.games" class="my-stats">
+          <div class="ms-item">
+            <span class="ms-val">{{ myStats.bestScore }}</span>
+            <span class="ms-lbl">คะแนนสูงสุด</span>
+          </div>
+          <div class="ms-item">
+            <span class="ms-val">{{ myStats.bestWave }}</span>
+            <span class="ms-lbl">Wave สูงสุด</span>
+          </div>
+          <div class="ms-item">
+            <span class="ms-val">{{ myStats.totalKills }}</span>
+            <span class="ms-lbl">ฆ่ารวม</span>
+          </div>
+          <div class="ms-item">
+            <span class="ms-val">{{ myStats.games }}</span>
+            <span class="ms-lbl">เกมที่เล่น</span>
+          </div>
+        </div>
+
+        <div v-if="leaderboard.length === 0" class="lb-empty">
+          ยังไม่มีสถิติ — เล่นให้จบเกมเพื่อขึ้นกระดาน
+        </div>
+        <ol v-else class="lb-list">
+          <li
+            v-for="row in leaderboard"
+            :key="row.userId"
+            class="lb-item"
+            :class="{ 'lb-me': user && String(row.userId) === String(user._id) }"
+          >
+            <span class="lb-rank">#{{ row.rank }}</span>
+            <span class="lb-name">{{ row.username }}</span>
+            <span class="lb-best">{{ row.bestScore }}</span>
+            <span class="lb-wave">W{{ row.bestWave }}</span>
+          </li>
+        </ol>
       </section>
     </main>
   </div>
@@ -140,7 +180,9 @@ export default {
       rooms: [],
       loading: false,
       refreshing: false,
-      pollInterval: null
+      pollInterval: null,
+      leaderboard: [],
+      myStats: null
     }
   },
   computed: {
@@ -151,6 +193,7 @@ export default {
   },
   mounted () {
     this.loadRooms()
+    this.loadLeaderboard()
     this.$socket.emit('gameRoomList')
     this.$socket.on('gameRoomListResult', ({ rooms }) => {
       this.rooms = rooms || []
@@ -170,6 +213,18 @@ export default {
       this.loading = this.rooms.length === 0
       this.refreshing = true
       this.$socket.emit('gameRoomList')
+    },
+
+    async loadLeaderboard () {
+      try {
+        const [lb, stats] = await Promise.all([
+          this.$axios.$get(process.env.API_GAME_LEADERBOARD, { params: { limit: 10 } }),
+          this.$axios.$get(process.env.API_GAME_MY_STATS)
+        ])
+        this.leaderboard = lb.result || []
+        this.myStats = stats.result?.summary || null
+      } catch (err) {
+      }
     },
 
     createRoom () {
@@ -515,12 +570,52 @@ section h2 {
   white-space: nowrap;
 }
 
+.leaderboard-panel {
+  grid-column: 1;
+  background: rgba(0,255,80,0.03);
+  border: 1px solid rgba(0,255,80,0.12);
+  padding: 28px;
+}
+
+.my-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0,255,80,0.12);
+}
+.ms-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ms-val { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: #00ff50; }
+.ms-lbl { font-size: 10px; color: rgba(224,240,224,0.45); text-align: center; }
+
+.lb-empty { font-size: 12px; color: rgba(224,240,224,0.4); text-align: center; padding: 20px 0; }
+
+.lb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lb-item {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(0,255,80,0.06);
+  font-size: 12px;
+  color: rgba(224,240,224,0.6);
+}
+.lb-item.lb-me { border-color: rgba(0,255,80,0.35); color: #e0f0e0; }
+.lb-rank { color: #00ff50; font-family: 'Orbitron', sans-serif; font-size: 11px; }
+.lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-best { color: #00ff50; font-family: 'Orbitron', sans-serif; }
+.lb-wave { color: #ff8080; }
+
 @media (max-width: 900px) {
   .lobby-body {
     grid-template-columns: 1fr;
     padding: 24px 20px;
   }
   .rooms-panel { grid-column: 1; grid-row: auto; }
+  .leaderboard-panel { grid-column: 1; }
   .lobby-header { padding: 16px 20px; }
   .title-block h1 { font-size: 24px; }
 }

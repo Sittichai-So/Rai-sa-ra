@@ -118,6 +118,9 @@ export default {
 
     API_STATS: currentEnv.api + '/stats',
 
+    API_GAME_LEADERBOARD: currentEnv.api + '/game/leaderboard',
+    API_GAME_MY_STATS: currentEnv.api + '/game/my-stats',
+
     API_COINS_WALLET: currentEnv.api + '/coins/wallet',
     API_COINS_PACKAGES: currentEnv.api + '/coins/packages',
     API_COINS_TOPUP: currentEnv.api + '/coins/topup',
