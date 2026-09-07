@@ -83,12 +83,23 @@
       </div>
     </transition>
 
+    <div v-if="bossZombie" class="boss-bar">
+      <div class="boss-bar-label">
+        <i class="fas fa-skull" /> BOSS
+      </div>
+      <div class="boss-bar-track">
+        <div class="boss-bar-fill" :style="{ width: bossHpPct + '%' }" />
+      </div>
+    </div>
+
     <transition name="wave-fade">
       <div v-if="waveAnnounce" class="wave-announce">
-        <div class="wave-announce-inner">
-          <span class="wa-tag">INCOMING</span>
+        <div class="wave-announce-inner" :class="{ 'wa-boss': waveIsBoss }">
+          <span class="wa-tag">{{ waveIsBoss ? 'BOSS WAVE' : 'INCOMING' }}</span>
           <h2>WAVE {{ wave }}</h2>
-          <span class="wa-sub">{{ announceCount }} ซอมบี้</span>
+          <span class="wa-sub">
+            {{ waveIsBoss ? 'ระวังบอส!' : announceCount + ' ซอมบี้' }}
+          </span>
         </div>
       </div>
     </transition>
@@ -155,9 +166,11 @@ export default {
       players: [],
       zombies: [],
       bullets: [],
+      projectiles: [],
       wave: 0,
       waveActive: false,
       waveAnnounce: false,
+      waveIsBoss: false,
       waveCountdown: 0,
       announceCount: 0,
       waveTimer: 0,
@@ -219,6 +232,14 @@ export default {
     },
     isDead () {
       return this.myPlayer ? !this.myPlayer.alive : false
+    },
+    bossZombie () {
+      return this.zombies.find(z => z.type === 'boss') || null
+    },
+    bossHpPct () {
+      const b = this.bossZombie
+      if (!b || !b.maxHp) { return 0 }
+      return Math.max(0, (b.hp / b.maxHp) * 100)
     },
     timerDisplay () {
       const mins = Math.floor(this.waveTimer / 60)
@@ -300,6 +321,7 @@ export default {
           players: this.players,
           zombies: this.zombies,
           bullets: this.bullets,
+          projectiles: this.projectiles,
           myId: this.myId,
           camX: this.camX,
           camY: this.camY,
@@ -468,6 +490,7 @@ export default {
         this.players = state.players || []
         this.zombies = state.zombies || []
         this.bullets = state.bullets || []
+        this.projectiles = state.projectiles || []
         this.wave = state.wave || 0
         this.waveActive = state.waveActive || false
 
@@ -484,13 +507,14 @@ export default {
         }
       })
 
-      this.$socket.on('waveStart', ({ wave, count, timeLimit }) => {
+      this.$socket.on('waveStart', ({ wave, count, timeLimit, boss }) => {
         this.wave = wave
         this.announceCount = count
+        this.waveIsBoss = !!boss
         this.waveAnnounce = true
         this.waveTimeLimit = timeLimit || 120
         this.waveTimer = this.waveTimeLimit
-        setTimeout(() => { this.waveAnnounce = false }, 2500)
+        setTimeout(() => { this.waveAnnounce = false }, 2800)
         this._startCountdown()
       })
 
@@ -891,6 +915,44 @@ export default {
   text-shadow: 0 0 20px rgba(0,255,80,0.5);
 }
 .wa-sub { font-size: 14px; color: rgba(224,240,224,0.5); font-family: 'Share Tech Mono', monospace; }
+
+.wave-announce-inner.wa-boss {
+  border-color: rgba(255,40,40,0.6);
+  box-shadow: 0 0 40px rgba(255,40,40,0.35);
+}
+.wa-boss .wa-tag { color: #ff2020; letter-spacing: 6px; }
+.wa-boss h2 { color: #ff5050; text-shadow: 0 0 24px rgba(255,40,40,0.7); }
+
+.boss-bar {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 80vw);
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.boss-bar-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ff3030;
+  white-space: nowrap;
+}
+.boss-bar-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,40,40,0.4);
+}
+.boss-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff2020, #ff6040);
+  transition: width 0.2s;
+}
 
 .dead-overlay {
   position: absolute;

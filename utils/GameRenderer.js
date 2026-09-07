@@ -5,6 +5,14 @@ const MAP_W = 1600
 const MAP_H = 1200
 const TILE = 40
 
+const ZOMBIE_STYLE = {
+  normal: { color: '#7f9a3c', radius: 20 },
+  runner: { color: '#cf4fb2', radius: 15 },
+  tank: { color: '#4c7d5c', radius: 31 },
+  spitter: { color: '#6b4fd0', radius: 18 },
+  boss: { color: '#b52323', radius: 52 }
+}
+
 export default class GameRenderer {
   constructor (canvas) {
     this.canvas = canvas
@@ -26,7 +34,7 @@ export default class GameRenderer {
     this.mapPatternCanvas = off
   }
 
-  draw ({ players, zombies, bullets, myId, camX, camY, mapW, mapH }) {
+  draw ({ players, zombies, bullets, projectiles, myId, camX, camY, mapW, mapH }) {
     const ctx = this.ctx
     const W = this.canvas.width
     const H = this.canvas.height
@@ -51,6 +59,8 @@ export default class GameRenderer {
 
     this._drawBullets(ctx, bullets)
 
+    this._drawProjectiles(ctx, projectiles || [])
+
     this._drawZombies(ctx, zombies)
 
     this._drawPlayers(ctx, players, myId)
@@ -74,36 +84,53 @@ export default class GameRenderer {
     ctx.restore()
   }
 
+  _drawProjectiles (ctx, projectiles) {
+    ctx.save()
+    for (const p of projectiles) {
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.radius || 7, 0, Math.PI * 2)
+      ctx.fillStyle = '#9d6bff'
+      ctx.shadowColor = '#9d6bff'
+      ctx.shadowBlur = 10
+      ctx.fill()
+    }
+    ctx.shadowBlur = 0
+    ctx.restore()
+  }
+
   _drawZombies (ctx, zombies) {
     for (const z of zombies) {
+      const style = ZOMBIE_STYLE[z.type] || ZOMBIE_STYLE.normal
+      const rad = z.radius || style.radius
+      const hpPct = z.maxHp ? z.hp / z.maxHp : 1
+      const flashing = z.hitFlash > 0
+
       ctx.save()
       ctx.translate(z.x, z.y)
       ctx.rotate(z.angle + Math.PI / 2)
 
       ctx.beginPath()
-      ctx.arc(0, 0, 18, 0, Math.PI * 2)
-      const hpPct = z.hp / z.maxHp
-      const r = Math.round(200 - hpPct * 100)
-      const g = Math.round(40 + hpPct * 80)
-      ctx.fillStyle = `rgba(${r},${g},20,0.9)`
-      ctx.strokeStyle = `rgba(255,${g},20,0.6)`
-      ctx.lineWidth = 1.5
+      ctx.arc(0, 0, rad, 0, Math.PI * 2)
+      ctx.fillStyle = flashing ? '#ffffff' : style.color
+      ctx.strokeStyle = z.type === 'boss' ? '#ff5050' : 'rgba(0,0,0,0.5)'
+      ctx.lineWidth = z.type === 'boss' ? 3 : 1.5
       ctx.fill()
       ctx.stroke()
 
-      ctx.fillStyle = '#ff2020'
+      const eyeOff = rad * 0.34
+      ctx.fillStyle = flashing ? '#000' : '#ff2020'
       ctx.shadowColor = '#ff2020'
       ctx.shadowBlur = 4
-      ctx.beginPath(); ctx.arc(-6, -8, 3, 0, Math.PI * 2); ctx.fill()
-      ctx.beginPath(); ctx.arc(6, -8, 3, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.arc(-eyeOff, -rad * 0.4, rad * 0.16, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.arc(eyeOff, -rad * 0.4, rad * 0.16, 0, Math.PI * 2); ctx.fill()
       ctx.shadowBlur = 0
 
       ctx.restore()
 
-      const barW = 36
-      const barH = 4
+      const barW = Math.max(30, rad * 1.9)
+      const barH = z.type === 'boss' ? 6 : 4
       const bx = z.x - barW / 2
-      const by = z.y - 28
+      const by = z.y - rad - 10
       ctx.fillStyle = 'rgba(0,0,0,0.5)'
       ctx.fillRect(bx, by, barW, barH)
       ctx.fillStyle = hpPct > 0.5 ? '#40ff40' : hpPct > 0.25 ? '#ffcc00' : '#ff4040'
@@ -130,11 +157,14 @@ export default class GameRenderer {
       ctx.translate(p.x, p.y)
 
       const isMe = p.id === myId
+      const color = p.color || '#7c6ff5'
+      const rad = p.radius || 18
+      const flashing = p.hitFlash > 0
 
       if (isMe) {
         ctx.beginPath()
-        ctx.arc(0, 0, 24, 0, Math.PI * 2)
-        ctx.strokeStyle = p.color
+        ctx.arc(0, 0, rad + 6, 0, Math.PI * 2)
+        ctx.strokeStyle = color
         ctx.lineWidth = 1
         ctx.globalAlpha = 0.3
         ctx.stroke()
@@ -142,17 +172,17 @@ export default class GameRenderer {
       }
 
       ctx.beginPath()
-      ctx.arc(0, 0, 18, 0, Math.PI * 2)
-      ctx.fillStyle = isMe ? p.color : `${p.color}cc`
-      ctx.strokeStyle = isMe ? '#fff' : p.color
+      ctx.arc(0, 0, rad, 0, Math.PI * 2)
+      ctx.fillStyle = flashing ? '#ff6b6b' : (isMe ? color : `${color}cc`)
+      ctx.strokeStyle = isMe ? '#fff' : color
       ctx.lineWidth = isMe ? 2 : 1
       ctx.fill()
       ctx.stroke()
 
       ctx.save()
       ctx.rotate(p.angle)
-      ctx.fillStyle = isMe ? '#fff' : p.color
-      ctx.fillRect(14, -3, 12, 6)
+      ctx.fillStyle = isMe ? '#fff' : color
+      ctx.fillRect(rad - 4, -3, 12, 6)
       ctx.restore()
 
       ctx.font = isMe ? 'bold 11px Share Tech Mono, monospace' : '10px Share Tech Mono, monospace'
@@ -200,9 +230,14 @@ export default class GameRenderer {
       cvH * scY
     )
 
-    ctx.fillStyle = '#ff4020'
     for (const z of zombies) {
-      ctx.fillRect(mmX + z.x * scX - 1, mmY + z.y * scY - 1, 2, 2)
+      if (z.type === 'boss') {
+        ctx.fillStyle = '#ff2020'
+        ctx.fillRect(mmX + z.x * scX - 2, mmY + z.y * scY - 2, 5, 5)
+      } else {
+        ctx.fillStyle = z.type === 'spitter' ? '#9d6bff' : '#ff4020'
+        ctx.fillRect(mmX + z.x * scX - 1, mmY + z.y * scY - 1, 2, 2)
+      }
     }
 
     for (const p of players) {
