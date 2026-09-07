@@ -133,6 +133,7 @@ export default {
     API_GET_USER_BY_ID: currentEnv.api + '/user/getByID',
     API_EDIT_PROFILE_BY_ID: currentEnv.api + '/user/editProfile',
     API_EDIT_PASSWORD_BY_ID: currentEnv.api + '/user/resetPassword',
+    API_USER_AVATAR: currentEnv.api + '/user/avatar',
 
     // landing stats
     API_STATS: currentEnv.api + '/stats',

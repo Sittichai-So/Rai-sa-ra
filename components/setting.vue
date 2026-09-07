@@ -71,10 +71,24 @@
                   <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img">
                   <i v-else class="fas fa-user" />
                 </div>
-                <b-button class="avatar-edit-btn" :disabled="uploadingAvatar" @click="pickAvatar">
-                  <i :class="uploadingAvatar ? 'fas fa-spinner fa-spin' : 'fas fa-camera'" />
+                <b-button
+                  class="avatar-edit-btn"
+                  :class="{ locked: avatarCooldown.locked }"
+                  :disabled="uploadingAvatar"
+                  :title="avatarCooldown.locked ? ('เปลี่ยนได้อีกครั้ง ' + avatarCooldown.nextDate) : 'เปลี่ยนรูปโปรไฟล์'"
+                  @click="pickAvatar"
+                >
+                  <i :class="uploadingAvatar ? 'fas fa-spinner fa-spin' : (avatarCooldown.locked ? 'fas fa-lock' : 'fas fa-camera')" />
                 </b-button>
               </div>
+              <p class="avatar-note">
+                <template v-if="avatarCooldown.locked">
+                  <i class="fas fa-clock" /> เปลี่ยนรูปได้อีกครั้ง {{ avatarCooldown.nextDate }}
+                </template>
+                <template v-else>
+                  รูปต้องไม่เกิน 2MB · เปลี่ยนได้เดือนละครั้ง
+                </template>
+              </p>
 
               <div class="profile-info-grid">
                 <div class="info-card">
@@ -468,6 +482,18 @@ export default {
       const len = (this.profile && this.profile.bio ? this.profile.bio : '').length
       return len > 500 ? false : null
     },
+    // เปลี่ยนรูปได้เดือนละครั้ง — คำนวณว่าล็อกอยู่ไหม + เปลี่ยนได้อีกครั้งวันไหน
+    avatarCooldown () {
+      const last = this.profile && this.profile.avatarUpdatedAt
+      if (!last) {
+        return { locked: false, nextDate: '' }
+      }
+      const ready = new Date(new Date(last).getTime() + 30 * 24 * 60 * 60 * 1000)
+      return {
+        locked: ready > new Date(),
+        nextDate: ready.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })
+      }
+    },
     isPasswordValid () {
       const { currentPassword, newPassword, passwordConfirm } = this.password
       if (!currentPassword || !newPassword || !passwordConfirm) {
@@ -526,6 +552,14 @@ export default {
       this.resetForms()
     },
     pickAvatar () {
+      if (this.avatarCooldown.locked) {
+        this.$swal({
+          icon: 'info',
+          title: 'ยังเปลี่ยนรูปไม่ได้',
+          text: `เปลี่ยนรูปโปรไฟล์ได้เดือนละครั้ง — เปลี่ยนได้อีกครั้งวันที่ ${this.avatarCooldown.nextDate}`
+        })
+        return
+      }
       this.$refs.avatarInput.click()
     },
     async onAvatarSelected (e) {
@@ -538,8 +572,8 @@ export default {
         this.$swal({ icon: 'error', title: 'ไฟล์ไม่ถูกต้อง', text: 'กรุณาเลือกไฟล์รูปภาพ' })
         return
       }
-      if (file.size > 5 * 1024 * 1024) {
-        this.$swal({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'รูปโปรไฟล์ต้องไม่เกิน 5MB' })
+      if (file.size > 2 * 1024 * 1024) {
+        this.$swal({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'รูปโปรไฟล์ต้องไม่เกิน 2MB' })
         return
       }
 
@@ -547,20 +581,20 @@ export default {
       try {
         const fd = new FormData()
         fd.append('file', file)
-        const up = await this.$axios.$post(process.env.API_UPLOAD_FILE, fd)
-        const url = up.result && up.result.url
-        if (!url) {
+        const res = await this.$axios.$post(process.env.API_USER_AVATAR, fd)
+        const r = res.result || {}
+        if (!r.avatar) {
           throw new Error('ไม่ได้รับ URL รูปจากเซิร์ฟเวอร์')
         }
 
-        await this.$axios.$post(process.env.API_EDIT_PROFILE_BY_ID, { avatar: url })
-        this.$set(this.profile, 'avatar', url)
-        this.syncAvatarToSession(url)
+        this.$set(this.profile, 'avatar', r.avatar)
+        this.$set(this.profile, 'avatarUpdatedAt', r.avatarUpdatedAt || new Date().toISOString())
+        this.syncAvatarToSession(r.avatar)
         this.$swal({ icon: 'success', title: 'อัปเดตรูปโปรไฟล์แล้ว', timer: 1600, showConfirmButton: false })
       } catch (err) {
         this.$swal({
-          icon: 'error',
-          title: 'อัปโหลดไม่สำเร็จ',
+          icon: err.response?.status === 429 ? 'info' : 'error',
+          title: err.response?.status === 429 ? 'ยังเปลี่ยนรูปไม่ได้' : 'อัปโหลดไม่สำเร็จ',
           text: err.response?.data?.message || err.message || 'ลองใหม่อีกครั้ง'
         })
       } finally {
@@ -988,6 +1022,24 @@ export default {
   color: white;
   transform: scale(1.1);
 }
+
+.avatar-edit-btn.locked {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+.avatar-edit-btn.locked:hover {
+  background: #d1d5db;
+  color: #6b7280;
+  transform: none;
+}
+
+.avatar-note {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  margin: -6px 0 18px;
+}
+.avatar-note .fa-clock { color: #d97706; margin-right: 4px; }
 
 .profile-info-grid {
   display: grid;
