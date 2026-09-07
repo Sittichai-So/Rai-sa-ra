@@ -104,6 +104,36 @@
       </div>
     </transition>
 
+    <transition name="fade">
+      <div v-if="upgradeOffer" class="upgrade-overlay">
+        <div class="upgrade-panel">
+          <div class="upgrade-head">
+            <span class="uh-tag">LEVEL UP</span>
+            <h3>เลือกอัปเกรด</h3>
+          </div>
+          <div class="upgrade-cards">
+            <button
+              v-for="c in upgradeOffer.choices"
+              :key="c.key"
+              class="upgrade-card"
+              @click="pickUpgrade(c.key)"
+            >
+              <span class="uc-name">{{ c.name }}</span>
+              <span class="uc-desc">{{ c.desc }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <div v-if="myUpgrades.length" class="upgrade-tags">
+      <span
+        v-for="(u, i) in upgradeSummary"
+        :key="i"
+        class="upgrade-tag"
+      >{{ u.label }}<b v-if="u.count > 1">×{{ u.count }}</b></span>
+    </div>
+
     <div v-if="bossZombie" class="boss-bar">
       <div class="boss-bar-label">
         <i class="fas fa-skull" /> BOSS
@@ -200,6 +230,8 @@ export default {
       combo: 0,
       maxCombo: 0,
       reinforceMsg: '',
+      upgradeOffer: null,
+      myUpgrades: [],
       scoreMultiplier: 1,
       lastKillTime: 0,
       comboTimeWindow: 3000,
@@ -272,6 +304,23 @@ export default {
       const b = this.bossZombie
       if (!b || !b.maxHp) { return 0 }
       return Math.max(0, (b.hp / b.maxHp) * 100)
+    },
+    upgradeSummary () {
+      const labels = {
+        damage: 'DMG',
+        firerate: 'RATE',
+        magsize: 'MAG',
+        reload: 'RLD',
+        speed: 'SPD',
+        maxhp: 'HP',
+        pierce: 'PRC',
+        multishot: 'MULTI',
+        lifesteal: 'LEECH',
+        regen: 'REGEN'
+      }
+      const counts = {}
+      for (const k of this.myUpgrades) { counts[k] = (counts[k] || 0) + 1 }
+      return Object.entries(counts).map(([k, count]) => ({ label: labels[k] || k, count }))
     },
     timerDisplay () {
       const mins = Math.floor(this.waveTimer / 60)
@@ -402,6 +451,11 @@ export default {
       if (p && this.renderer && !p.reloading) {
         this.renderer.muzzle(p.x, p.y, angle)
       }
+    },
+
+    pickUpgrade (key) {
+      this.$socket.emit('upgradePick', { key })
+      this.upgradeOffer = null
     },
 
     sendInput () {
@@ -629,6 +683,8 @@ export default {
         this.pickups = []
         this.projectiles = []
         this.leaderboard = []
+        this.myUpgrades = []
+        this.upgradeOffer = null
       })
 
       this.$socket.on('waveReinforce', ({ count }) => {
@@ -636,13 +692,25 @@ export default {
         clearTimeout(this._reinforceT)
         this._reinforceT = setTimeout(() => { this.reinforceMsg = '' }, 3000)
       })
+
+      this.$socket.on('upgradeOffer', ({ choices }) => {
+        this.upgradeOffer = { choices }
+      })
+
+      this.$socket.on('upgradeApplied', ({ upgrades, picksLeft, auto }) => {
+        this.myUpgrades = upgrades || []
+        if (picksLeft <= 0) { this.upgradeOffer = null }
+        if (auto && this.renderer && this.myPlayer) {
+          this.renderer.floatText(this.myPlayer.x, this.myPlayer.y - 30, 'AUTO UPGRADE', '#ffcc40')
+        }
+      })
     },
 
     _offAll () {
       const events = [
         'gameJoined', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
         'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted', 'waveReinforce',
-        'pickupCollected'
+        'pickupCollected', 'upgradeOffer', 'upgradeApplied'
       ]
       events.forEach(ev => this.$socket.off(ev))
       this.$socket.off('connect', this.onSocketReconnect)
@@ -1044,6 +1112,94 @@ export default {
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   padding: 8px 18px;
+}
+
+.upgrade-overlay {
+  position: absolute;
+  inset: 60px 0 0 0;
+  background: rgba(4,8,10,0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 45;
+}
+.upgrade-panel {
+  text-align: center;
+  padding: 28px;
+}
+.upgrade-head { margin-bottom: 22px; }
+.uh-tag {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: #00ff50;
+}
+.upgrade-head h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  color: #fff;
+  margin: 6px 0 0;
+}
+.upgrade-cards {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.upgrade-card {
+  width: 200px;
+  min-height: 130px;
+  padding: 18px 16px;
+  background: rgba(0,255,80,0.04);
+  border: 1px solid rgba(0,255,80,0.25);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  text-align: left;
+  transition: all 0.15s;
+}
+.upgrade-card:hover {
+  background: rgba(0,255,80,0.12);
+  border-color: #00ff50;
+  transform: translateY(-3px);
+  box-shadow: 0 0 24px rgba(0,255,80,0.25);
+}
+.uc-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #00ff50;
+}
+.uc-desc {
+  font-size: 12px;
+  color: rgba(224,240,224,0.6);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.upgrade-tags {
+  position: absolute;
+  left: 14px;
+  top: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 10;
+}
+.upgrade-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: rgba(0,255,80,0.7);
+  background: rgba(0,0,0,0.5);
+  border-left: 2px solid rgba(0,255,80,0.5);
+  padding: 2px 8px;
+}
+.upgrade-tag b { color: #fff; margin-left: 3px; }
+
+@media (max-width: 900px) {
+  .upgrade-card { width: 44%; min-height: 0; }
+  .upgrade-tags { top: 66px; }
 }
 
 .boss-bar {
