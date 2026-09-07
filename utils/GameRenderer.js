@@ -34,7 +34,7 @@ export default class GameRenderer {
     this.mapPatternCanvas = off
   }
 
-  draw ({ players, zombies, bullets, projectiles, myId, camX, camY, mapW, mapH }) {
+  draw ({ players, zombies, bullets, projectiles, pickups, myId, camX, camY, mapW, mapH }) {
     const ctx = this.ctx
     const W = this.canvas.width
     const H = this.canvas.height
@@ -56,6 +56,8 @@ export default class GameRenderer {
     ctx.strokeStyle = 'rgba(255,40,40,0.15)'
     ctx.lineWidth = 20
     ctx.strokeRect(10, 10, mapW - 20, mapH - 20)
+
+    this._drawPickups(ctx, pickups || [])
 
     this._drawBullets(ctx, bullets)
 
@@ -82,6 +84,35 @@ export default class GameRenderer {
     }
     ctx.shadowBlur = 0
     ctx.restore()
+  }
+
+  _drawPickups (ctx, pickups) {
+    const t = Date.now() / 300
+    for (const p of pickups) {
+      const bob = Math.sin(t + p.id) * 3
+      const isAmmo = p.type === 'ammo'
+      ctx.save()
+      ctx.translate(p.x, p.y + bob)
+
+      ctx.beginPath()
+      ctx.arc(0, 0, 14, 0, Math.PI * 2)
+      ctx.fillStyle = isAmmo ? 'rgba(255,204,64,0.2)' : 'rgba(64,255,120,0.2)'
+      ctx.strokeStyle = isAmmo ? '#ffcc40' : '#40ff78'
+      ctx.lineWidth = 2
+      ctx.fill()
+      ctx.stroke()
+
+      ctx.fillStyle = isAmmo ? '#ffcc40' : '#40ff78'
+      if (isAmmo) {
+        ctx.fillRect(-5, -6, 10, 12)
+        ctx.fillStyle = '#080c10'
+        ctx.fillRect(-5, -6, 10, 3)
+      } else {
+        ctx.fillRect(-2, -7, 4, 14)
+        ctx.fillRect(-7, -2, 14, 4)
+      }
+      ctx.restore()
+    }
   }
 
   _drawProjectiles (ctx, projectiles) {

@@ -23,6 +23,9 @@
         <div v-if="waveCountdown > 0" class="wave-countdown">
           คลื่นถัดไปใน {{ waveCountdown }}s
         </div>
+        <div v-else-if="waveActive && waveTimer <= 0" class="timer-display timer-warning">
+          <i class="fas fa-skull" /> OVERTIME
+        </div>
         <div v-else-if="waveActive" class="timer-display" :class="{ 'timer-warning': waveTimer <= 30 }">
           <i class="fas fa-clock" /> {{ timerDisplay }} / {{ timeLimitDisplay }}
         </div>
@@ -92,6 +95,12 @@
           <i class="fas fa-wifi" />
           <p>การเชื่อมต่อหลุด — กำลังเชื่อมต่อใหม่...</p>
         </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="reinforceMsg" class="reinforce-toast">
+        <i class="fas fa-triangle-exclamation" /> {{ reinforceMsg }}
       </div>
     </transition>
 
@@ -179,6 +188,7 @@ export default {
       zombies: [],
       bullets: [],
       projectiles: [],
+      pickups: [],
       wave: 0,
       waveActive: false,
       waveAnnounce: false,
@@ -189,6 +199,7 @@ export default {
       waveTimeLimit: 120,
       combo: 0,
       maxCombo: 0,
+      reinforceMsg: '',
       scoreMultiplier: 1,
       lastKillTime: 0,
       comboTimeWindow: 3000,
@@ -315,6 +326,7 @@ export default {
     clearInterval(this.inputInterval)
     clearInterval(this.countdownInterval)
     clearInterval(this.timerInterval)
+    clearTimeout(this._reinforceT)
     window.removeEventListener('resize', this.setupCanvas)
     window.removeEventListener('touchmove', this.onStickMove)
     window.removeEventListener('touchend', this.onStickEnd)
@@ -343,6 +355,7 @@ export default {
           zombies: this.zombies,
           bullets: this.bullets,
           projectiles: this.projectiles,
+          pickups: this.pickups,
           myId: this.myId,
           camX: this.camX,
           camY: this.camY,
@@ -514,6 +527,7 @@ export default {
         this.zombies = state.zombies || []
         this.bullets = state.bullets || []
         this.projectiles = state.projectiles || []
+        this.pickups = state.pickups || []
         this.wave = state.wave || 0
         this.waveActive = state.waveActive || false
 
@@ -581,14 +595,22 @@ export default {
         this.players = []
         this.zombies = []
         this.bullets = []
+        this.pickups = []
+        this.projectiles = []
         this.leaderboard = []
+      })
+
+      this.$socket.on('waveReinforce', ({ count }) => {
+        this.reinforceMsg = `หมดเวลา! กำลังเสริม ${count} ตัว`
+        clearTimeout(this._reinforceT)
+        this._reinforceT = setTimeout(() => { this.reinforceMsg = '' }, 3000)
       })
     },
 
     _offAll () {
       const events = [
         'gameJoined', 'gameState', 'waveCountdown', 'waveStart',
-        'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted'
+        'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted', 'waveReinforce'
       ]
       events.forEach(ev => this.$socket.off(ev))
       this.$socket.off('connect', this.onSocketReconnect)
@@ -977,6 +999,20 @@ export default {
 }
 .wa-boss .wa-tag { color: #ff2020; letter-spacing: 6px; }
 .wa-boss h2 { color: #ff5050; text-shadow: 0 0 24px rgba(255,40,40,0.7); }
+
+.reinforce-toast {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  background: rgba(255,40,40,0.15);
+  border: 1px solid rgba(255,40,40,0.5);
+  color: #ff6040;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  padding: 8px 18px;
+}
 
 .boss-bar {
   position: absolute;
