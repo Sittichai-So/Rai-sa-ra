@@ -81,6 +81,8 @@
 </template>
 
 <script>
+// TODO: DM ยังทำไม่ครบ — โหลดข้อความเก่า (infinite scroll), แก้ไข/ลบข้อความ,
+//   typing indicator, ส่งรูป/ไฟล์ (backend ต้องเพิ่ม endpoint ด้วย)
 export default {
   name: 'DirectMessageModal',
   props: {

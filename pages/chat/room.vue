@@ -22,6 +22,7 @@
             </div>
           </div>
           <div class="header-actions">
+            <!-- TODO: ปุ่มค้นหาข้อความในห้อง — backend พร้อมแล้ว (API_SEARCH_MESSAGE / GET /chatLog/:roomId/search) แต่ยังไม่มี UI -->
             <button
               class="icon-btn"
               title="ตั้งค่าธีมแชท"

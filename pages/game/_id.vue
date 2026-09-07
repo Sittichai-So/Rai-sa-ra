@@ -112,6 +112,8 @@
 <script>
 import GameRenderer from '~/utils/GameRenderer'
 
+// TODO: เล่นบนมือถือไม่ได้ — ต้องมี virtual joystick (เดิน) + ปุ่มยิง สำหรับจอสัมผัส
+// TODO: reconnect กลับเข้าเกมเมื่อ socket หลุด
 export default {
   name: 'GameRoom',
   middleware: 'middlewareAuth',
