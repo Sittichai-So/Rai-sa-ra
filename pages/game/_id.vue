@@ -156,6 +156,24 @@
     </transition>
 
     <transition name="fade">
+      <div v-if="isDowned && !gameOver" class="downed-overlay">
+        <div class="downed-box">
+          <div class="downed-icon">
+            <i class="fas fa-heart-crack" />
+          </div>
+          <h2>คุณถูกน็อค!</h2>
+          <p>รอเพื่อนมาช่วยชุบ — อย่าเพิ่งยอมแพ้</p>
+          <div class="bleed-track">
+            <div class="bleed-fill" :style="{ width: downedBleedPct + '%' }" />
+          </div>
+          <div v-if="reviveProgressPct > 0" class="revive-note">
+            กำลังถูกช่วย {{ reviveProgressPct }}%
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
       <div v-if="isDead && !gameOver" class="dead-overlay">
         <div class="dead-box">
           <div class="dead-icon">
@@ -286,7 +304,20 @@ export default {
       }).sort((a, b) => b.score - a.score)
     },
     isDead () {
-      return this.myPlayer ? !this.myPlayer.alive : false
+      return this.myPlayer ? (!this.myPlayer.alive && !this.myPlayer.downed) : false
+    },
+    isDowned () {
+      return this.myPlayer ? !!this.myPlayer.downed : false
+    },
+    downedBleedPct () {
+      const p = this.myPlayer
+      if (!p || !p.downed || !p.downedAt) { return 100 }
+      const elapsed = Date.now() - p.downedAt
+      return Math.max(0, 100 - (elapsed / 18000) * 100)
+    },
+    reviveProgressPct () {
+      const p = this.myPlayer
+      return p && p.reviveProgress ? Math.round(p.reviveProgress * 100) : 0
     },
     myAmmo () {
       return this.myPlayer ? this.myPlayer.ammo : 0
@@ -627,6 +658,23 @@ export default {
         }
       })
 
+      this.$socket.on('playerDowned', ({ playerId }) => {
+        const p = this.players.find(x => x.id === playerId)
+        if (p && this.renderer) {
+          this.renderer.bloodSplat(p.x, p.y, true)
+          this.renderer.floatText(p.x, p.y - 24, 'DOWN!', '#ff4040')
+        }
+        if (playerId === this.myId && this.renderer) { this.renderer.shake(10) }
+      })
+
+      this.$socket.on('playerRevived', ({ playerId }) => {
+        const p = this.players.find(x => x.id === playerId)
+        if (p && this.renderer) {
+          this.renderer.spark(p.x, p.y, '#40ff78')
+          this.renderer.floatText(p.x, p.y - 24, 'REVIVED', '#40ff78')
+        }
+      })
+
       this.$socket.on('playerHit', ({ playerId, damage }) => {
         const p = this.players.find(x => x.id === playerId)
         if (!p || !this.renderer) { return }
@@ -709,8 +757,8 @@ export default {
     _offAll () {
       const events = [
         'gameJoined', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
-        'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted', 'waveReinforce',
-        'pickupCollected', 'upgradeOffer', 'upgradeApplied'
+        'playerDied', 'playerDowned', 'playerRevived', 'zombieKilled', 'gameOver',
+        'gameRestarted', 'waveReinforce', 'pickupCollected', 'upgradeOffer', 'upgradeApplied'
       ]
       events.forEach(ev => this.$socket.off(ev))
       this.$socket.off('connect', this.onSocketReconnect)
@@ -1252,6 +1300,34 @@ export default {
 .dead-icon { font-size: 52px; margin-bottom: 12px; opacity: 0.5; }
 .dead-box h2 { font-family: 'Orbitron', sans-serif; font-size: 22px; color: #ff5050; margin-bottom: 8px; }
 .dead-box p { font-size: 13px; color: rgba(224,240,224,0.4); font-family: 'Share Tech Mono', monospace; }
+
+.downed-overlay {
+  position: absolute;
+  inset: 60px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(60,0,0,0.35);
+  z-index: 18;
+  pointer-events: none;
+}
+.downed-box {
+  text-align: center;
+  background: rgba(10,0,0,0.78);
+  border: 1px solid rgba(255,64,64,0.45);
+  padding: 30px 44px;
+}
+.downed-icon { font-size: 40px; color: #ff4040; margin-bottom: 10px; animation: pulse-warning 0.9s infinite; }
+.downed-box h2 { font-family: 'Orbitron', sans-serif; font-size: 20px; color: #ff5050; margin-bottom: 6px; }
+.downed-box p { font-size: 12px; color: rgba(224,240,224,0.55); font-family: 'Share Tech Mono', monospace; margin-bottom: 14px; }
+.bleed-track {
+  width: 220px;
+  height: 6px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.1);
+}
+.bleed-fill { height: 100%; background: linear-gradient(90deg, #ff2020, #ff7040); transition: width 0.2s linear; }
+.revive-note { margin-top: 10px; font-size: 12px; color: #40ff78; font-family: 'Share Tech Mono', monospace; }
 
 .gameover-overlay {
   position: absolute;

@@ -346,7 +346,7 @@ export default class GameRenderer {
       const color = p.color || '#7c6ff5'
       const rad = p.radius || 18
 
-      if (!p.alive) {
+      if (!p.alive && !p.downed) {
         ctx.save()
         ctx.translate(p.x, p.y)
         ctx.beginPath()
@@ -358,6 +358,37 @@ export default class GameRenderer {
         ctx.fillStyle = 'rgba(60,60,66,0.7)'
         ctx.fill()
         ctx.restore()
+        continue
+      }
+
+      if (p.downed) {
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.beginPath()
+        ctx.ellipse(0, 0, rad * 1.3, rad * 0.75, 0, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(80,14,14,0.35)'
+        ctx.fill()
+        ctx.beginPath()
+        ctx.ellipse(0, 0, rad * 0.95, rad * 0.6, p.angle, 0, Math.PI * 2)
+        ctx.fillStyle = `${p.color || '#7c6ff5'}88`
+        ctx.strokeStyle = '#ff5050'
+        ctx.lineWidth = 1.5
+        ctx.fill()
+        ctx.stroke()
+        // revive progress ring
+        if (p.reviveProgress > 0) {
+          ctx.beginPath()
+          ctx.arc(0, 0, rad + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p.reviveProgress)
+          ctx.strokeStyle = '#40ff78'
+          ctx.lineWidth = 3
+          ctx.stroke()
+        }
+        ctx.restore()
+
+        ctx.font = '10px Share Tech Mono, monospace'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = '#ff6060'
+        ctx.fillText('▼ ' + p.username, p.x, p.y - rad - 8)
         continue
       }
 
