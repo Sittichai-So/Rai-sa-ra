@@ -138,6 +138,17 @@ export default {
     // landing stats
     API_STATS: currentEnv.api + '/stats',
 
+    // coins / เติมเงิน
+    API_COINS_WALLET: currentEnv.api + '/coins/wallet',
+    API_COINS_PACKAGES: currentEnv.api + '/coins/packages',
+    API_COINS_TOPUP: currentEnv.api + '/coins/topup',
+    API_COINS_TOPUP_SLIP: currentEnv.api + '/coins/topup/:id/slip',
+    API_COINS_TOPUP_STATUS: currentEnv.api + '/coins/topup/:id',
+    API_COINS_ADMIN_TOPUPS: currentEnv.api + '/coins/admin/topups',
+    API_COINS_ADMIN_APPROVE: currentEnv.api + '/coins/admin/topups/:id/approve',
+    API_COINS_ADMIN_REJECT: currentEnv.api + '/coins/admin/topups/:id/reject',
+    API_ROOM_EXTEND_RETENTION: currentEnv.api + '/room/:id/extend-retention',
+
     // socket
     SOCKET_URL: process.env.SOCKET_URL || FILE_BASE
   },
