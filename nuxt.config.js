@@ -92,6 +92,7 @@ export default {
 
     API_DM_CONVERSATIONS: currentEnv.api + '/dm/conversations',
     API_DM_MESSAGES: currentEnv.api + '/dm/:friendId/messages',
+    API_DM_MESSAGE: currentEnv.api + '/dm/messages/:messageId',
     API_DM_READ: currentEnv.api + '/dm/:friendId/read',
 
     API_SEND_FRIEND: currentEnv.api + '/friends/send',
