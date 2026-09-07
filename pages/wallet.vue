@@ -146,7 +146,8 @@ export default {
         private_room: 'สร้างห้องส่วนตัว',
         retention_extend: 'ต่ออายุเก็บข้อความ',
         adjust: 'ปรับยอดโดยแอดมิน',
-        refund: 'คืนเหรียญ'
+        refund: 'คืนเหรียญ',
+        refund_topup: 'คืนเงินการเติมเหรียญ'
       }[r] || r
     },
     async startTopup (pkg) {

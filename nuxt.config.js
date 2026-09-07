@@ -125,6 +125,7 @@ export default {
     API_COINS_ADMIN_TOPUPS: currentEnv.api + '/coins/admin/topups',
     API_COINS_ADMIN_APPROVE: currentEnv.api + '/coins/admin/topups/:id/approve',
     API_COINS_ADMIN_REJECT: currentEnv.api + '/coins/admin/topups/:id/reject',
+    API_COINS_ADMIN_REFUND: currentEnv.api + '/coins/admin/topups/:id/refund',
     API_ROOM_EXTEND_RETENTION: currentEnv.api + '/room/:id/extend-retention',
 
     SOCKET_URL: process.env.SOCKET_URL || FILE_BASE

@@ -15,6 +15,9 @@
         <option value="rejected">
           ปฏิเสธ
         </option>
+        <option value="refunded">
+          คืนเงินแล้ว
+        </option>
         <option value="all">
           ทั้งหมด
         </option>
@@ -46,6 +49,10 @@
           <div v-if="t.rejectReason" class="at-reason">
             {{ t.rejectReason }}
           </div>
+          <div v-if="t.refundReason" class="at-reason">
+            คืนเงิน: {{ t.refundReason }}
+            <span v-if="t.refundShortfall > 0">(ขาด {{ t.refundShortfall }} เหรียญ)</span>
+          </div>
         </div>
 
         <a v-if="t.slipUrl" :href="fileBase + t.slipUrl" target="_blank" class="at-slip">
@@ -58,6 +65,11 @@
           </button>
           <button class="at-reject" :disabled="busy === t._id" @click="reject(t)">
             <i class="fas fa-times" /> ปฏิเสธ
+          </button>
+        </div>
+        <div v-else-if="t.status === 'approved'" class="at-actions">
+          <button class="at-reject" :disabled="busy === t._id" @click="doRefund(t)">
+            <i class="fas fa-rotate-left" /> คืนเงิน
           </button>
         </div>
       </div>
@@ -91,7 +103,7 @@ export default {
       return d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''
     },
     statuslabel (s) {
-      return { awaiting_review: 'รอตรวจสอบ', approved: 'อนุมัติแล้ว', rejected: 'ปฏิเสธ', pending: 'รอสลิป', expired: 'หมดอายุ' }[s] || s
+      return { awaiting_review: 'รอตรวจสอบ', approved: 'อนุมัติแล้ว', rejected: 'ปฏิเสธ', pending: 'รอสลิป', expired: 'หมดอายุ', refunded: 'คืนเงินแล้ว' }[s] || s
     },
     async load () {
       try {
@@ -123,6 +135,29 @@ export default {
       this.busy = t._id
       try {
         await this.$axios.$post(process.env.API_COINS_ADMIN_REJECT.replace(':id', t._id), { reason })
+        this.load()
+      } catch (e) {
+        this.$swal({ icon: 'error', title: 'ไม่สำเร็จ', text: e.response?.data?.message })
+      } finally {
+        this.busy = null
+      }
+    },
+    async doRefund (t) {
+      const { value: reason, isConfirmed } = await this.$swal({
+        title: 'คืนเงินคำขอนี้?',
+        html: `จะหักคืน <b>${t.coins} เหรียญ</b> จากผู้ใช้<br><small>ถ้าผู้ใช้ใช้เหรียญไปบางส่วนแล้ว จะหักได้เท่าที่เหลือ</small>`,
+        input: 'text',
+        inputPlaceholder: 'เหตุผลการคืนเงิน',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'คืนเงิน',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!isConfirmed) { return }
+      this.busy = t._id
+      try {
+        const r = await this.$axios.$post(process.env.API_COINS_ADMIN_REFUND.replace(':id', t._id), { reason })
+        this.$swal({ icon: 'success', title: 'คืนเงินแล้ว', text: r.message, timer: 2200, showConfirmButton: false })
         this.load()
       } catch (e) {
         this.$swal({ icon: 'error', title: 'ไม่สำเร็จ', text: e.response?.data?.message })
