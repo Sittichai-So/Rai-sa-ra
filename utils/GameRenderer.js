@@ -34,12 +34,20 @@ function shade (hex, f) {
   return `rgb(${r},${g},${b})`
 }
 
+const TILE_COL = {
+  a: '#22242a', // ถนน
+  s: '#2f3138', // ฟุตบาท
+  g: '#1f3020', // หญ้า
+  d: '#2e2820' // ดิน
+}
+
 export default class GameRenderer {
   constructor (canvas) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
-    this._buildMapPattern()
 
+    this.map = null
+    this.mapCanvas = null
     this.particles = []
     this.floaters = []
     this.decals = []
@@ -47,17 +55,108 @@ export default class GameRenderer {
     this._last = (typeof performance !== 'undefined' ? performance.now() : Date.now())
   }
 
-  _buildMapPattern () {
-    const off = document.createElement('canvas')
-    off.width = TILE
-    off.height = TILE
-    const c = off.getContext('2d')
-    c.fillStyle = '#0d1117'
-    c.fillRect(0, 0, TILE, TILE)
-    c.strokeStyle = 'rgba(0,255,80,0.06)'
-    c.lineWidth = 0.5
-    c.strokeRect(0, 0, TILE, TILE)
-    this.mapPattern = this.ctx.createPattern(off, 'repeat')
+  // ── สร้างชั้นแมพ (พื้น + ของ) ครั้งเดียว แล้ว blit ทุกเฟรม ──
+  setMap (map) {
+    if (!map || !map.tiles) { return }
+    this.map = map
+    const cv = document.createElement('canvas')
+    cv.width = map.w
+    cv.height = map.h
+    const c = cv.getContext('2d')
+    const t = map.tile
+    const cols = Math.floor(map.w / t)
+
+    for (let i = 0; i < map.tiles.length; i++) {
+      const ch = map.tiles[i]
+      const cx = (i % cols) * t
+      const cy = Math.floor(i / cols) * t
+      c.fillStyle = TILE_COL[ch] || '#202228'
+      c.fillRect(cx, cy, t, t)
+      // texture พิกเซลเล็กน้อย
+      c.fillStyle = 'rgba(0,0,0,0.16)'
+      for (let k = 0; k < 3; k++) {
+        const px = cx + ((i * 7 + k * 13) % t)
+        const py = cy + ((i * 11 + k * 5) % t)
+        c.fillRect(px, py, 4, 4)
+      }
+      if (ch === 'g') {
+        c.fillStyle = 'rgba(90,150,70,0.3)'
+        c.fillRect(cx + (i % 20), cy + ((i * 3) % 24), 3, 6)
+      }
+      c.strokeStyle = 'rgba(255,255,255,0.03)'
+      c.strokeRect(cx + 0.5, cy + 0.5, t, t)
+    }
+
+    // เส้นถนน
+    c.fillStyle = 'rgba(220,200,90,0.5)'
+    for (let y = 0; y < map.h; y += 64) { c.fillRect(map.w / 2 - 3, y + 14, 6, 30) }
+    for (let x = 0; x < map.w; x += 64) { c.fillRect(x + 14, map.h / 2 - 3, 30, 6) }
+
+    for (const p of map.props || []) { this._drawProp(c, p) }
+
+    this.mapCanvas = cv
+  }
+
+  _drawProp (c, p) {
+    c.save()
+    c.translate(p.x, p.y)
+    const w = p.w || (p.r ? p.r * 2 : 40)
+    const h = p.h || (p.r ? p.r * 2 : 40)
+    // เงา
+    c.fillStyle = 'rgba(0,0,0,0.35)'
+    c.fillRect(-w / 2 + 4, -h / 2 + 6, w, h)
+
+    if (p.type === 'car') {
+      const vert = h > w
+      c.fillStyle = '#3a4657'
+      c.fillRect(-w / 2, -h / 2, w, h)
+      c.fillStyle = '#20262f'
+      c.fillRect(-w / 2, -h / 2, w, h - (vert ? 0 : 4))
+      c.fillStyle = '#8fb8d8'
+      if (vert) {
+        c.fillRect(-w / 2 + 5, -h / 2 + 8, w - 10, 14)
+        c.fillRect(-w / 2 + 5, h / 2 - 22, w - 10, 14)
+      } else {
+        c.fillRect(-w / 2 + 8, -h / 2 + 5, 14, h - 10)
+        c.fillRect(w / 2 - 22, -h / 2 + 5, 14, h - 10)
+      }
+      c.fillStyle = '#12151a'
+      c.fillRect(-w / 2 - 2, -h / 2 + 4, 4, h - 8)
+      c.fillRect(w / 2 - 2, -h / 2 + 4, 4, h - 8)
+    } else if (p.type === 'dumpster') {
+      c.fillStyle = '#2f5c39'
+      c.fillRect(-w / 2, -h / 2, w, h)
+      c.fillStyle = '#3d7449'
+      c.fillRect(-w / 2, -h / 2, w, 8)
+      c.fillStyle = '#1c3a24'
+      c.fillRect(-w / 2 + 3, -h / 2 + 12, w - 6, h - 16)
+    } else if (p.type === 'barrel') {
+      const r = p.r || 20
+      c.fillStyle = '#7a4a20'
+      c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill()
+      c.strokeStyle = '#3f2811'
+      c.lineWidth = 3
+      c.beginPath(); c.arc(0, 0, r - 3, 0, Math.PI * 2); c.stroke()
+      c.beginPath(); c.arc(0, 0, r - 9, 0, Math.PI * 2); c.stroke()
+    } else if (p.type === 'planter') {
+      c.fillStyle = '#4a3a2a'
+      c.fillRect(-w / 2, -h / 2, w, h)
+      c.fillStyle = '#2f5a30'
+      for (let i = 0; i < 6; i++) {
+        c.fillRect(-w / 2 + 4 + (i * (w - 8)) / 6, -h / 2 - 4, 6, 12)
+      }
+    } else { // crate
+      c.fillStyle = '#6b4a2a'
+      c.fillRect(-w / 2, -h / 2, w, h)
+      c.strokeStyle = '#3f2c18'
+      c.lineWidth = 3
+      c.strokeRect(-w / 2 + 1.5, -h / 2 + 1.5, w - 3, h - 3)
+      c.beginPath()
+      c.moveTo(-w / 2, -h / 2); c.lineTo(w / 2, h / 2)
+      c.moveTo(w / 2, -h / 2); c.lineTo(-w / 2, h / 2)
+      c.stroke()
+    }
+    c.restore()
   }
 
   // ── effect triggers (เรียกจาก component) ─────────────
@@ -82,8 +181,16 @@ export default class GameRenderer {
 
   bloodSplat (x, y, big = false) {
     this.burst(x, y, big ? 26 : 12, BLOOD, { speed: big ? 190 : 130, size: big ? 4 : 3 })
-    this.decals.push({ x, y, r: big ? 22 : 12, a: 0.5 })
-    if (this.decals.length > 60) { this.decals.shift() }
+    const n = big ? 3 : 2
+    for (let i = 0; i < n; i++) {
+      this.decals.push({
+        x: x + (Math.random() - 0.5) * (big ? 30 : 16),
+        y: y + (Math.random() - 0.5) * (big ? 30 : 16),
+        r: (big ? 14 : 8) + Math.random() * 8,
+        a: 0.34 + Math.random() * 0.14
+      })
+    }
+    if (this.decals.length > 240) { this.decals.splice(0, this.decals.length - 240) }
   }
 
   spark (x, y, color = '#ffec70') {
@@ -131,7 +238,6 @@ export default class GameRenderer {
     }
     this.floaters = this.floaters.filter(f => f.life < f.maxLife)
 
-    for (const d of this.decals) { d.a *= 0.999 }
     this.shakeAmt *= 0.86
     if (this.shakeAmt < 0.3) { this.shakeAmt = 0 }
   }
@@ -156,15 +262,16 @@ export default class GameRenderer {
     ctx.save()
     ctx.translate(-Math.round(camX) + sx, -Math.round(camY) + sy)
 
-    ctx.fillStyle = this.mapPattern
-    ctx.fillRect(0, 0, mapW, mapH)
+    if (this.mapCanvas) {
+      ctx.drawImage(this.mapCanvas, 0, 0)
+    } else {
+      ctx.fillStyle = '#1a1c22'
+      ctx.fillRect(0, 0, mapW, mapH)
+    }
 
-    ctx.strokeStyle = 'rgba(0,255,80,0.22)'
+    ctx.strokeStyle = 'rgba(0,255,80,0.18)'
     ctx.lineWidth = 3
     ctx.strokeRect(0, 0, mapW, mapH)
-    ctx.strokeStyle = 'rgba(255,40,40,0.12)'
-    ctx.lineWidth = 20
-    ctx.strokeRect(10, 10, mapW - 20, mapH - 20)
 
     this._drawDecals(ctx)
     this._drawPickups(ctx, pickups || [], now)
@@ -182,10 +289,9 @@ export default class GameRenderer {
 
   _drawDecals (ctx) {
     for (const d of this.decals) {
-      if (d.a < 0.04) { continue }
       ctx.beginPath()
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(80,14,14,${d.a})`
+      ctx.fillStyle = `rgba(74,10,10,${d.a})`
       ctx.fill()
     }
   }
@@ -522,6 +628,15 @@ export default class GameRenderer {
     ctx.strokeStyle = 'rgba(0,255,80,0.2)'
     ctx.lineWidth = 1
     ctx.strokeRect(mmX, mmY, mmW, mmH)
+
+    if (this.map && this.map.props) {
+      ctx.fillStyle = 'rgba(140,150,165,0.35)'
+      for (const pr of this.map.props) {
+        const w = pr.w || (pr.r ? pr.r * 2 : 30)
+        const h = pr.h || (pr.r ? pr.r * 2 : 30)
+        ctx.fillRect(mmX + (pr.x - w / 2) * scX, mmY + (pr.y - h / 2) * scY, Math.max(1, w * scX), Math.max(1, h * scY))
+      }
+    }
 
     const cvW = Math.min(this.canvas.width, mapW)
     const cvH = Math.min(this.canvas.height, mapH)

@@ -643,11 +643,12 @@ export default {
       this.$socket.on('connect', this.onSocketReconnect)
       this.$socket.on('disconnect', this.onSocketDrop)
 
-      this.$socket.on('gameJoined', ({ playerId, mapSize }) => {
+      this.$socket.on('gameJoined', ({ playerId, mapSize, map }) => {
         this.myId = playerId
         this.joined = true
         this.reconnecting = false
         if (mapSize) { this.mapW = mapSize.w; this.mapH = mapSize.h }
+        if (map && this.renderer) { this.renderer.setMap(map) }
       })
 
       this.$socket.on('gameState', (state) => {
@@ -769,6 +770,10 @@ export default {
         this.leaderboard = []
         this.myUpgrades = []
         this.upgradeOffer = null
+        if (this.renderer) {
+          this.renderer.decals = []
+          this.renderer.particles = []
+        }
       })
 
       this.$socket.on('waveReinforce', ({ count }) => {
