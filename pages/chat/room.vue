@@ -22,7 +22,13 @@
             </div>
           </div>
           <div class="header-actions">
-            <!-- TODO: ปุ่มค้นหาข้อความในห้อง — backend พร้อมแล้ว (API_SEARCH_MESSAGE / GET /chatLog/:roomId/search) แต่ยังไม่มี UI -->
+            <button
+              class="icon-btn"
+              title="ค้นหาข้อความในห้อง"
+              @click="openSearch"
+            >
+              <i class="fas fa-magnifying-glass" />
+            </button>
             <button
               class="icon-btn"
               title="ตั้งค่าธีมแชท"
@@ -116,6 +122,62 @@
       @save="handleSettingsSave"
       @close="closeSettings"
     />
+
+    <transition name="search-fade">
+      <div v-if="showSearch" class="search-overlay" @click.self="closeSearch">
+        <div class="search-panel">
+          <div class="search-panel-header">
+            <div class="search-input-box">
+              <i class="fas fa-magnifying-glass" />
+              <input
+                ref="searchInput"
+                v-model="searchQuery"
+                type="text"
+                placeholder="ค้นหาข้อความในห้องนี้..."
+                @input="onSearchInput"
+                @keydown.esc="closeSearch"
+              >
+              <button v-if="searchQuery" class="search-clear" @click="clearSearch">
+                <i class="fas fa-times" />
+              </button>
+            </div>
+            <button class="search-close" @click="closeSearch">
+              <i class="fas fa-times" />
+            </button>
+          </div>
+
+          <div class="search-results">
+            <div v-if="searchLoading" class="search-state">
+              <b-spinner small class="mr-2" />กำลังค้นหา...
+            </div>
+            <div v-else-if="searchTouched && !searchResults.length" class="search-state">
+              ไม่พบข้อความที่ตรงกับ "{{ lastSearchQuery }}"
+            </div>
+            <div v-else-if="!searchTouched" class="search-state muted">
+              พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อค้นหา
+            </div>
+            <template v-else>
+              <div class="search-result-count">
+                พบ {{ searchResults.length }} ข้อความ
+              </div>
+              <button
+                v-for="r in searchResults"
+                :key="r._id"
+                class="search-result-item"
+                @click="jumpToSearchResult(r)"
+              >
+                <div class="search-result-top">
+                  <span class="search-result-user">{{ r.username || 'ไม่ทราบชื่อ' }}</span>
+                  <span class="search-result-time">{{ formatSearchTime(r.createdAt) }}</span>
+                </div>
+                <!-- eslint-disable-next-line vue/no-v-html -- highlightMatch escapes HTML before wrapping matches -->
+                <div class="search-result-text" v-html="highlightMatch(r.content)" />
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -159,6 +221,15 @@ export default {
       emojiList: ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '🔥', '👏', '✅', '❌', '⭐'],
       page: 1,
       hasMore: true,
+
+      showSearch: false,
+      searchQuery: '',
+      lastSearchQuery: '',
+      searchResults: [],
+      searchLoading: false,
+      searchTouched: false,
+      searchTimer: null,
+      searchSeq: 0,
 
       showSettingsModal: false,
       chatTheme: 'purple',
@@ -303,6 +374,7 @@ export default {
   },
   beforeDestroy () {
     document.documentElement.style.removeProperty('font-size')
+    clearTimeout(this.searchTimer)
     if (this.$socket) {
       this.$socket.off('receiveMessage')
       this.$socket.off('messageReaction')
@@ -368,6 +440,103 @@ export default {
       this._themeSnapshot = this.roomSettings.theme
       this.saveRoomSettings()
       this.showSettingsModal = false
+    },
+
+    openSearch () {
+      this.showSearch = true
+      this.$nextTick(() => {
+        this.$refs.searchInput && this.$refs.searchInput.focus()
+      })
+    },
+
+    closeSearch () {
+      this.showSearch = false
+      clearTimeout(this.searchTimer)
+    },
+
+    clearSearch () {
+      this.searchQuery = ''
+      this.searchResults = []
+      this.searchTouched = false
+      this.$refs.searchInput && this.$refs.searchInput.focus()
+    },
+
+    onSearchInput () {
+      clearTimeout(this.searchTimer)
+      const term = this.searchQuery.trim()
+      if (term.length < 2) {
+        this.searchResults = []
+        this.searchTouched = false
+        this.searchLoading = false
+        return
+      }
+      this.searchTimer = setTimeout(() => this.runSearch(term), 350)
+    },
+
+    async runSearch (term) {
+      const seq = ++this.searchSeq
+      this.searchLoading = true
+      try {
+        const res = await this.$axios.$get(
+          process.env.API_SEARCH_MESSAGE.replace(':roomId', this.roomId),
+          { params: { q: term } }
+        )
+        if (seq !== this.searchSeq) { return }
+        const payload = res.result || {}
+        this.searchResults = payload.messages || []
+        this.lastSearchQuery = term
+        this.searchTouched = true
+      } catch (err) {
+        if (seq !== this.searchSeq) { return }
+        this.searchResults = []
+        this.lastSearchQuery = term
+        this.searchTouched = true
+      } finally {
+        if (seq === this.searchSeq) { this.searchLoading = false }
+      }
+    },
+
+    highlightMatch (text) {
+      const raw = String(text || '')
+      const escaped = raw.replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]))
+      const term = this.lastSearchQuery.trim()
+      if (!term) { return escaped }
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return escaped.replace(new RegExp(safeTerm, 'gi'), m => `<mark>${m}</mark>`)
+    },
+
+    formatSearchTime (dateString) {
+      try {
+        const d = new Date(dateString)
+        if (isNaN(d.getTime())) { return '' }
+        return d.toLocaleString('th-TH', {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+        })
+      } catch {
+        return ''
+      }
+    },
+
+    async jumpToSearchResult (result) {
+      this.closeSearch()
+      const list = this.$refs.chatContainer
+      if (!list) { return }
+
+      for (let i = 0; i < 15; i++) {
+        if (this.messages.some(m => m._id === result._id)) {
+          this.$nextTick(() => list.scrollToMessage(result._id))
+          return
+        }
+        if (!this.hasMore) { break }
+        await this.loadMoreMessages()
+      }
+
+      this.$bvToast.toast('ข้อความนี้อยู่เก่าเกินกว่าที่โหลดไว้', {
+        variant: 'warning',
+        solid: true
+      })
     },
 
     async fetchRoomInfo () {
@@ -1049,6 +1218,169 @@ export default {
   flex-shrink: 0;
   border-top: var(--line) solid var(--ink);
   background: var(--paper-soft);
+}
+
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 16, 20, 0.6);
+  z-index: 9998;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8vh 16px 16px;
+}
+
+.search-fade-enter-active,
+.search-fade-leave-active { transition: opacity 0.16s ease; }
+
+.search-fade-enter,
+.search-fade-leave-to { opacity: 0; }
+
+.search-panel {
+  width: 100%;
+  max-width: 520px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-soft);
+  border: var(--line) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.search-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: var(--line-sm) solid var(--ink);
+  background: var(--violet);
+}
+
+.search-input-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  color: rgba(16, 16, 20, 0.5);
+}
+
+.search-input-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.search-clear,
+.search-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(16, 16, 20, 0.5);
+  font-size: 0.9rem;
+}
+
+.search-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--white);
+  border: var(--line-sm) solid var(--ink);
+  color: var(--ink);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-xs);
+}
+
+.search-results {
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.search-state {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--cream);
+  font-size: 0.88rem;
+}
+
+.search-state.muted { color: rgba(246, 243, 237, 0.5); }
+
+.search-result-count {
+  padding: 6px 10px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(246, 243, 237, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.search-result-item {
+  width: 100%;
+  text-align: left;
+  background: var(--paper);
+  border: var(--line-sm) solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.search-result-item:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-xs);
+}
+
+.search-result-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.search-result-user {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--violet);
+}
+
+.search-result-time {
+  font-size: 0.72rem;
+  color: rgba(246, 243, 237, 0.45);
+  flex-shrink: 0;
+}
+
+.search-result-text {
+  font-size: 0.86rem;
+  color: var(--cream);
+  line-height: 1.4;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.search-result-text ::v-deep mark {
+  background: var(--yellow);
+  color: var(--ink);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+@media (max-width: 480px) {
+  .search-overlay { padding: 6vh 10px 10px; }
+  .search-panel { max-height: 78vh; }
 }
 
 .reaction-picker-overlay {
