@@ -106,6 +106,8 @@ export default {
     API_SEARCH_FRIEND: currentEnv.api + '/friends/search',
     API_STATS_FRIEND: currentEnv.api + '/friends/stats',
     API_PROFILE_FRIEND_ID: currentEnv.api + '/friends/profile/:friendId',
+    API_FRIENDS_BLOCK: currentEnv.api + '/friends/block/:userId',
+    API_FRIENDS_BLOCKED: currentEnv.api + '/friends/blocked',
 
     API_PATCH_USER_STATUS: currentEnv.api + '/user/:id/status',
     API_GET_USER_BY_ID: currentEnv.api + '/user/getByID',

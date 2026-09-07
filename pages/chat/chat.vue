@@ -70,9 +70,14 @@
               เพื่อนของฉัน
               <span v-if="friendRequests.length" class="hdr-badge">{{ friendRequests.length }}</span>
             </h6>
-            <button class="add-channel-btn" @click="showAddFriend = true">
-              <i class="fas fa-user-plus" />
-            </button>
+            <div class="section-header-actions">
+              <button class="add-channel-btn" title="ผู้ใช้ที่ถูกบล็อก" @click="openBlockedList">
+                <i class="fas fa-user-slash" />
+              </button>
+              <button class="add-channel-btn" title="เพิ่มเพื่อน" @click="showAddFriend = true">
+                <i class="fas fa-user-plus" />
+              </button>
+            </div>
           </div>
 
           <div v-if="friendRequests.length > 0" class="friend-requests">
@@ -660,7 +665,6 @@
       @sent="onDmSent"
     />
 
-    <!-- Friend row context menu (fixed-positioned so it escapes the sidebar scroll) -->
     <div
       v-if="friendMenu.open"
       class="friend-menu-backdrop"
@@ -680,6 +684,9 @@
         </button>
         <button type="button" class="danger" @click="fmRemove">
           <i class="fas fa-user-minus" /> ลบเพื่อน
+        </button>
+        <button type="button" class="danger" @click="fmBlock">
+          <i class="fas fa-user-slash" /> บล็อก
         </button>
       </div>
     </div>
@@ -1729,6 +1736,80 @@ export default {
       }
     },
 
+    fmBlock () {
+      const f = this.friendMenu.friend
+      this.closeFriendMenu()
+      if (f) { this.blockUser(f) }
+    },
+
+    async blockUser (friend) {
+      const result = await this.$swal({
+        title: `บล็อก ${friend.displayName || friend.fullname || 'ผู้ใช้'}?`,
+        text: 'ผู้ใช้นี้จะถูกลบออกจากเพื่อน และส่งข้อความหรือคำขอเป็นเพื่อนหากันไม่ได้',
+        icon: 'warning',
+        showCancelButton: true,
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonText: 'บล็อก',
+        confirmButtonColor: '#d33'
+      })
+      if (!result.isConfirmed) { return }
+      try {
+        await this.$axios.$post(process.env.API_FRIENDS_BLOCK.replace(':userId', friend.friendId))
+        this.friends = this.friends.filter(f => f.friendId !== friend.friendId)
+        this.dmConversations = this.dmConversations.filter(c => c.friendId !== friend.friendId)
+        this.updateFriendLists()
+        this.friendToast('success', 'บล็อกผู้ใช้แล้ว')
+      } catch (err) {
+        this.friendToast('error', err.response?.data?.message || 'ไม่สามารถบล็อกผู้ใช้ได้')
+      }
+    },
+
+    async openBlockedList () {
+      let blocked = []
+      try {
+        const res = await this.$axios.$get(process.env.API_FRIENDS_BLOCKED)
+        blocked = res.data || []
+      } catch (err) {
+        this.friendToast('error', 'ไม่สามารถโหลดรายชื่อที่ถูกบล็อกได้')
+        return
+      }
+
+      if (!blocked.length) {
+        this.$swal({ icon: 'info', title: 'ไม่มีผู้ใช้ที่ถูกบล็อก', timer: 1600, showConfirmButton: false })
+        return
+      }
+
+      const esc = this.escapeHtml
+      const rows = blocked.map(b => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee">
+          <span>${esc(b.displayName || b.username || 'ผู้ใช้')}</span>
+          <button data-unblock="${esc(String(b.userId))}" style="border:none;background:#7c6ff5;color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer">ยกเลิกบล็อก</button>
+        </div>`).join('')
+
+      await this.$swal({
+        title: 'ผู้ใช้ที่ถูกบล็อก',
+        html: `<div style="text-align:left;max-height:320px;overflow:auto">${rows}</div>`,
+        showConfirmButton: false,
+        showCloseButton: true,
+        didOpen: (el) => {
+          el.querySelectorAll('[data-unblock]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true
+              try {
+                await this.$axios.$delete(process.env.API_FRIENDS_BLOCK.replace(':userId', btn.dataset.unblock))
+                btn.closest('div').remove()
+                this.friendToast('success', 'ยกเลิกการบล็อกแล้ว')
+                await this.loadFriends()
+              } catch (err) {
+                btn.disabled = false
+                this.friendToast('error', 'ไม่สามารถยกเลิกการบล็อกได้')
+              }
+            })
+          })
+        }
+      })
+    },
+
     setupNotifications () {
       if (Notification.permission === 'default') { Notification.requestPermission() }
     },
@@ -1875,6 +1956,11 @@ export default {
   text-transform: uppercase;
   color: var(--text-muted);
   letter-spacing: 0.08em;
+}
+
+.section-header-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .add-channel-btn {
