@@ -394,6 +394,14 @@ export default {
       if (e.button !== 0) { return }
       const angle = this.getShootAngle()
       this.$socket.emit('playerShoot', { angle })
+      this._muzzle(angle)
+    },
+
+    _muzzle (angle) {
+      const p = this.myPlayer
+      if (p && this.renderer && !p.reloading) {
+        this.renderer.muzzle(p.x, p.y, angle)
+      }
     },
 
     sendInput () {
@@ -418,6 +426,7 @@ export default {
           if (now - this.lastTouchShot > 140) {
             this.lastTouchShot = now
             this.$socket.emit('playerShoot', { angle })
+            this._muzzle(angle)
           }
         }
         return
@@ -556,12 +565,34 @@ export default {
       })
 
       this.$socket.on('playerDied', ({ playerId }) => {
+        const p = this.players.find(x => x.id === playerId)
+        if (p && this.renderer) { this.renderer.bloodSplat(p.x, p.y, true) }
         if (playerId === this.myId) {
+          if (this.renderer) { this.renderer.shake(12) }
           this.$nextTick(() => this.$forceUpdate())
         }
       })
 
-      this.$socket.on('zombieKilled', ({ playerId, score, kills, isCombo }) => {
+      this.$socket.on('playerHit', ({ playerId, damage }) => {
+        const p = this.players.find(x => x.id === playerId)
+        if (!p || !this.renderer) { return }
+        this.renderer.bloodSplat(p.x, p.y, false)
+        if (playerId === this.myId) { this.renderer.shake(Math.min(8, 2 + damage / 6)) }
+      })
+
+      this.$socket.on('pickupCollected', ({ type, x, y }) => {
+        if (this.renderer) {
+          this.renderer.spark(x, y, type === 'ammo' ? '#ffcc40' : '#40ff78')
+        }
+      })
+
+      this.$socket.on('zombieKilled', ({ playerId, score, kills, isCombo, zombieType, x, y, gained }) => {
+        if (this.renderer && x != null) {
+          const big = zombieType === 'boss' || zombieType === 'tank'
+          this.renderer.bloodSplat(x, y, big)
+          this.renderer.floatText(x, y, '+' + (gained || 0), big ? '#ffcc40' : '#00ff50')
+          if (zombieType === 'boss') { this.renderer.shake(10) }
+        }
         if (playerId === this.myId) {
           const now = Date.now()
           if (isCombo || (now - this.lastKillTime < this.comboTimeWindow)) {
@@ -609,8 +640,9 @@ export default {
 
     _offAll () {
       const events = [
-        'gameJoined', 'gameState', 'waveCountdown', 'waveStart',
-        'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted', 'waveReinforce'
+        'gameJoined', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
+        'playerDied', 'zombieKilled', 'gameOver', 'gameRestarted', 'waveReinforce',
+        'pickupCollected'
       ]
       events.forEach(ev => this.$socket.off(ev))
       this.$socket.off('connect', this.onSocketReconnect)
