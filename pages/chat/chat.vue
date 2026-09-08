@@ -2147,6 +2147,7 @@ export default {
 .community-chat-app {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   background: var(--bg-app);
   color: var(--text-cream);
   font-family: 'Inter', system-ui, sans-serif;
@@ -2159,6 +2160,7 @@ export default {
 .sidebar {
   width: 300px;
   height: 100vh;
+  height: 100dvh;
   background: var(--bg-panel);
   display: flex;
   overflow: hidden;
@@ -2174,6 +2176,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .workspace-info {
@@ -2471,6 +2474,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .user-info { display: flex; align-items: center; flex: 1; min-width: 0; }
@@ -2528,6 +2532,7 @@ export default {
   flex-direction: column;
   position: relative;
   height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   z-index: 1;
 }
@@ -3712,7 +3717,7 @@ select.cr-input {
 @media (max-width: 768px) {
   .mobile-menu-toggle { display: flex; }
   .sidebar-overlay { display: block; }
-  .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; width: 320px; z-index: 100; transition: left 0.3s ease; }
+  .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; height: 100dvh; width: 320px; z-index: 100; transition: left 0.3s ease; }
   .sidebar.open { left: 0; }
   .main-content { width: 100%; }
   .main-header { flex-direction: column; gap: 14px; align-items: stretch; padding: 16px 18px; padding-top: 80px; }

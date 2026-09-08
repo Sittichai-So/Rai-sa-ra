@@ -906,6 +906,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .game-page {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: #080c10;
   overflow: hidden;
   position: relative;

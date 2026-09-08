@@ -1070,7 +1070,8 @@ export default {
   display: flex;
   flex-direction: row;
   height: 100vh;
-  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow: hidden;
   background: var(--paper);
   position: relative;
@@ -1278,7 +1279,8 @@ export default {
   background: #121218;
   overflow: hidden;
   height: 100vh;
-  max-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -1293,13 +1295,13 @@ export default {
 
 @media (max-width: 992px) {
   .chat-room-page {
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     flex-direction: column;
   }
   .chat-area {
     height: 100%;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100dvh - 140px);
     width: 100%;
   }
   .member-sidebar {
@@ -1755,13 +1757,13 @@ export default {
 
 @media (max-width: 992px) {
   .chat-room-page {
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
     flex-direction: column;
   }
   .chat-area {
     height: 100%;
-    max-height: 100vh;
+    max-height: 100dvh;
     width: 100%;
   }
   .member-sidebar {
@@ -1797,7 +1799,7 @@ export default {
   .chat-area {
     width: 100%;
     max-width: 100%;
-    height: 100vh;
+    height: 100dvh;
   }
   .member-sidebar {
     width: 100%;
@@ -1827,7 +1829,7 @@ export default {
   .chat-area {
     width: 100%;
     max-width: 100%;
-    height: 100vh;
+    height: 100dvh;
   }
   .member-sidebar {
     width: 100%;
@@ -1865,7 +1867,7 @@ export default {
   .chat-area {
     width: 100%;
     max-width: 100%;
-    height: 100vh;
+    height: 100dvh;
   }
   .member-sidebar {
     width: 100%;
