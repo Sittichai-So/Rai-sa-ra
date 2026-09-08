@@ -1,13 +1,19 @@
-const API_BASE = process.env.API_BASE || 'http://localhost:8012/api/raisara'
-const FILE_BASE = process.env.API_FILE_BASE || 'http://localhost:8012'
+const UAT_HOST = 'https://back-raisara.onrender.com'
 
-const environment = {
-  development: { api: API_BASE },
-  production: { api: API_BASE },
-  test: { api: API_BASE }
+const environments = {
+  local: {
+    api: process.env.API_BASE || 'http://localhost:8012/api/raisara',
+    file: process.env.API_FILE_BASE || 'http://localhost:8012'
+  },
+  uat: {
+    api: process.env.API_BASE || UAT_HOST + '/api/raisara',
+    file: process.env.API_FILE_BASE || UAT_HOST
+  }
 }
 
-const currentEnv = environment[process.env.NODE_ENV] || environment.development
+const APP_ENV = process.env.APP_ENV === 'uat' ? 'uat' : 'local'
+const currentEnv = environments[APP_ENV]
+const FILE_BASE = currentEnv.file
 
 export default {
   ssr: false,
@@ -61,6 +67,7 @@ export default {
 
   env: {
     NODE_ENV: process.env.NODE_ENV,
+    APP_ENV,
     API_BASE: currentEnv.api,
     API_FILE_BASE: FILE_BASE,
 
