@@ -347,6 +347,11 @@
                           placeholder="••••••••"
                           @input="checkPasswordStrength"
                         />
+                        <b-input-group-append>
+                          <b-button variant="outline-secondary" type="button" tabindex="-1" @click="showPassword = !showPassword">
+                            <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" />
+                          </b-button>
+                        </b-input-group-append>
                       </b-input-group>
 
                       <div v-if="password.newPassword && password.currentPassword && password.newPassword === password.currentPassword" class="text-danger mt-2">
@@ -395,6 +400,11 @@
                           :state="getPasswordConfirmState(validationContext)"
                           placeholder="••••••••"
                         />
+                        <b-input-group-append>
+                          <b-button variant="outline-secondary" type="button" tabindex="-1" @click="showConfirmPassword = !showConfirmPassword">
+                            <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" />
+                          </b-button>
+                        </b-input-group-append>
                       </b-input-group>
 
                       <div v-if="password.passwordConfirm && password.newPassword === password.passwordConfirm" class="text-success mt-1">

@@ -75,6 +75,7 @@
 <script>
 export default {
   layout: 'login',
+  middleware: 'guest',
   data () {
     return {
       token: '',

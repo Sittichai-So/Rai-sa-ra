@@ -33,13 +33,20 @@
 
           <validation-provider v-slot="validationContext" name="password" :rules="{ required: true }">
             <b-form-group label="รหัสผ่าน" label-for="txtPass">
-              <b-form-input
-                id="txtPass"
-                v-model="form.password"
-                type="password"
-                :state="getValidationState(validationContext)"
-                placeholder="••••••••"
-              />
+              <b-input-group>
+                <b-form-input
+                  id="txtPass"
+                  v-model="form.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  :state="getValidationState(validationContext)"
+                  placeholder="••••••••"
+                />
+                <b-input-group-append>
+                  <b-button class="pw-toggle" type="button" tabindex="-1" @click="showPassword = !showPassword">
+                    <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" />
+                  </b-button>
+                </b-input-group-append>
+              </b-input-group>
               <b-form-invalid-feedback>{{ validationContext.errors[0] }}</b-form-invalid-feedback>
             </b-form-group>
           </validation-provider>
@@ -69,12 +76,14 @@
 <script>
 export default {
   layout: 'login',
+  middleware: 'guest',
   data () {
     return {
       form: {
         username: '',
         password: ''
-      }
+      },
+      showPassword: false
     }
   },
   head () {
@@ -265,6 +274,22 @@ export default {
   color: #ff8f84;
   font-size: 14px;
   font-weight: 500;
+}
+
+.pw-toggle {
+  background: #121218 !important;
+  border: 2px solid rgba(246, 243, 237, 0.2) !important;
+  border-left: none !important;
+  color: rgba(246, 243, 237, 0.6) !important;
+  border-radius: 0 12px 12px 0 !important;
+  padding: 0 14px !important;
+}
+
+.pw-toggle:hover,
+.pw-toggle:focus {
+  color: #ff5c4d !important;
+  background: #121218 !important;
+  box-shadow: none !important;
 }
 
 .submit-btn {

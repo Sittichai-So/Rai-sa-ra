@@ -155,6 +155,11 @@
                         placeholder="••••••••"
                         @input="checkPasswordStrength"
                       />
+                      <b-input-group-append>
+                        <b-button class="pw-toggle" type="button" tabindex="-1" @click="showPassword = !showPassword">
+                          <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" />
+                        </b-button>
+                      </b-input-group-append>
                     </b-input-group>
 
                     <div v-if="form.password" class="password-strength mt-2">
@@ -193,6 +198,11 @@
                         :state="getPasswordConfirmState(validationContext)"
                         placeholder="••••••••"
                       />
+                      <b-input-group-append>
+                        <b-button class="pw-toggle" type="button" tabindex="-1" @click="showConfirmPassword = !showConfirmPassword">
+                          <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" />
+                        </b-button>
+                      </b-input-group-append>
                     </b-input-group>
 
                     <div v-if="form.passwordConfirm && form.password === form.passwordConfirm" class="text-success mt-1">
@@ -260,6 +270,7 @@ let usernameCheckTimeout = null
 
 export default {
   layout: 'login',
+  middleware: 'guest',
   data () {
     return {
       form: {
@@ -288,14 +299,6 @@ export default {
       link: [
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap' }
       ]
-    }
-  },
-  computed: {
-    isFormValid () {
-      return this.form.acceptTerms &&
-             this.usernameCheckStatus === 'available' &&
-             this.form.password === this.form.passwordConfirm &&
-             this.passwordStrength.level !== 'weak'
     }
   },
   methods: {
@@ -411,26 +414,6 @@ export default {
       } finally {
         this.isRegistering = false
       }
-    },
-
-    onClear () {
-      this.form = {
-        username: '',
-        firstName: '',
-        lastName: '',
-        email: '',
-        phoneNumber: '',
-        password: '',
-        passwordConfirm: '',
-        acceptTerms: false
-      }
-      this.usernameCheckStatus = null
-      this.passwordStrength = {
-        level: 'weak',
-        percent: 0,
-        text: 'รหัสผ่านอ่อนแอ'
-      }
-      this.$refs.observer.reset()
     },
 
     showTerms () {
@@ -742,6 +725,22 @@ export default {
 .terms-checkbox {
   font-size: 15px;
   color: #f6f3ed;
+}
+
+.pw-toggle {
+  background: #1c1c26 !important;
+  border: 2px solid rgba(246, 243, 237, 0.2) !important;
+  border-left: none !important;
+  color: rgba(246, 243, 237, 0.6) !important;
+  border-radius: 0 12px 12px 0 !important;
+  padding: 0 14px !important;
+}
+
+.pw-toggle:hover,
+.pw-toggle:focus {
+  color: #ff5c4d !important;
+  background: #1c1c26 !important;
+  box-shadow: none !important;
 }
 
 .submit-btn {
