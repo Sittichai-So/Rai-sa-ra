@@ -620,6 +620,82 @@
     </transition>
 
     <transition name="af-fade">
+      <div v-if="showProfileModal" class="af-overlay" @click.self="closeProfile">
+        <div class="pf-panel" role="dialog" aria-modal="true">
+          <button class="pf-close" type="button" aria-label="ปิด" @click="closeProfile">
+            <i class="fas fa-times" />
+          </button>
+
+          <div class="pf-cover" />
+
+          <div class="pf-avatar-wrap">
+            <img
+              v-if="pfAvatar"
+              :src="pfAvatar"
+              :alt="pfName"
+              class="pf-avatar"
+              @error="profileData && (profileData.avatar = null)"
+            >
+            <div v-else class="pf-avatar pf-avatar-fallback">
+              {{ getInitials(pfName) }}
+            </div>
+            <span class="pf-status-dot" :class="pfOnline ? 'online' : 'offline'" />
+          </div>
+
+          <div class="pf-body">
+            <h3 class="pf-name">
+              {{ pfName }}
+            </h3>
+            <span class="pf-status-text" :class="pfOnline ? 'online' : 'offline'">
+              {{ pfOnline ? 'ออนไลน์' : 'ออฟไลน์ · ' + fmtLastActive((profileData && profileData.lastActive) || (profileFriend && profileFriend.lastActive)) }}
+            </span>
+
+            <div v-if="profileLoading" class="pf-loading">
+              <i class="fas fa-spinner fa-spin" /> กำลังโหลด...
+            </div>
+
+            <template v-else>
+              <p v-if="pfBio" class="pf-bio">
+                {{ pfBio }}
+              </p>
+              <p v-else class="pf-bio pf-bio-empty">
+                ยังไม่มีคำอธิบายตัวเอง
+              </p>
+
+              <div class="pf-rows">
+                <div v-if="pfUsername" class="pf-row">
+                  <i class="fas fa-at" />
+                  <span>{{ pfUsername }}</span>
+                </div>
+                <div v-if="pfEmail" class="pf-row">
+                  <i class="fas fa-envelope" />
+                  <span>{{ pfEmail }}</span>
+                </div>
+                <div v-if="profileData && profileData.friendsSince" class="pf-row">
+                  <i class="fas fa-user-check" />
+                  <span>เป็นเพื่อนกันตั้งแต่ {{ fmtProfileDate(profileData.friendsSince) }}</span>
+                </div>
+                <div v-if="profileData && profileData.memberSince" class="pf-row">
+                  <i class="fas fa-calendar-day" />
+                  <span>เข้าร่วมเมื่อ {{ fmtProfileDate(profileData.memberSince) }}</span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="pf-actions">
+            <button type="button" class="pf-btn pf-btn-primary" @click="profileMessage">
+              <i class="fas fa-comment" /> ส่งข้อความ
+            </button>
+            <button type="button" class="pf-btn pf-btn-danger" @click="profileBlock">
+              <i class="fas fa-user-slash" /> บล็อก
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="af-fade">
       <div v-if="showJoinPasswordModal" class="cr-overlay" @click.self="showJoinPasswordModal = false">
         <div class="cr-panel cr-panel-sm" role="dialog" aria-modal="true">
           <header class="cr-header">
@@ -731,6 +807,10 @@ export default {
       hasSearched: false,
       sendingRequest: null,
       friendMenu: { open: false, friend: null, x: 0, y: 0 },
+      showProfileModal: false,
+      profileFriend: null,
+      profileData: null,
+      profileLoading: false,
       showJoinPasswordModal: false,
       limit: 5,
       newRoom: { name: '', category: 'gaming', description: '', type: 'public', password: '', tags: [], iconGradient: '' },
@@ -789,6 +869,30 @@ export default {
         (this.user && this.user.avatar) ||
         null
       return this.resolveAsset(src)
+    },
+    pfName () {
+      const d = this.profileData
+      const f = this.profileFriend
+      return (d && (d.displayName || d.fullname)) || (f && (f.displayName || f.fullname)) || 'โปรไฟล์เพื่อน'
+    },
+    pfAvatar () {
+      const raw = (this.profileData && this.profileData.avatar) || (this.profileFriend && this.profileFriend.avatar) || null
+      return raw ? this.resolveAsset(raw) : null
+    },
+    pfOnline () {
+      const d = this.profileData
+      const f = this.profileFriend
+      if (d && typeof d.isOnline === 'boolean') { return d.isOnline }
+      return !!(f && f.isOnline)
+    },
+    pfBio () {
+      return (this.profileData && this.profileData.bio) || ''
+    },
+    pfUsername () {
+      return (this.profileData && this.profileData.username) || (this.profileFriend && this.profileFriend.username) || ''
+    },
+    pfEmail () {
+      return (this.profileData && this.profileData.email) || (this.profileFriend && this.profileFriend.email) || ''
     },
     myCoins () {
       if (this.profile && typeof this.profile.coins === 'number') { return this.profile.coins }
@@ -1011,23 +1115,60 @@ export default {
     },
 
     async viewFriendProfile (friend) {
-      const statusText = friend.isOnline ? 'ออนไลน์' : 'ออฟไลน์'
-      const esc = this.escapeHtml
-      await this.$swal({
-        title: friend.displayName || friend.fullname || 'โปรไฟล์เพื่อน',
-        html: `
-          <div style="text-align:left;line-height:1.9">
-            <div><b>สถานะ:</b> ${statusText}</div>
-            ${friend.email ? `<div><b>อีเมล:</b> ${esc(friend.email)}</div>` : ''}
-            ${friend.username ? `<div><b>ชื่อผู้ใช้:</b> ${esc(friend.username)}</div>` : ''}
-          </div>`,
-        confirmButtonText: 'ส่งข้อความ',
-        showCancelButton: true,
-        cancelButtonText: 'ปิด',
-        confirmButtonColor: '#7c6ff5'
-      }).then((r) => {
-        if (r.isConfirmed) { this.openDirectMessage(friend) }
-      })
+      this.profileFriend = friend
+      this.profileData = null
+      this.profileLoading = true
+      this.showProfileModal = true
+      try {
+        const url = process.env.API_PROFILE_FRIEND_ID.replace(':friendId', friend.friendId)
+        const res = await this.$axios.$get(url)
+        this.profileData = res.data || null
+      } catch (err) {
+        this.profileData = null
+      } finally {
+        this.profileLoading = false
+      }
+    },
+
+    closeProfile () {
+      this.showProfileModal = false
+      this.profileFriend = null
+      this.profileData = null
+    },
+
+    profileMessage () {
+      const f = this.profileFriend
+      this.closeProfile()
+      if (f) { this.openDirectMessage(f) }
+    },
+
+    profileBlock () {
+      const f = this.profileFriend
+      this.closeProfile()
+      if (f) { this.blockUser(f) }
+    },
+
+    fmtProfileDate (d) {
+      if (!d) { return '—' }
+      try {
+        return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+      } catch {
+        return '—'
+      }
+    },
+
+    fmtLastActive (d) {
+      if (!d) { return 'ไม่ทราบ' }
+      const diff = Date.now() - new Date(d).getTime()
+      if (diff < 0) { return 'เมื่อสักครู่' }
+      const m = Math.floor(diff / 60000)
+      if (m < 1) { return 'เมื่อสักครู่' }
+      if (m < 60) { return `${m} นาทีที่แล้ว` }
+      const h = Math.floor(m / 60)
+      if (h < 24) { return `${h} ชั่วโมงที่แล้ว` }
+      const days = Math.floor(h / 24)
+      if (days < 30) { return `${days} วันที่แล้ว` }
+      return this.fmtProfileDate(d)
     },
 
     onFriendStatusUpdate ({ friendId, status, lastSeen }) {
@@ -2618,6 +2759,188 @@ export default {
 }
 
 .af-close:hover { background: rgba(255, 255, 255, 0.35); transform: rotate(90deg); }
+
+/* ── Friend profile modal ── */
+.pf-panel {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hair);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.pf-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.pf-close:hover { background: rgba(0, 0, 0, 0.55); transform: rotate(90deg); }
+
+.pf-cover {
+  height: 88px;
+  background: linear-gradient(135deg, var(--coral), var(--violet));
+}
+
+.pf-avatar-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  margin: -46px auto 0;
+}
+
+.pf-avatar {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--bg-panel);
+  background: var(--bg-panel-raised);
+  display: block;
+}
+
+.pf-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: var(--fw-black);
+  color: var(--text-cream);
+}
+
+.pf-status-dot {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-panel);
+}
+.pf-status-dot.online { background: var(--green); }
+.pf-status-dot.offline { background: var(--grey); }
+
+.pf-body {
+  padding: 12px 22px 4px;
+  text-align: center;
+}
+
+.pf-name {
+  margin: 0;
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-black);
+  color: var(--text-cream);
+}
+
+.pf-status-text {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+}
+.pf-status-text.online { color: var(--green); }
+.pf-status-text.offline { color: var(--text-muted); }
+
+.pf-loading {
+  padding: 22px 0;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
+.pf-bio {
+  margin: 14px 0 0;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--text-body);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.pf-bio-empty { color: var(--text-muted); font-style: italic; }
+
+.pf-rows {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: var(--fs-small);
+  color: var(--text-body);
+}
+
+.pf-row i {
+  width: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pf-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-actions {
+  display: flex;
+  gap: 10px;
+  padding: 18px 22px 22px;
+}
+
+.pf-btn {
+  flex: 1;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+}
+
+.pf-btn-primary {
+  background: var(--violet);
+  color: #fff;
+}
+.pf-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(124, 108, 245, 0.35);
+}
+
+.pf-btn-danger {
+  flex: 0 0 auto;
+  background: rgba(255, 90, 69, 0.12);
+  color: var(--coral);
+}
+.pf-btn-danger:hover { background: rgba(255, 90, 69, 0.2); }
+
+@media (max-width: 480px) {
+  .pf-panel { max-width: 100%; }
+}
 
 .af-search-row {
   flex-shrink: 0;
