@@ -1,7 +1,7 @@
 <template>
   <div class="at-page">
     <header class="at-header">
-      <button class="at-back" @click="$router.push('/chat/chat')">
+      <button class="at-back" @click="$router.push('/admin')">
         <i class="fas fa-arrow-left" />
       </button>
       <h1>อนุมัติการเติมเหรียญ</h1>
@@ -79,7 +79,7 @@
 
 <script>
 export default {
-  middleware: 'middlewareAuth',
+  middleware: ['middlewareAuth', 'admin'],
   data () {
     return {
       list: [],

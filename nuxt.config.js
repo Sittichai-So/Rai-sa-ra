@@ -78,6 +78,10 @@ export default {
     API_JOIN_ROOM_USERS: currentEnv.api + '/room/joinRoom',
     API_CREATE_ROOM: currentEnv.api + '/room/createRoom',
     API_LEAVE_ROOM_USERS: currentEnv.api + '/room/removeJoinRoom',
+    API_ROOM_UPDATE: currentEnv.api + '/room/:id',
+    API_ROOM_DELETE: currentEnv.api + '/room/:id',
+    API_ROOM_PASSWORD: currentEnv.api + '/room/:id/password',
+    API_ROOM_KICK: currentEnv.api + '/room/:id/kick',
 
     API_GET_ROOM_MEMBER: currentEnv.api + '/chat/:roomId/members',
     API_GET_ROOM_BY_ID: currentEnv.api + '/chat/room/:roomId',
@@ -115,6 +119,10 @@ export default {
     API_EDIT_PROFILE_BY_ID: currentEnv.api + '/user/editProfile',
     API_EDIT_PASSWORD_BY_ID: currentEnv.api + '/user/resetPassword',
     API_USER_AVATAR: currentEnv.api + '/user/avatar',
+
+    API_ADMIN_USERS: currentEnv.api + '/user/admin/list',
+    API_ADMIN_USER_ROLE: currentEnv.api + '/user/admin/:id/role',
+    API_ADMIN_USER_ACTIVE: currentEnv.api + '/user/admin/:id/active',
 
     API_STATS: currentEnv.api + '/stats',
 

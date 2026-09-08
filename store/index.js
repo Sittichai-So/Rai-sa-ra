@@ -12,3 +12,15 @@ export const mutations = {
     state.login = data
   }
 }
+
+export const getters = {
+  role (state) {
+    return (state.user && state.user.role) || null
+  },
+  isAdmin (state) {
+    return !!state.user && state.user.role === 'admin'
+  },
+  isStaff (state) {
+    return !!state.user && ['admin', 'moderator'].includes(state.user.role)
+  }
+}
