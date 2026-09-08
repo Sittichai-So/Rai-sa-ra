@@ -84,14 +84,17 @@ export default {
     async onForgotPassword () {
       this.loading = true
       try {
-        await this.$axios.$post(process.env.API_FORGOT_PASSWORD, { email: this.form.Email })
+        await this.$axios.$post(process.env.API_FORGOT_PASSWORD, { email: this.form.Email }, { timeout: 20000 })
         this.sent = true
       } catch (error) {
+        const timedOut = error.code === 'ECONNABORTED' || /timeout/i.test(error.message || '')
         const resData = error.response?.data || {}
         await this.$swal({
           icon: 'error',
           title: 'ส่งอีเมลไม่สำเร็จ',
-          text: resData.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+          text: timedOut
+            ? 'ระบบส่งอีเมลใช้เวลานานผิดปกติ อาจมีปัญหาชั่วคราว กรุณาลองใหม่ภายหลังหรือติดต่อผู้ดูแล'
+            : (resData.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
         })
       } finally {
         this.loading = false

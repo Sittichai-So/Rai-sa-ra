@@ -1899,10 +1899,11 @@ export default {
       }
       this.resendingVerify = true
       try {
-        await this.$axios.$post(process.env.API_RESEND_VERIFICATION, { email })
+        await this.$axios.$post(process.env.API_RESEND_VERIFICATION, { email }, { timeout: 20000 })
         this.friendToast('success', 'ส่งลิงก์ยืนยันไปที่อีเมลของคุณแล้ว')
       } catch (err) {
-        this.friendToast('error', err.response?.data?.message || 'ส่งอีเมลไม่สำเร็จ')
+        const timedOut = err.code === 'ECONNABORTED' || /timeout/i.test(err.message || '')
+        this.friendToast('error', timedOut ? 'ระบบส่งอีเมลใช้เวลานานผิดปกติ ลองใหม่ภายหลัง' : (err.response?.data?.message || 'ส่งอีเมลไม่สำเร็จ'))
       } finally {
         this.resendingVerify = false
       }

@@ -113,14 +113,17 @@ export default {
     async onResend () {
       this.loading = true
       try {
-        await this.$axios.$post(process.env.API_RESEND_VERIFICATION, { email: this.email })
+        await this.$axios.$post(process.env.API_RESEND_VERIFICATION, { email: this.email }, { timeout: 20000 })
         this.resent = true
       } catch (error) {
+        const timedOut = error.code === 'ECONNABORTED' || /timeout/i.test(error.message || '')
         const resData = error.response?.data || {}
         await this.$swal({
           icon: 'error',
           title: 'ส่งไม่สำเร็จ',
-          text: resData.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+          text: timedOut
+            ? 'ระบบส่งอีเมลใช้เวลานานผิดปกติ อาจมีปัญหาชั่วคราว กรุณาลองใหม่ภายหลัง'
+            : (resData.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่')
         })
       } finally {
         this.loading = false
