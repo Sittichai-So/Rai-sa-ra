@@ -1,0 +1,25 @@
+{
+  "cell": {
+    "w": 210,
+    "h": 238
+  },
+  "baseline": 4,
+  "facing": {
+    "walk": "left",
+    "shoot": "right"
+  },
+  "anims": {
+    "walk": {
+      "file": "hero_{skin}_walk.png",
+      "frames": 8,
+      "cols": 8,
+      "fps": 11
+    },
+    "shoot": {
+      "file": "hero_m_shoot.png",
+      "frames": 9,
+      "cols": 9,
+      "fps": 22
+    }
+  }
+}

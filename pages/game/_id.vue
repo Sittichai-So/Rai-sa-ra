@@ -223,6 +223,10 @@
 
 <script>
 import GameRenderer from '~/utils/GameRenderer'
+import heroMWalk from '~/assets/images/hero_m_walk.png'
+import heroFWalk from '~/assets/images/hero_f_walk.png'
+import heroMShoot from '~/assets/images/hero_m_shoot.png'
+import heroSpriteMeta from '~/assets/images/hero_sprites.json'
 
 const STICK_RADIUS = 46
 const STICK_DEADZONE = 0.18
@@ -280,7 +284,9 @@ export default {
       joined: false,
       moveStick: { active: false, id: null, x: 0, y: 0, which: 'move' },
       aimStick: { active: false, id: null, x: 0, y: 0, which: 'aim' },
-      lastTouchShot: 0
+      lastTouchShot: 0,
+      shootFx: {},
+      atkSeen: {}
     }
   },
   computed: {
@@ -448,6 +454,10 @@ export default {
 
     setupRenderer () {
       this.renderer = new GameRenderer(this.$refs.canvas)
+      this.renderer.loadHeroSprites({
+        m: { walk: heroMWalk, shoot: heroMShoot },
+        f: { walk: heroFWalk, shoot: heroMShoot }
+      }, heroSpriteMeta)
     },
 
     renderLoop () {
@@ -460,6 +470,7 @@ export default {
           bullets: this.bullets,
           projectiles: this.projectiles,
           pickups: this.pickups,
+          shootFx: this.shootFx,
           myId: this.myId,
           camX: this.camX,
           camY: this.camY,
@@ -655,6 +666,13 @@ export default {
 
       this.$socket.on('gameState', (state) => {
         this.players = state.players || []
+        const now = Date.now()
+        for (const p of this.players) {
+          if (p.lastAttackTime && this.atkSeen[p.id] !== p.lastAttackTime) {
+            this.atkSeen[p.id] = p.lastAttackTime
+            this.$set(this.shootFx, p.id, now + 240)
+          }
+        }
         this.zombies = state.zombies || []
         this.bullets = state.bullets || []
         this.projectiles = state.projectiles || []

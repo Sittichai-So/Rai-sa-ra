@@ -39,7 +39,22 @@ export default class GameRenderer {
     this.floaters = []
     this.decals = []
     this.shakeAmt = 0
+    this.hero = null
+    this.heroMeta = null
     this._last = (typeof performance !== 'undefined' ? performance.now() : Date.now())
+  }
+
+  loadHeroSprites (urls, meta) {
+    this.heroMeta = meta
+    this.hero = {}
+    for (const skin of Object.keys(urls)) {
+      this.hero[skin] = {}
+      for (const anim of Object.keys(urls[skin])) {
+        const img = new Image()
+        img.src = urls[skin][anim]
+        this.hero[skin][anim] = img
+      }
+    }
   }
 
   // ── สร้างชั้นแมพ (พื้น + ของ) ครั้งเดียว แล้ว blit ทุกเฟรม ──
@@ -230,7 +245,7 @@ export default class GameRenderer {
   }
 
   // ── main draw ────────────────────────────────────────
-  draw ({ players, zombies, bullets, projectiles, pickups, myId, camX, camY, mapW, mapH }) {
+  draw ({ players, zombies, bullets, projectiles, pickups, shootFx, myId, camX, camY, mapW, mapH }) {
     const ctx = this.ctx
     const W = this.canvas.width
     const H = this.canvas.height
@@ -265,7 +280,7 @@ export default class GameRenderer {
     this._drawBullets(ctx, bullets)
     this._drawProjectiles(ctx, projectiles || [])
     this._drawZombies(ctx, zombies, now)
-    this._drawPlayers(ctx, players, myId, now)
+    this._drawPlayers(ctx, players, myId, now, shootFx || {})
     this._drawParticles(ctx)
     this._drawFloaters(ctx)
 
@@ -458,7 +473,63 @@ export default class GameRenderer {
   }
 
   // นักเอาชีวิตรอดมุมมองบน — อ้างอิง assets/images/charector.png
-  _drawSurvivor (ctx, { rad, angle, step, flashing, female, ring }) {
+  _drawSurvivor (ctx, o) {
+    const set = this.hero && this.hero[o.female ? 'f' : 'm']
+    const walkImg = set && set.walk
+    if (this.heroMeta && walkImg && walkImg.complete && walkImg.naturalWidth) {
+      return this._drawHeroSprite(ctx, o, set)
+    }
+    return this._drawSurvivorVector(ctx, o)
+  }
+
+  _drawHeroSprite (ctx, o, set) {
+    const meta = this.heroMeta
+    const cw = meta.cell.w
+    const ch = meta.cell.h
+    const now = o.now || Date.now()
+    const facingRight = Math.cos(o.angle) >= 0
+
+    let img = set.walk
+    let a = meta.anims.walk
+    let sheetFacing = meta.facing.walk
+    if (o.shooting && set.shoot && set.shoot.complete && set.shoot.naturalWidth) {
+      img = set.shoot
+      a = meta.anims.shoot
+      sheetFacing = meta.facing.shoot
+    }
+
+    let fi = 0
+    if (o.shooting && a === meta.anims.shoot) {
+      fi = 3 + Math.floor((now / (1000 / a.fps)) % 3)
+    } else if (o.moving) {
+      fi = Math.floor(now / (1000 / a.fps)) % a.frames
+    }
+    fi = Math.min(fi, a.frames - 1)
+    const sx = (fi % a.cols) * cw
+    const sy = Math.floor(fi / a.cols) * ch
+
+    const drawH = o.rad * 3.0
+    const drawW = drawH * (cw / ch)
+    const footY = o.rad * 0.95
+    const mirror = sheetFacing === 'left' ? facingRight : !facingRight
+
+    ctx.save()
+    if (mirror) { ctx.scale(-1, 1) }
+    ctx.drawImage(img, sx, sy, cw, ch, -drawW / 2, -drawH + footY, drawW, drawH)
+    ctx.restore()
+
+    if (o.flashing) {
+      ctx.save()
+      ctx.globalCompositeOperation = 'lighter'
+      ctx.fillStyle = 'rgba(255,70,70,0.28)'
+      ctx.beginPath()
+      ctx.ellipse(0, -drawH * 0.35, drawW * 0.4, drawH * 0.42, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+  }
+
+  _drawSurvivorVector (ctx, { rad, angle, step, flashing, female }) {
     const P = female
       ? { jacket: '#a83232', jacketD: '#7a2222', pack: '#5a4a30' }
       : { jacket: '#5a5f3a', jacketD: '#3f4428', pack: '#6b5335' }
@@ -513,7 +584,7 @@ export default class GameRenderer {
     ctx.restore()
   }
 
-  _drawPlayers (ctx, players, myId, now) {
+  _drawPlayers (ctx, players, myId, now, shootFx) {
     for (const p of players) {
       const color = p.color || '#7c6ff5'
       const rad = p.radius || 18
@@ -566,7 +637,8 @@ export default class GameRenderer {
 
       const isMe = p.id === myId
       const flashing = p.hitFlash > 0
-      const moving = Math.hypot(p.vx || 0, p.vy || 0) > 1
+      const moving = Math.hypot(p.vx || 0, p.vy || 0) > 6
+      const shooting = (shootFx[p.id] || 0) > now
       const step = moving ? Math.round(Math.sin(now / 90)) : 0
 
       ctx.save()
@@ -592,9 +664,12 @@ export default class GameRenderer {
         rad,
         angle: p.angle,
         step,
+        moving,
+        shooting,
         flashing,
         female: p.skin === 'f',
-        ring: isMe ? color : null
+        ring: isMe ? color : null,
+        now
       })
 
       ctx.restore()
