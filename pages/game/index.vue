@@ -13,7 +13,7 @@
         <p>เอาตัวรอดให้นานที่สุด — เล่นกับเพื่อนทุกคน</p>
       </div>
       <div class="player-chip">
-        <img v-if="user?.avatar" :src="user.avatar" class="chip-avatar">
+        <img v-if="avatarUrl && !avatarBroken" :src="avatarUrl" class="chip-avatar" @error="avatarBroken = true">
         <div v-else class="chip-avatar-placeholder">
           {{ initials }}
         </div>
@@ -200,13 +200,19 @@ export default {
       refreshing: false,
       pollInterval: null,
       leaderboard: [],
-      myStats: null
+      myStats: null,
+      avatarBroken: false
     }
   },
   computed: {
     initials () {
       const name = this.user?.username || this.user?.fullname || 'G'
       return name.substring(0, 2).toUpperCase()
+    },
+    avatarUrl () {
+      const src = this.user?.avatar
+      if (!src) { return null }
+      return /^https?:\/\//.test(src) ? src : (process.env.API_FILE_BASE || '') + src
     }
   },
   mounted () {

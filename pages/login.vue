@@ -144,11 +144,8 @@ export default {
 </script>
 
 <style scoped>
-* {
-  font-family: 'Kanit', sans-serif;
-}
-
 .auth-page {
+  font-family: 'Kanit', sans-serif;
   position: relative;
   min-height: 100vh;
   display: flex;
