@@ -595,6 +595,7 @@ export default class GameRenderer {
   }
 
   _drawPlayers (ctx, players, myId, now, shootFx, deathFx) {
+    const wallNow = Date.now() // shootFx/deathFx เก็บเป็น Date.now() — ต้องเทียบฐานเวลาเดียวกัน
     for (const p of players) {
       const color = p.color || '#7c6ff5'
       const rad = p.radius || 18
@@ -610,7 +611,7 @@ export default class GameRenderer {
             angle: p.angle,
             female,
             mode: 'dead',
-            deadElapsed: deathFx && deathFx[p.id] ? now - deathFx[p.id] : null
+            deadElapsed: deathFx && deathFx[p.id] ? wallNow - deathFx[p.id] : null
           })
           ctx.restore()
         } else {
@@ -666,7 +667,7 @@ export default class GameRenderer {
       const isMe = p.id === myId
       const flashing = p.hitFlash > 0
       const moving = Math.hypot(p.vx || 0, p.vy || 0) > 6
-      const shooting = (shootFx[p.id] || 0) > now
+      const shooting = !p.reloading && (shootFx[p.id] || 0) > wallNow
       const step = moving ? Math.round(Math.sin(now / 90)) : 0
 
       ctx.save()
@@ -719,12 +720,15 @@ export default class GameRenderer {
       ctx.fillStyle = hpPct > 0.5 ? '#00ff50' : hpPct > 0.25 ? '#ffcc00' : '#ff4040'
       ctx.fillRect(bx, by, barW * Math.max(0, hpPct), 4)
 
-      // reload ring
+      // reload ring (แสดง progress จริง)
       if (p.reloading) {
+        const prog = p.reloadStart
+          ? Math.max(0, Math.min(1, (wallNow - p.reloadStart) / (p.reloadMs || 1600)))
+          : ((now / (p.reloadMs || 1600)) % 1)
         ctx.beginPath()
-        ctx.arc(p.x, p.y, rad + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ((now / (p.reloadMs || 1600)) % 1))
+        ctx.arc(p.x, p.y, rad + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * prog)
         ctx.strokeStyle = '#ffcc40'
-        ctx.lineWidth = 2.5
+        ctx.lineWidth = 3
         ctx.stroke()
       }
     }

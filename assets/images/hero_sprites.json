@@ -5,7 +5,7 @@
   },
   "baseline": 4,
   "facing": {
-    "walk": "left",
+    "walk": "right",
     "shoot": "right",
     "dead": "right"
   },
