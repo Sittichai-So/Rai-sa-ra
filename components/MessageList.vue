@@ -147,12 +147,12 @@
       <button class="context-menu-item" @click="copyMessage(contextMenu.message)">
         <i class="far fa-copy" /> คัดลอก
       </button>
-      <div v-if="contextMenu.message.userId === currentUserId" class="context-menu-divider" />
-      <button v-if="contextMenu.message.userId === currentUserId" class="context-menu-item" @click="editMessage(contextMenu.message)">
+      <div v-if="canEditMsg(contextMenu.message) || canDeleteMsg(contextMenu.message)" class="context-menu-divider" />
+      <button v-if="canEditMsg(contextMenu.message)" class="context-menu-item" @click="editMessage(contextMenu.message)">
         <i class="fas fa-edit" /> แก้ไข
       </button>
-      <button v-if="contextMenu.message.userId === currentUserId" class="context-menu-item danger" @click="deleteMessage(contextMenu.message._id)">
-        <i class="fas fa-trash" /> ลบ
+      <button v-if="canDeleteMsg(contextMenu.message)" class="context-menu-item danger" @click="deleteMessage(contextMenu.message._id)">
+        <i class="fas fa-trash" /> {{ contextMenu.message.userId === currentUserId ? 'ลบ' : 'ลบ (ผู้ดูแล)' }}
       </button>
     </div>
 
@@ -203,7 +203,8 @@ export default {
     currentUserId: { type: String, required: true },
     typingUsers: { type: Array, default: () => [] },
     loadingMore: { type: Boolean, default: false },
-    chatTheme: { type: String, default: 'default' }
+    chatTheme: { type: String, default: 'default' },
+    canModerate: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -422,12 +423,18 @@ export default {
       this.$emit('delete-message', messageId)
       this.hideContextMenu()
     },
+    canEditMsg (message) {
+      return message && message.userId === this.currentUserId && message.type === 'text'
+    },
+    canDeleteMsg (message) {
+      return message && (message.userId === this.currentUserId || this.canModerate)
+    },
     showContextMenu (event, message) {
       event.preventDefault()
       event.stopPropagation()
 
       const menuWidth = 200
-      const menuHeight = message.userId === this.currentUserId ? 280 : 180
+      const menuHeight = (this.canEditMsg(message) || this.canDeleteMsg(message)) ? 280 : 180
       const windowWidth = window.innerWidth
       const windowHeight = window.innerHeight
 

@@ -73,6 +73,14 @@
                 <button class="member-action-btn" title="ส่งข้อความ" @click.stop="$emit('message-member', member)">
                   <i class="fas fa-comment" />
                 </button>
+                <button
+                  v-if="showKick(member)"
+                  class="member-action-btn kick"
+                  title="เตะออกจากห้อง"
+                  @click.stop="$emit('kick-member', member)"
+                >
+                  <i class="fas fa-user-slash" />
+                </button>
               </div>
             </div>
           </div>
@@ -106,6 +114,19 @@
                   <span>{{ member.lastSeen ? formatLastSeen(member.lastSeen) : 'ออฟไลน์' }}</span>
                 </div>
               </div>
+              <div class="member-actions">
+                <button class="member-action-btn" title="ส่งข้อความ" @click.stop="$emit('message-member', member)">
+                  <i class="fas fa-comment" />
+                </button>
+                <button
+                  v-if="showKick(member)"
+                  class="member-action-btn kick"
+                  title="เตะออกจากห้อง"
+                  @click.stop="$emit('kick-member', member)"
+                >
+                  <i class="fas fa-user-slash" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -127,7 +148,9 @@ export default {
   props: {
     roomId: { type: String, required: true },
     currentUserId: { type: String, required: true },
-    chatTheme: { type: String, default: 'default' }
+    chatTheme: { type: String, default: 'default' },
+    ownerId: { type: String, default: '' },
+    canKick: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -195,7 +218,7 @@ export default {
   },
   methods: {
     normalizeMember (m) {
-      const id = m._id || m.id
+      const id = m._id || m.id || m.userId
       return {
         _id: id,
         username: m.username || m.fullname || m.displayName || m.name || 'Unknown',
@@ -225,6 +248,12 @@ export default {
 
     clearSearch () {
       this.searchQuery = ''
+    },
+
+    showKick (member) {
+      return this.canKick &&
+        !member.isYou &&
+        String(member._id) !== String(this.ownerId)
     },
 
     async fetchMembers () {
@@ -676,7 +705,7 @@ export default {
 .status-dot.online { background: var(--mint); }
 .status-dot.offline { background: var(--text-muted); }
 
-.member-actions { flex-shrink: 0; }
+.member-actions { flex-shrink: 0; display: flex; gap: 6px; }
 
 .member-action-btn {
   width: 30px;
@@ -693,6 +722,9 @@ export default {
 }
 
 .member-action-btn:hover { background: rgba(139, 127, 251, 0.3); }
+
+.member-action-btn.kick { color: var(--coral); }
+.member-action-btn.kick:hover { background: rgba(255, 107, 91, 0.22); }
 
 .no-members {
   flex: 1;

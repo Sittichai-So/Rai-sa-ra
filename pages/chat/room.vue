@@ -39,6 +39,22 @@
             <button class="icon-btn members-toggle-btn" title="สมาชิก" :class="{ active: showMemberSidebar }" @click="toggleMemberSidebar">
               <i class="fas fa-users" />
             </button>
+            <button
+              v-if="isRoomOwner"
+              class="icon-btn"
+              title="เก็บข้อความห้อง"
+              @click="showRetentionModal = true"
+            >
+              <i class="fas fa-clock-rotate-left" />
+            </button>
+            <button
+              v-if="isAdmin"
+              class="icon-btn admin-btn"
+              title="จัดการห้อง (แอดมิน)"
+              @click="showManageModal = true"
+            >
+              <i class="fas fa-screwdriver-wrench" />
+            </button>
             <button class="icon-btn back-btn" title="กลับ" @click.prevent="goBack">
               <i class="fas fa-arrow-left" />
             </button>
@@ -54,6 +70,7 @@
         :typing-users="[]"
         :loading-more="loadingMore"
         :chat-theme="chatTheme"
+        :can-moderate="isStaff"
         @toggle-reaction="handleToggleReaction"
         @add-reaction="handleAddReaction"
         @reply-to="handleReplyTo"
@@ -86,7 +103,12 @@
         :current-user-id="currentUserId"
         :chat-theme="chatTheme"
         :member-count="currentRoom.memberCount || 0"
+        :owner-id="String(currentRoom.createdBy || '')"
+        :can-kick="canKick"
         @close="showMemberSidebar = false"
+        @kick-member="handleKickMember"
+        @select-member="goToMemberDM"
+        @message-member="goToMemberDM"
       />
     </aside>
 
@@ -121,6 +143,25 @@
       :available-themes="availableThemes"
       @save="handleSettingsSave"
       @close="closeSettings"
+    />
+
+    <RetentionModal
+      :show="showRetentionModal"
+      :room-id="roomId"
+      :retention-days="currentRoom.retentionDays"
+      :retention-paid-until="currentRoom.retentionPaidUntil"
+      @close="showRetentionModal = false"
+      @extended="onRetentionExtended"
+    />
+
+    <RoomManagePanel
+      :show="showManageModal"
+      :room="currentRoom"
+      :room-id="roomId"
+      :categories="manageCategories"
+      @close="showManageModal = false"
+      @saved="onRoomUpdated"
+      @deleted="onRoomDeleted"
     />
 
     <transition name="search-fade">
@@ -187,6 +228,8 @@ import MessageInput from '~/components/MessageInput.vue'
 import DiscordMemberList from '~/components/MemberList.vue'
 import TypingIndicator from '~/components/TypingIndicator.vue'
 import RoomSettings from '~/components/RoomSettings.vue'
+import RetentionModal from '~/components/RetentionModal.vue'
+import RoomManagePanel from '~/components/RoomManagePanel.vue'
 
 export default {
   components: {
@@ -194,7 +237,9 @@ export default {
     MessageInput,
     DiscordMemberList,
     TypingIndicator,
-    RoomSettings
+    RoomSettings,
+    RetentionModal,
+    RoomManagePanel
   },
   middleware: 'middlewareAuth',
   data () {
@@ -210,8 +255,16 @@ export default {
         memberCount: parseInt(this.$route.query?.memberCount) || 1,
         tags: this.$route.query?.tags ? JSON.parse(this.$route.query.tags) : [],
         status: this.$route.query?.status || 'online',
-        type: this.$route.query?.type || 'public'
+        type: this.$route.query?.type || 'public',
+        createdBy: '',
+        iconGradient: '',
+        categoryName: '',
+        retentionDays: null,
+        retentionPaidUntil: null
       },
+      showRetentionModal: false,
+      showManageModal: false,
+      manageCategories: [],
       messages: [],
       typingUsers: [],
       user: null,
@@ -294,6 +347,19 @@ export default {
     currentUserId () {
       return this.user?._id || ''
     },
+    isAdmin () {
+      return this.$store.getters.isAdmin
+    },
+    isStaff () {
+      return this.$store.getters.isStaff
+    },
+    isRoomOwner () {
+      return !!this.currentRoom.createdBy &&
+        String(this.currentRoom.createdBy) === String(this.currentUserId)
+    },
+    canKick () {
+      return this.isRoomOwner || this.isStaff
+    },
     typingNames () {
       return this.typingUsers
         .filter(u => u.userId !== this.currentUserId)
@@ -371,6 +437,10 @@ export default {
     await this.fetchRoomInfo()
     await this.fetchMessages()
     this.setupSocketListeners()
+
+    if (this.$store.getters.isAdmin) {
+      this.loadManageCategories()
+    }
   },
   beforeDestroy () {
     document.documentElement.style.removeProperty('font-size')
@@ -383,6 +453,8 @@ export default {
       this.$socket.off('userTyping')
       this.$socket.off('userStoppedTyping')
       this.$socket.off('roomMembers', this.onRoomMembers)
+      this.$socket.off('roomKicked', this.onRoomKicked)
+      this.$socket.off('roomClosed', this.onRoomClosed)
       this.$socket.off('connect', this.onSocketConnect)
       this.$socket.off('disconnect', this.onSocketDisconnect)
       this.$socket.emit('leaveRoom', { roomId: this.roomId, user: this.user })
@@ -551,11 +623,16 @@ export default {
             ...this.currentRoom,
             name: r.name || this.currentRoom.name,
             category: r.category || this.currentRoom.category,
-            description: r.description || this.currentRoom.description,
+            categoryName: r.categoryName || this.currentRoom.categoryName,
+            description: r.description ?? this.currentRoom.description,
             memberCount: r.memberCount ?? this.currentRoom.memberCount,
             tags: r.tags || this.currentRoom.tags,
             status: r.status || this.currentRoom.status,
-            type: r.type || this.currentRoom.type
+            type: r.type || this.currentRoom.type,
+            createdBy: r.createdBy || this.currentRoom.createdBy,
+            iconGradient: r.iconGradient || this.currentRoom.iconGradient,
+            retentionDays: r.retentionDays ?? null,
+            retentionPaidUntil: r.retentionPaidUntil ?? null
           }
         }
       } catch (err) {
@@ -640,6 +717,8 @@ export default {
       this.$socket.on('connect', this.onSocketConnect)
       this.$socket.on('disconnect', this.onSocketDisconnect)
       this.$socket.on('roomMembers', this.onRoomMembers)
+      this.$socket.on('roomKicked', this.onRoomKicked)
+      this.$socket.on('roomClosed', this.onRoomClosed)
 
       this.$socket.emit('joinRoom', { roomId: this.roomId, user: this.user })
       this.$socket.on('receiveMessage', (msg) => {
@@ -870,10 +949,97 @@ export default {
 
     toggleMemberSidebar () {
       this.showMemberSidebar = !this.showMemberSidebar
+    },
+
+    goToMemberDM (member) {
+      const id = member && (member._id || member.id || member.userId)
+      if (!id || String(id) === String(this.currentUserId)) { return }
+      this.$router.push({ path: '/chat/chat', query: { dm: String(id) } })
+    },
+
+    async handleKickMember (member) {
+      const id = member && (member._id || member.id || member.userId)
+      if (!id) { return }
+      const name = member.username || member.fullname || member.displayName || 'สมาชิกคนนี้'
+      const confirmed = await this.$bvModal.msgBoxConfirm(`เตะ ${name} ออกจากห้องนี้?`, {
+        title: 'ยืนยันการเตะสมาชิก',
+        okVariant: 'danger',
+        okTitle: 'เตะออก',
+        cancelTitle: 'ยกเลิก',
+        centered: true
+      })
+      if (!confirmed) { return }
+      try {
+        await this.$axios.$post(
+          process.env.API_ROOM_KICK.replace(':id', this.roomId),
+          { userId: String(id) }
+        )
+        this.$bvToast.toast(`เตะ ${name} ออกจากห้องแล้ว`, { variant: 'success', solid: true })
+      } catch (err) {
+        this.$bvToast.toast(
+          err.response?.data?.message || 'เตะสมาชิกไม่สำเร็จ',
+          { variant: 'danger', solid: true }
+        )
+      }
+    },
+
+    onRoomKicked ({ roomId }) {
+      if (String(roomId) !== String(this.roomId)) { return }
+      this.$swal({
+        icon: 'warning',
+        title: 'คุณถูกเตะออกจากห้อง',
+        text: 'เจ้าของห้องหรือผู้ดูแลได้นำคุณออกจากห้องนี้',
+        confirmButtonText: 'ตกลง'
+      })
+      this.$router.push('/chat/chat')
+    },
+
+    onRoomClosed ({ roomId }) {
+      if (String(roomId) !== String(this.roomId)) { return }
+      this.$swal({
+        icon: 'info',
+        title: 'ห้องนี้ถูกปิดแล้ว',
+        text: 'ผู้ดูแลได้ลบห้องแชทนี้',
+        confirmButtonText: 'ตกลง'
+      })
+      this.$router.push('/chat/chat')
+    },
+
+    onRetentionExtended (result) {
+      if (result) {
+        this.$set(this.currentRoom, 'retentionDays', result.retentionDays)
+        this.$set(this.currentRoom, 'retentionPaidUntil', result.retentionPaidUntil)
+      }
+      this.showRetentionModal = false
+    },
+
+    async loadManageCategories () {
+      try {
+        const res = await this.$axios.$get(process.env.API_GET_CATEGORIES_ROOM)
+        if (res.status === 'success') {
+          this.manageCategories = (res.result || []).filter(c => c.key !== 'all')
+        }
+      } catch (err) {}
+    },
+
+    onRoomUpdated (room) {
+      this.currentRoom = { ...this.currentRoom, ...room }
+      this.showManageModal = false
+      this.$bvToast.toast('บันทึกการแก้ไขห้องแล้ว', { variant: 'success', solid: true })
+    },
+
+    onRoomDeleted () {
+      this.showManageModal = false
+      this.$bvToast.toast('ลบห้องแล้ว', { variant: 'success', solid: true })
+      this.$router.push('/chat/chat')
     }
   }
 }
 </script>
+
+<style scoped>
+.icon-btn.admin-btn { background: var(--yellow); }
+</style>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
