@@ -73,6 +73,33 @@
         </button>
       </section>
 
+      <section v-if="stage === 'packages' && myTopups.length" class="w-section">
+        <h2><i class="fas fa-hourglass-half" /> คำขอเติมเหรียญ</h2>
+        <input ref="listSlip" type="file" accept="image/jpeg,image/png,image/webp" hidden @change="onListSlip">
+        <ul class="topup-list">
+          <li v-for="t in myTopups" :key="t._id" class="topup-item">
+            <div class="topup-row">
+              <span class="topup-amount">฿{{ t.amountTHB }} → <b>{{ t.coins }}</b> เหรียญ</span>
+              <span class="topup-status" :class="t.status">{{ topupStatusLabel(t.status) }}</span>
+            </div>
+            <div class="topup-row topup-sub">
+              <span>{{ fmtTime(t.createdAt) }}</span>
+              <button
+                v-if="t.status === 'pending'"
+                class="topup-btn"
+                :disabled="busy"
+                @click="pickListSlip(t)"
+              >
+                <i class="fas fa-upload" /> แนบสลิป
+              </button>
+            </div>
+            <p v-if="t.status === 'rejected' && t.rejectReason" class="topup-reason">
+              {{ t.rejectReason }}
+            </p>
+          </li>
+        </ul>
+      </section>
+
       <section v-if="stage === 'packages'" class="w-section">
         <h2><i class="fas fa-clock-rotate-left" /> ประวัติ</h2>
         <div v-if="!history.length" class="w-empty">
@@ -98,12 +125,15 @@ export default {
       coins: 0,
       packages: [],
       history: [],
+      topups: [],
       promptpayReady: false,
       costs: {},
       stage: 'packages',
       topup: null,
       busy: false,
-      result: {}
+      result: {},
+      slipTarget: null,
+      pollTimer: null
     }
   },
   head () {
@@ -114,8 +144,19 @@ export default {
       ]
     }
   },
+  computed: {
+    myTopups () {
+      return this.topups.filter(t => ['pending', 'awaiting_review', 'rejected'].includes(t.status)).slice(0, 5)
+    },
+    hasPending () {
+      return this.topups.some(t => ['pending', 'awaiting_review'].includes(t.status))
+    }
+  },
   async mounted () {
     await Promise.all([this.loadWallet(), this.loadPackages()])
+  },
+  beforeDestroy () {
+    this.stopPoll()
   },
   methods: {
     async loadWallet () {
@@ -123,7 +164,69 @@ export default {
         const r = await this.$axios.$get(process.env.API_COINS_WALLET)
         this.coins = r.result.coins
         this.history = r.result.history || []
+        this.topups = r.result.topups || []
+        if (this.hasPending) {
+          this.startPoll()
+        } else {
+          this.stopPoll()
+        }
       } catch (e) {}
+    },
+    startPoll () {
+      if (this.pollTimer) { return }
+      this.pollTimer = setInterval(() => this.loadWallet(), 20000)
+    },
+    stopPoll () {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer)
+        this.pollTimer = null
+      }
+    },
+    topupStatusLabel (s) {
+      return {
+        pending: 'ยังไม่ได้แนบสลิป',
+        awaiting_review: 'รอแอดมินตรวจสอบ',
+        approved: 'อนุมัติแล้ว',
+        rejected: 'ถูกปฏิเสธ',
+        expired: 'หมดอายุ',
+        refunded: 'คืนเงินแล้ว'
+      }[s] || s
+    },
+    fmtTime (d) {
+      return d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : ''
+    },
+    pickListSlip (t) {
+      this.slipTarget = t
+      this.$refs.listSlip.click()
+    },
+    async onListSlip (e) {
+      const file = e.target.files && e.target.files[0]
+      e.target.value = ''
+      const t = this.slipTarget
+      if (!file || !t) { return }
+      if (file.size > 3 * 1024 * 1024) {
+        this.$swal({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'สลิปต้องไม่เกิน 3MB' })
+        return
+      }
+      this.busy = true
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const url = process.env.API_COINS_TOPUP_SLIP.replace(':id', t._id)
+        const r = await this.$axios.$post(url, fd)
+        const res = r.result || {}
+        if (res.status === 'approved') {
+          this.$swal({ icon: 'success', title: 'เติมเหรียญสำเร็จ', text: `ได้รับ ${res.coins} เหรียญ`, timer: 2200, showConfirmButton: false })
+        } else {
+          this.$swal({ icon: 'success', title: 'ส่งสลิปแล้ว', text: res.message || 'รอแอดมินตรวจสอบ', timer: 2400, showConfirmButton: false })
+        }
+        this.loadWallet()
+      } catch (err) {
+        this.$swal({ icon: 'error', title: 'ตรวจสลิปไม่ผ่าน', text: err.response?.data?.message || 'ลองใหม่' })
+      } finally {
+        this.busy = false
+        this.slipTarget = null
+      }
     },
     async loadPackages () {
       try {
@@ -331,6 +434,30 @@ export default {
 .btn-ghost { background: rgba(255, 255, 255, 0.08); color: #f6f3ed; }
 
 .w-empty { color: rgba(246, 243, 237, 0.5); font-size: 14px; }
+
+.topup-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.topup-item {
+  background: #1c1c26;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.topup-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.topup-amount { font-size: 14px; }
+.topup-sub { margin-top: 6px; font-size: 12px; color: rgba(246, 243, 237, 0.5); }
+.topup-status { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.topup-status.pending { background: rgba(255, 201, 77, 0.16); color: #ffc94d; }
+.topup-status.awaiting_review { background: rgba(124, 111, 245, 0.18); color: #a99bff; }
+.topup-status.rejected { background: rgba(255, 143, 132, 0.18); color: #ff8f84; }
+.topup-btn {
+  border: none; border-radius: 8px; padding: 6px 12px;
+  background: linear-gradient(135deg, #ff5c4d, #7c6ff5); color: #fff;
+  font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.topup-btn:disabled { opacity: 0.6; cursor: default; }
+.topup-reason { margin: 8px 0 0; font-size: 12px; color: #ff8f84; }
+
 .hist { list-style: none; padding: 0; margin: 0; }
 .hist li {
   display: grid;
