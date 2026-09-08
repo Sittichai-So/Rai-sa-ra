@@ -670,4 +670,12 @@ section h2 {
   .lobby-header { padding: 16px 20px; }
   .title-block h1 { font-size: 24px; }
 }
+
+@media (max-width: 420px) {
+  .lobby-body { padding: 20px 14px; }
+  .create-panel, .rooms-panel, .howto-panel, .leaderboard-panel { padding: 20px 16px; }
+  .controls-grid { grid-template-columns: 1fr; }
+  .title-block h1 { font-size: 20px; }
+  .my-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
 </style>

@@ -1513,7 +1513,10 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .hud-left, .hud-right {
     min-width: 0;
     gap: 8px;
+    flex-shrink: 0;
   }
+  .hud-center { min-width: 0; }
+  .wave-countdown, .timer-display { white-space: nowrap; }
   .hp-bar { width: 90px; }
   .wave-num { font-size: 20px; }
   .wave-label { font-size: 9px; }
@@ -1548,8 +1551,10 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 
 @media (max-width: 480px) {
-  .hud { height: 52px; padding: 0 8px; gap: 6px; }
+  .hud { height: auto; min-height: 50px; padding: 5px 8px; gap: 6px; }
   .hud-label { font-size: 7.5px; }
+  .wave-display { align-items: center; }
+  .timer-display { margin-top: 2px; padding: 1px 6px; }
   .hp-bar { width: 60px; height: 6px; }
   .hp-num { font-size: 11px; min-width: 22px; }
   .wave-num { font-size: 16px; }
