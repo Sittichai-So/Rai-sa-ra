@@ -311,7 +311,7 @@
       </div>
 
       <div class="rooms-container">
-        <div class="rooms-grid">
+        <div v-if="filteredUnjoinedRooms.length" class="rooms-grid">
           <div
             v-for="room in filteredUnjoinedRooms"
             :key="room._id"
@@ -380,6 +380,18 @@
               </button>
             </div>
           </div>
+        </div>
+        <div v-else class="empty-state">
+          <i class="fas fa-compass" />
+          <p v-if="searchQuery.trim()">
+            ไม่พบห้องที่ตรงกับ "{{ searchQuery }}"
+          </p>
+          <p v-else-if="rooms.length">
+            คุณเข้าร่วมทุกห้องในหมวดนี้แล้ว 🎉
+          </p>
+          <p v-else>
+            ยังไม่มีห้องแชทให้เข้าร่วม
+          </p>
         </div>
       </div>
     </main>
