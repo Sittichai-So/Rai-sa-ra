@@ -14,7 +14,7 @@
           </div>
           <div class="workspace-details">
             <h4>Community</h4>
-            <span class="workspace-members">{{ profile.firstName }} {{ profile.lastName }}</span>
+            <span class="workspace-members">{{ myDisplayName }}</span>
           </div>
         </div>
       </div>
@@ -219,7 +219,7 @@
             <div class="status-indicator online" />
           </div>
           <div class="user-details">
-            <span class="user-name">{{ profile.displayName }}</span>
+            <span class="user-name">{{ myDisplayName }}</span>
             <span class="user-status">ออนไลน์</span>
           </div>
         </div>
@@ -928,12 +928,17 @@ export default {
       return this.rooms.filter(room => !this.isUserInRoom(room._id))
     },
     userInitials () {
-      const name = this.userName || this.profile.displayName || 'U'
+      const name = this.myDisplayName || 'U'
       return String(name)
         .split(' ')
         .map(n => n.charAt(0))
         .join('')
         .toUpperCase()
+    },
+    myDisplayName () {
+      const u = this.user || {}
+      return (this.profile && this.profile.displayName) ||
+        u.displayName || u.fullname || u.username || 'ผู้ใช้'
     },
     myAvatar () {
       const src =
