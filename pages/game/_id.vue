@@ -226,6 +226,7 @@ import GameRenderer from '~/utils/GameRenderer'
 import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
 import heroMShoot from '~/assets/images/hero_m_shoot.png'
+import heroMDead from '~/assets/images/hero_m_dead.png'
 import heroSpriteMeta from '~/assets/images/hero_sprites.json'
 
 const STICK_RADIUS = 46
@@ -286,7 +287,8 @@ export default {
       aimStick: { active: false, id: null, x: 0, y: 0, which: 'aim' },
       lastTouchShot: 0,
       shootFx: {},
-      atkSeen: {}
+      atkSeen: {},
+      deathFx: {}
     }
   },
   computed: {
@@ -455,8 +457,8 @@ export default {
     setupRenderer () {
       this.renderer = new GameRenderer(this.$refs.canvas)
       this.renderer.loadHeroSprites({
-        m: { walk: heroMWalk, shoot: heroMShoot },
-        f: { walk: heroFWalk, shoot: heroMShoot }
+        m: { walk: heroMWalk, shoot: heroMShoot, dead: heroMDead },
+        f: { walk: heroFWalk, shoot: heroMShoot, dead: heroMDead }
       }, heroSpriteMeta)
     },
 
@@ -471,6 +473,7 @@ export default {
           projectiles: this.projectiles,
           pickups: this.pickups,
           shootFx: this.shootFx,
+          deathFx: this.deathFx,
           myId: this.myId,
           camX: this.camX,
           camY: this.camY,
@@ -709,6 +712,7 @@ export default {
       this.$socket.on('playerDied', ({ playerId }) => {
         const p = this.players.find(x => x.id === playerId)
         if (p && this.renderer) { this.renderer.bloodSplat(p.x, p.y, true) }
+        this.$set(this.deathFx, playerId, Date.now())
         if (playerId === this.myId) {
           if (this.renderer) { this.renderer.shake(12) }
           this.$nextTick(() => this.$forceUpdate())
@@ -725,6 +729,7 @@ export default {
       })
 
       this.$socket.on('playerRevived', ({ playerId }) => {
+        this.$delete(this.deathFx, playerId)
         const p = this.players.find(x => x.id === playerId)
         if (p && this.renderer) {
           this.renderer.spark(p.x, p.y, '#40ff78')
@@ -790,6 +795,9 @@ export default {
         this.leaderboard = []
         this.myUpgrades = []
         this.upgradeOffer = null
+        this.deathFx = {}
+        this.shootFx = {}
+        this.atkSeen = {}
         if (this.renderer) {
           this.renderer.decals = []
           this.renderer.particles = []

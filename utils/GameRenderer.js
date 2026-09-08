@@ -245,7 +245,7 @@ export default class GameRenderer {
   }
 
   // ── main draw ────────────────────────────────────────
-  draw ({ players, zombies, bullets, projectiles, pickups, shootFx, myId, camX, camY, mapW, mapH }) {
+  draw ({ players, zombies, bullets, projectiles, pickups, shootFx, deathFx, myId, camX, camY, mapW, mapH }) {
     const ctx = this.ctx
     const W = this.canvas.width
     const H = this.canvas.height
@@ -280,7 +280,7 @@ export default class GameRenderer {
     this._drawBullets(ctx, bullets)
     this._drawProjectiles(ctx, projectiles || [])
     this._drawZombies(ctx, zombies, now)
-    this._drawPlayers(ctx, players, myId, now, shootFx || {})
+    this._drawPlayers(ctx, players, myId, now, shootFx || {}, deathFx || {})
     this._drawParticles(ctx)
     this._drawFloaters(ctx)
 
@@ -473,38 +473,47 @@ export default class GameRenderer {
   }
 
   // นักเอาชีวิตรอดมุมมองบน — อ้างอิง assets/images/charector.png
+  heroReady (female) {
+    const set = this.hero && this.hero[female ? 'f' : 'm']
+    const w = set && set.walk
+    return !!(this.heroMeta && w && w.complete && w.naturalWidth)
+  }
+
   _drawSurvivor (ctx, o) {
-    const set = this.hero && this.hero[o.female ? 'f' : 'm']
-    const walkImg = set && set.walk
-    if (this.heroMeta && walkImg && walkImg.complete && walkImg.naturalWidth) {
-      return this._drawHeroSprite(ctx, o, set)
+    if (this.heroReady(o.female)) {
+      return this._drawHeroSprite(ctx, o)
     }
     return this._drawSurvivorVector(ctx, o)
   }
 
-  _drawHeroSprite (ctx, o, set) {
+  _drawHeroSprite (ctx, o) {
+    const set = this.hero[o.female ? 'f' : 'm']
     const meta = this.heroMeta
-    const cw = meta.cell.w
-    const ch = meta.cell.h
     const now = o.now || Date.now()
-    const facingRight = Math.cos(o.angle) >= 0
+    const facingRight = Math.cos(o.angle || 0) >= 0
 
     let img = set.walk
     let a = meta.anims.walk
     let sheetFacing = meta.facing.walk
-    if (o.shooting && set.shoot && set.shoot.complete && set.shoot.naturalWidth) {
-      img = set.shoot
-      a = meta.anims.shoot
-      sheetFacing = meta.facing.shoot
-    }
-
     let fi = 0
-    if (o.shooting && a === meta.anims.shoot) {
+
+    if (o.mode === 'dead' && set.dead && set.dead.complete && set.dead.naturalWidth) {
+      img = set.dead; a = meta.anims.dead; sheetFacing = meta.facing.dead
+      const t = o.deadElapsed != null ? o.deadElapsed : 9999
+      fi = Math.min(a.frames - 1, Math.floor(t / (1000 / a.fps)))
+    } else if (o.mode === 'downed' && set.dead && set.dead.complete && set.dead.naturalWidth) {
+      img = set.dead; a = meta.anims.dead; sheetFacing = meta.facing.dead
+      fi = 3
+    } else if (o.shooting && set.shoot && set.shoot.complete && set.shoot.naturalWidth) {
+      img = set.shoot; a = meta.anims.shoot; sheetFacing = meta.facing.shoot
       fi = 3 + Math.floor((now / (1000 / a.fps)) % 3)
     } else if (o.moving) {
       fi = Math.floor(now / (1000 / a.fps)) % a.frames
     }
     fi = Math.min(fi, a.frames - 1)
+
+    const cw = a.cw || meta.cell.w
+    const ch = a.ch || meta.cell.h
     const sx = (fi % a.cols) * cw
     const sy = Math.floor(fi / a.cols) * ch
 
@@ -514,6 +523,7 @@ export default class GameRenderer {
     const mirror = sheetFacing === 'left' ? facingRight : !facingRight
 
     ctx.save()
+    if (o.mode === 'dead' || o.mode === 'downed') { ctx.globalAlpha = o.mode === 'dead' ? 0.95 : 1 }
     if (mirror) { ctx.scale(-1, 1) }
     ctx.drawImage(img, sx, sy, cw, ch, -drawW / 2, -drawH + footY, drawW, drawH)
     ctx.restore()
@@ -584,44 +594,62 @@ export default class GameRenderer {
     ctx.restore()
   }
 
-  _drawPlayers (ctx, players, myId, now, shootFx) {
+  _drawPlayers (ctx, players, myId, now, shootFx, deathFx) {
     for (const p of players) {
       const color = p.color || '#7c6ff5'
       const rad = p.radius || 18
+      const female = p.skin === 'f'
+      const useSprite = this.heroReady(female)
 
       if (!p.alive && !p.downed) {
-        ctx.save()
-        ctx.translate(p.x, p.y)
-        ctx.beginPath()
-        ctx.ellipse(0, 0, rad * 1.2, rad * 0.7, 0, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(80,14,14,0.4)'
-        ctx.fill()
-        ctx.beginPath()
-        ctx.arc(0, 0, rad * 0.8, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(60,60,66,0.7)'
-        ctx.fill()
-        ctx.restore()
+        if (useSprite) {
+          ctx.save()
+          ctx.translate(Math.round(p.x), Math.round(p.y))
+          this._drawHeroSprite(ctx, {
+            rad,
+            angle: p.angle,
+            female,
+            mode: 'dead',
+            deadElapsed: deathFx && deathFx[p.id] ? now - deathFx[p.id] : null
+          })
+          ctx.restore()
+        } else {
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.beginPath()
+          ctx.ellipse(0, 0, rad * 1.2, rad * 0.7, 0, 0, Math.PI * 2)
+          ctx.fillStyle = 'rgba(80,14,14,0.4)'
+          ctx.fill()
+          ctx.beginPath()
+          ctx.arc(0, 0, rad * 0.8, 0, Math.PI * 2)
+          ctx.fillStyle = 'rgba(60,60,66,0.7)'
+          ctx.fill()
+          ctx.restore()
+        }
         continue
       }
 
       if (p.downed) {
         ctx.save()
-        ctx.translate(p.x, p.y)
+        ctx.translate(Math.round(p.x), Math.round(p.y))
         ctx.beginPath()
-        ctx.ellipse(0, 0, rad * 1.3, rad * 0.75, 0, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(80,14,14,0.35)'
+        ctx.ellipse(0, rad * 0.5, rad * 1.4, rad * 0.7, 0, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(80,14,14,0.32)'
         ctx.fill()
-        ctx.beginPath()
-        ctx.ellipse(0, 0, rad * 0.95, rad * 0.6, p.angle, 0, Math.PI * 2)
-        ctx.fillStyle = `${p.color || '#7c6ff5'}88`
-        ctx.strokeStyle = '#ff5050'
-        ctx.lineWidth = 1.5
-        ctx.fill()
-        ctx.stroke()
-        // revive progress ring
+        if (useSprite) {
+          this._drawHeroSprite(ctx, { rad, angle: p.angle, female, mode: 'downed' })
+        } else {
+          ctx.beginPath()
+          ctx.ellipse(0, 0, rad * 0.95, rad * 0.6, p.angle, 0, Math.PI * 2)
+          ctx.fillStyle = `${color}88`
+          ctx.strokeStyle = '#ff5050'
+          ctx.lineWidth = 1.5
+          ctx.fill()
+          ctx.stroke()
+        }
         if (p.reviveProgress > 0) {
           ctx.beginPath()
-          ctx.arc(0, 0, rad + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p.reviveProgress)
+          ctx.arc(0, 0, rad + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p.reviveProgress)
           ctx.strokeStyle = '#40ff78'
           ctx.lineWidth = 3
           ctx.stroke()

@@ -6,20 +6,33 @@
   "baseline": 4,
   "facing": {
     "walk": "left",
-    "shoot": "right"
+    "shoot": "right",
+    "dead": "right"
   },
   "anims": {
     "walk": {
       "file": "hero_{skin}_walk.png",
       "frames": 8,
       "cols": 8,
-      "fps": 11
+      "fps": 11,
+      "cw": 210,
+      "ch": 238
     },
     "shoot": {
       "file": "hero_m_shoot.png",
       "frames": 9,
       "cols": 9,
-      "fps": 22
+      "fps": 22,
+      "cw": 210,
+      "ch": 238
+    },
+    "dead": {
+      "file": "hero_m_dead.png",
+      "frames": 7,
+      "cols": 7,
+      "fps": 8,
+      "cw": 295,
+      "ch": 271
     }
   }
 }
