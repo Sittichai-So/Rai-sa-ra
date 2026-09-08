@@ -322,6 +322,7 @@ export default {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
+  padding-top: calc(18px + env(safe-area-inset-top));
   background: linear-gradient(135deg, #ff5c4d, #7c6ff5);
   position: sticky;
   top: 0;

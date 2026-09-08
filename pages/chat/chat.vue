@@ -2473,6 +2473,7 @@ export default {
 
 .user-profile {
   padding: 16px 18px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   background: var(--bg-panel);
   border-top: 1px solid var(--border-hair);
   display: flex;
@@ -3675,8 +3676,8 @@ select.cr-input {
 .mobile-menu-toggle {
   display: none;
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: calc(16px + env(safe-area-inset-top));
+  left: calc(16px + env(safe-area-inset-left));
   z-index: 101;
   background: linear-gradient(135deg, var(--coral), var(--coral-dark));
   border: none;
@@ -3725,7 +3726,7 @@ select.cr-input {
   .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; height: 100dvh; width: 320px; z-index: 100; transition: left 0.3s ease; }
   .sidebar.open { left: 0; }
   .main-content { width: 100%; }
-  .main-header { flex-direction: column; gap: 14px; align-items: stretch; padding: 16px 18px; padding-top: 80px; }
+  .main-header { flex-direction: column; gap: 14px; align-items: stretch; padding: 16px 18px; padding-top: calc(80px + env(safe-area-inset-top)); }
   .header-left h1 { font-size: 22px; }
   .header-left p { font-size: var(--fs-small); }
   .search-container { width: 100%; }
@@ -3740,7 +3741,7 @@ select.cr-input {
 @media (max-width: 640px) {
   .workspace-icon { width: 38px; height: 38px; font-size: 16px; }
   .workspace-details h4 { font-size: 14px; }
-  .main-header { padding: 72px 16px 14px; }
+  .main-header { padding: calc(72px + env(safe-area-inset-top)) 16px 14px; }
   .header-left h1 { font-size: 20px; }
   .rooms-container { padding: 12px 14px; }
   .room-card { padding: 20px; }

@@ -1104,6 +1104,7 @@ export default {
   background: var(--violet);
   border-bottom: var(--line) solid var(--ink);
   padding: 18px 24px;
+  padding-top: calc(18px + env(safe-area-inset-top));
   flex-shrink: 0;
 }
 
@@ -1319,6 +1320,7 @@ export default {
     right: 0;
     z-index: 100;
     border-radius: 18px 18px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .member-sidebar.hidden {
     display: none;
@@ -1781,6 +1783,7 @@ export default {
     right: 0;
     z-index: 100;
     border-radius: 18px 18px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .member-sidebar.hidden {
     display: none;
@@ -1809,7 +1812,7 @@ export default {
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
-  .chat-header { padding: 14px 16px; }
+  .chat-header { padding: calc(14px + env(safe-area-inset-top)) 16px 14px; }
   .header-content { gap: 12px; }
   .room-info { gap: 10px; }
   .room-avatar { width: 40px; height: 40px; font-size: 16px; }
@@ -1839,7 +1842,7 @@ export default {
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
-  .chat-header { padding: 10px 14px; }
+  .chat-header { padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
   .header-content { gap: 10px; }
   .room-info { gap: 8px; }
   .room-avatar { width: 36px; height: 36px; font-size: 14px; }
@@ -1877,7 +1880,7 @@ export default {
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
-  .chat-header { padding: 8px 12px; }
+  .chat-header { padding: calc(8px + env(safe-area-inset-top)) 12px 8px; }
   .header-content { gap: 8px; }
   .room-info { gap: 8px; }
   .room-avatar { width: 32px; height: 32px; font-size: 13px; border-radius: 12px; }
@@ -1905,7 +1908,7 @@ export default {
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
-  .chat-header { padding: 8px 12px; }
+  .chat-header { padding: calc(8px + env(safe-area-inset-top)) 12px 8px; }
   .room-avatar { width: 32px; height: 32px; }
   .room-name { font-size: 0.85rem; }
   .room-status { font-size: 0.65rem; }
@@ -1915,7 +1918,7 @@ export default {
 }
 
 @media (max-width: 360px) {
-  .chat-header { padding: 6px 10px; }
+  .chat-header { padding: calc(6px + env(safe-area-inset-top)) 10px 6px; }
   .room-avatar { width: 28px; height: 28px; font-size: 12px; }
   .room-name { font-size: 0.78rem; max-width: calc(100vw - 120px); }
   .room-status { font-size: 0.62rem; gap: 5px; }

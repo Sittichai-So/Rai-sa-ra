@@ -130,7 +130,7 @@ export default {
 .ar-page { min-height: 100vh; background: #121218; color: #f6f3ed; font-family: 'Kanit', sans-serif; }
 .ar-header {
   display: flex; align-items: center; gap: 12px;
-  padding: 16px 18px; background: linear-gradient(135deg, #ff5c4d, #7c6ff5);
+  padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: linear-gradient(135deg, #ff5c4d, #7c6ff5);
   position: sticky; top: 0; z-index: 5;
 }
 .ar-header h1 { flex: 1; margin: 0; font-size: 18px; font-weight: 700; }

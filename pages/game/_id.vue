@@ -916,12 +916,12 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 
 .hud {
-  height: 60px;
+  min-height: 60px;
   background: rgba(0,0,0,0.85);
   border-bottom: 1px solid rgba(0,255,80,0.2);
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: env(safe-area-inset-top) 20px 0;
   gap: 24px;
   z-index: 10;
   flex-shrink: 0;
@@ -1101,7 +1101,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .joystick-pad {
   position: absolute;
-  bottom: 28px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
   width: 132px;
   height: 132px;
   pointer-events: auto;
@@ -1111,8 +1111,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   justify-content: center;
 }
 
-.move-pad { left: 24px; }
-.aim-pad { right: 24px; }
+.move-pad { left: calc(24px + env(safe-area-inset-left)); }
+.aim-pad { right: calc(24px + env(safe-area-inset-right)); }
 
 .joystick-base {
   position: absolute;
@@ -1145,8 +1145,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .reload-btn {
   position: absolute;
-  right: 168px;
-  bottom: 40px;
+  right: calc(168px + env(safe-area-inset-right));
+  bottom: calc(40px + env(safe-area-inset-bottom));
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -1507,7 +1507,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 @media (max-width: 900px) {
   .hud {
-    padding: 0 12px;
+    padding: env(safe-area-inset-top) 12px 0;
     gap: 10px;
   }
   .hud-left, .hud-right {
@@ -1551,7 +1551,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 
 @media (max-width: 480px) {
-  .hud { height: auto; min-height: 50px; padding: 5px 8px; gap: 6px; }
+  .hud { min-height: 50px; padding: calc(5px + env(safe-area-inset-top)) 8px 5px; gap: 6px; }
   .hud-label { font-size: 7.5px; }
   .wave-display { align-items: center; }
   .timer-display { margin-top: 2px; padding: 1px 6px; }
