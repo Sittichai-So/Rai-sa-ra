@@ -224,6 +224,14 @@
           </div>
         </div>
         <div class="user-actions">
+          <button
+            v-if="$store.getters.isAdmin"
+            class="user-action-btn user-action-admin"
+            title="ศูนย์จัดการระบบ"
+            @click="$router.push('/admin')"
+          >
+            <i class="fas fa-shield-halved" />
+          </button>
           <button class="user-action-btn" @click="setting">
             <i class="fas fa-cog" />
           </button>
@@ -536,83 +544,144 @@
             </button>
           </header>
 
-          <div class="af-search-row">
-            <div class="af-search-box">
-              <i class="fas fa-search af-search-icon" />
-              <input
-                ref="afSearch"
-                v-model="userSearchQuery"
-                type="text"
-                placeholder="ชื่อผู้ใช้ หรืออีเมล..."
-                @keyup.enter="searchUsers"
-              >
-              <button
-                v-if="userSearchQuery"
-                class="af-clear"
-                type="button"
-                aria-label="ล้าง"
-                @click="clearSearchInput"
-              >
-                <i class="fas fa-times" />
-              </button>
-            </div>
+          <div class="af-tabs">
             <button
-              class="af-search-btn"
               type="button"
-              :disabled="!userSearchQuery.trim() || isSearching"
-              @click="searchUsers"
+              class="af-tab"
+              :class="{ active: afTab === 'search' }"
+              @click="afTab = 'search'"
             >
-              <i v-if="isSearching" class="fas fa-spinner fa-spin" />
-              <i v-else class="fas fa-search" />
-              <span>ค้นหา</span>
+              <i class="fas fa-search" /> ค้นหา
+            </button>
+            <button
+              type="button"
+              class="af-tab"
+              :class="{ active: afTab === 'sent' }"
+              @click="switchToSentTab"
+            >
+              <i class="fas fa-paper-plane" /> คำขอที่ส่ง
+              <span v-if="sentRequests.length" class="af-tab-badge">{{ sentRequests.length }}</span>
             </button>
           </div>
 
-          <div class="af-body">
-            <div v-if="isSearching" class="af-state">
-              <div class="spinner" />
-              <span>กำลังค้นหา...</span>
+          <template v-if="afTab === 'search'">
+            <div class="af-search-row">
+              <div class="af-search-box">
+                <i class="fas fa-search af-search-icon" />
+                <input
+                  ref="afSearch"
+                  v-model="userSearchQuery"
+                  type="text"
+                  placeholder="ชื่อผู้ใช้ หรืออีเมล..."
+                  @keyup.enter="searchUsers"
+                >
+                <button
+                  v-if="userSearchQuery"
+                  class="af-clear"
+                  type="button"
+                  aria-label="ล้าง"
+                  @click="clearSearchInput"
+                >
+                  <i class="fas fa-times" />
+                </button>
+              </div>
+              <button
+                class="af-search-btn"
+                type="button"
+                :disabled="!userSearchQuery.trim() || isSearching"
+                @click="searchUsers"
+              >
+                <i v-if="isSearching" class="fas fa-spinner fa-spin" />
+                <i v-else class="fas fa-search" />
+                <span>ค้นหา</span>
+              </button>
             </div>
 
-            <div v-else-if="searchResults.length > 0" class="search-results">
+            <div class="af-body">
+              <div v-if="isSearching" class="af-state">
+                <div class="spinner" />
+                <span>กำลังค้นหา...</span>
+              </div>
+
+              <div v-else-if="searchResults.length > 0" class="search-results">
+                <div
+                  v-for="u in searchResults"
+                  :key="u._id"
+                  class="user-result"
+                >
+                  <div class="user-avatar">
+                    <img v-if="u.avatar" :src="u.avatar" :alt="u.displayName">
+                    <div v-else class="avatar-placeholder">
+                      {{ u.initials }}
+                    </div>
+                    <span v-if="u.isOnline" class="user-online-dot" />
+                  </div>
+                  <div class="user-info">
+                    <h4>{{ u.displayName }}</h4>
+                    <p>{{ u.email || ('@' + u.username) }}</p>
+                  </div>
+                  <button
+                    type="button"
+                    class="friend-add-btn"
+                    :class="friendBtn(u).cls"
+                    :disabled="friendBtn(u).disabled || sendingRequest === u._id"
+                    @click="handleFriendAction(u)"
+                  >
+                    <i v-if="sendingRequest === u._id" class="fas fa-spinner fa-spin" />
+                    <i v-else :class="friendBtn(u).icon" />
+                    <span>{{ friendBtn(u).text }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-else-if="hasSearched" class="af-state">
+                <i class="fas fa-user-slash" />
+                <p>ไม่พบผู้ใช้ "{{ userSearchQuery }}"</p>
+              </div>
+
+              <div v-else class="af-state">
+                <i class="fas fa-user-friends" />
+                <p>พิมพ์ชื่อผู้ใช้หรืออีเมล แล้วกดค้นหา</p>
+              </div>
+            </div>
+          </template>
+
+          <div v-else class="af-body">
+            <div v-if="loadingSent" class="af-state">
+              <div class="spinner" />
+              <span>กำลังโหลด...</span>
+            </div>
+            <div v-else-if="!sentRequests.length" class="af-state">
+              <i class="fas fa-paper-plane" />
+              <p>ยังไม่มีคำขอเป็นเพื่อนที่ส่งออกไป</p>
+            </div>
+            <div v-else class="search-results">
               <div
-                v-for="u in searchResults"
-                :key="u._id"
+                v-for="r in sentRequests"
+                :key="r._id"
                 class="user-result"
               >
                 <div class="user-avatar">
-                  <img v-if="u.avatar" :src="u.avatar" :alt="u.displayName">
+                  <img v-if="r.avatar" :src="r.avatar" :alt="r.displayName">
                   <div v-else class="avatar-placeholder">
-                    {{ u.initials }}
+                    {{ r.initials }}
                   </div>
-                  <span v-if="u.isOnline" class="user-online-dot" />
                 </div>
                 <div class="user-info">
-                  <h4>{{ u.displayName }}</h4>
-                  <p>{{ u.email || ('@' + u.username) }}</p>
+                  <h4>{{ r.displayName }}</h4>
+                  <p>{{ r.email || ('@' + r.username) }}</p>
                 </div>
                 <button
                   type="button"
-                  class="friend-add-btn"
-                  :class="friendBtn(u).cls"
-                  :disabled="friendBtn(u).disabled || sendingRequest === u._id"
-                  @click="handleFriendAction(u)"
+                  class="friend-add-btn is-cancel"
+                  :disabled="cancellingRequest === r._id"
+                  @click="cancelSentRequest(r)"
                 >
-                  <i v-if="sendingRequest === u._id" class="fas fa-spinner fa-spin" />
-                  <i v-else :class="friendBtn(u).icon" />
-                  <span>{{ friendBtn(u).text }}</span>
+                  <i v-if="cancellingRequest === r._id" class="fas fa-spinner fa-spin" />
+                  <i v-else class="fas fa-times" />
+                  <span>ยกเลิก</span>
                 </button>
               </div>
-            </div>
-
-            <div v-else-if="hasSearched" class="af-state">
-              <i class="fas fa-user-slash" />
-              <p>ไม่พบผู้ใช้ "{{ userSearchQuery }}"</p>
-            </div>
-
-            <div v-else class="af-state">
-              <i class="fas fa-user-friends" />
-              <p>พิมพ์ชื่อผู้ใช้หรืออีเมล แล้วกดค้นหา</p>
             </div>
           </div>
         </div>
@@ -806,6 +875,10 @@ export default {
       isSearching: false,
       hasSearched: false,
       sendingRequest: null,
+      afTab: 'search',
+      sentRequests: [],
+      loadingSent: false,
+      cancellingRequest: null,
       friendMenu: { open: false, friend: null, x: 0, y: 0 },
       showProfileModal: false,
       profileFriend: null,
@@ -1004,6 +1077,8 @@ export default {
     if (userData) {
       this.user = JSON.parse(userData)
     }
+
+    this.handleDmQuery()
   },
   beforeDestroy () {
     clearTimeout(this.idleTimer)
@@ -1056,6 +1131,18 @@ export default {
       })
       const conv = this.dmConversations.find(c => c.friendId === friend.friendId)
       if (conv) { conv.unreadCount = 0 }
+    },
+    handleDmQuery () {
+      const dmId = this.$route.query.dm
+      if (!dmId) { return }
+      this.$router.replace({ path: '/chat/chat' })
+      const friend = this.allFriends.find(f => String(f.friendId) === String(dmId)) ||
+        this.dmConversations.find(c => String(c.friendId) === String(dmId))
+      if (friend) {
+        this.openDirectMessage(friend)
+      } else {
+        this.friendToast('info', 'ทักแชทส่วนตัวได้เฉพาะเพื่อน — เพิ่มเพื่อนก่อน')
+      }
     },
     getInitials (name) {
       if (!name) { return '?' }
@@ -1702,6 +1789,54 @@ export default {
     closeModal () {
       this.showAddFriend = false
       this.resetSearch()
+      this.afTab = 'search'
+    },
+
+    switchToSentTab () {
+      this.afTab = 'sent'
+      this.loadSentRequests()
+    },
+
+    async loadSentRequests () {
+      this.loadingSent = true
+      try {
+        const res = await this.$axios.$get(process.env.API_SENT_FRIEND)
+        const list = res.data || res.result || []
+        this.sentRequests = list.map((r) => {
+          const rec = r.recipient || {}
+          const name = rec.displayName ||
+            [rec.firstName, rec.lastName].filter(Boolean).join(' ') ||
+            rec.username || 'ผู้ใช้'
+          return {
+            _id: r._id,
+            recipientId: rec._id,
+            displayName: name,
+            username: rec.username,
+            email: rec.email || '',
+            avatar: rec.avatar ? this.resolveAsset(rec.avatar) : null,
+            initials: this.getInitials(name)
+          }
+        })
+      } catch (err) {
+        this.sentRequests = []
+      } finally {
+        this.loadingSent = false
+      }
+    },
+
+    async cancelSentRequest (r) {
+      this.cancellingRequest = r._id
+      try {
+        await this.$axios.$delete(process.env.API_DELETE_CANCEL_FRIENDSHIP_ID.replace(':friendshipId', r._id))
+        this.sentRequests = this.sentRequests.filter(x => x._id !== r._id)
+        const inResults = this.searchResults.find(u => String(u._id) === String(r.recipientId))
+        if (inResults) { this.$set(inResults, 'friendStatus', 'none') }
+        this.friendToast('success', `ยกเลิกคำขอถึง ${r.displayName} แล้ว`)
+      } catch (err) {
+        this.friendToast('error', err.response?.data?.message || 'ยกเลิกคำขอไม่สำเร็จ')
+      } finally {
+        this.cancellingRequest = null
+      }
     },
 
     friendBtn (u) {
@@ -1784,6 +1919,7 @@ export default {
         })
         this.$set(targetUser, 'friendStatus', 'pending_sent')
         this.friendToast('success', `ส่งคำขอเป็นเพื่อนให้ ${targetUser.displayName || 'ผู้ใช้'} แล้ว`)
+        if (this.sentRequests.length) { this.loadSentRequests() }
       } catch (err) {
         this.friendToast('error', err.response?.data?.message || 'ไม่สามารถส่งคำขอเป็นเพื่อนได้')
       } finally {
@@ -2374,6 +2510,18 @@ export default {
   color: #fff;
 }
 
+.user-action-admin {
+  background: rgba(255, 201, 77, 0.12);
+  border-color: rgba(255, 201, 77, 0.4);
+  color: var(--amber);
+}
+
+.user-action-admin:hover {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #121218;
+}
+
 .main-content {
   flex: 1;
   display: flex;
@@ -2942,6 +3090,45 @@ export default {
   .pf-panel { max-width: 100%; }
 }
 
+.af-tabs {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  padding: 10px 18px 0;
+}
+
+.af-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-hair);
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  color: var(--text-muted, rgba(255, 255, 255, 0.6));
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.af-tab.active {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #fff;
+}
+
+.af-tab-badge {
+  background: var(--coral);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
 .af-search-row {
   flex-shrink: 0;
   display: flex;
@@ -3414,6 +3601,12 @@ select.cr-input {
   color: var(--green);
   border-color: rgba(55, 200, 113, 0.35);
   cursor: default;
+}
+
+.friend-add-btn.is-cancel {
+  background: rgba(255, 90, 69, 0.14);
+  color: var(--coral);
+  border-color: rgba(255, 90, 69, 0.35);
 }
 
 @media (max-width: 480px) {
