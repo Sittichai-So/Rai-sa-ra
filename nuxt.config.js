@@ -106,6 +106,9 @@ export default {
     API_DM_MESSAGE: currentEnv.api + '/dm/messages/:messageId',
     API_DM_READ: currentEnv.api + '/dm/:friendId/read',
 
+    API_SUPPORT_CONTACT: currentEnv.api + '/support/contact',
+    API_SUPPORT_THREADS: currentEnv.api + '/support/threads',
+
     API_SEND_FRIEND: currentEnv.api + '/friends/send',
     API_POST_ACCEPT_FRIENDSHIP_ID: currentEnv.api + '/friends/accept/:friendshipId',
     API_POST_REJECT_FRIENDSHIP_ID: currentEnv.api + '/friends/reject/:friendshipId',

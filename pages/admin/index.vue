@@ -54,6 +54,13 @@ export default {
           desc: 'แก้ไขรายละเอียดห้อง ตั้งรหัสผ่าน หรือลบห้อง',
           icon: 'fas fa-comments',
           color: 'linear-gradient(135deg, #ff5c4d, #e8412f)'
+        },
+        {
+          to: '/admin/support',
+          title: 'แชทกับลูกค้า',
+          desc: 'ตอบข้อความสอบถาม / แจ้งปัญหาจากผู้ใช้',
+          icon: 'fas fa-headset',
+          color: 'linear-gradient(135deg, #37c871, #1e9e56)'
         }
       ]
     }
