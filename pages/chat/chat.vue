@@ -147,48 +147,6 @@
 
         <div class="section">
           <div class="section-header">
-            <h6>
-              ข้อความส่วนตัว
-              <span v-if="totalUnreadDM" class="hdr-badge">{{ totalUnreadDM > 99 ? '99+' : totalUnreadDM }}</span>
-            </h6>
-          </div>
-          <div class="dm-list">
-            <div v-if="activeDMs.length === 0" class="empty-dm">
-              <i class="fas fa-comments" />
-              <span>ยังไม่มีข้อความส่วนตัว</span>
-            </div>
-            <div
-              v-for="dm in activeDMs"
-              :key="dm.friendId"
-              class="dm-item"
-              :class="{
-                active: selectedFriend && selectedFriend.friendId === dm.friendId,
-                unread: dm.unreadCount > 0
-              }"
-              @click="openDirectMessage(dm)"
-            >
-              <div class="dm-avatar">
-                <img v-if="dm.avatar" :src="dm.avatar" :alt="dm.displayName">
-                <div v-else class="avatar-placeholder">
-                  {{ getInitials(dm.displayName) }}
-                </div>
-                <span v-if="dm.status === 'online'" class="dm-online-dot" />
-              </div>
-              <div class="dm-info">
-                <span class="dm-name">{{ dm.displayName }}</span>
-                <span class="dm-last-message">
-                  <i v-if="dm.lastFromMe" class="fas fa-reply dm-you-icon" />{{ dm.lastMessage || 'เริ่มการสนทนา...' }}
-                </span>
-              </div>
-              <span v-if="dm.unreadCount" class="dm-count">
-                {{ dm.unreadCount > 99 ? '99+' : dm.unreadCount }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">
             <h6>มินิเกม</h6>
           </div>
           <div style="padding: 0 12px;">
@@ -867,6 +825,85 @@
         </button>
       </div>
     </div>
+
+    <div v-if="dmPanelOpen" class="dm-launcher-backdrop" @click="dmPanelOpen = false" />
+
+    <transition name="dm-launcher">
+      <div v-if="dmPanelOpen" class="dm-launcher-panel" role="dialog" aria-label="ข้อความส่วนตัว">
+        <header class="dm-launcher-head">
+          <h3>ข้อความ</h3>
+          <button class="dm-launcher-close" type="button" aria-label="ปิด" @click="dmPanelOpen = false">
+            <i class="fas fa-times" />
+          </button>
+        </header>
+        <div class="dm-launcher-search">
+          <i class="fas fa-search" />
+          <input v-model="dmSearch" type="text" placeholder="ค้นหาแชท...">
+        </div>
+        <div class="dm-launcher-list">
+          <button
+            v-if="supportContact && !dmSearch.trim()"
+            type="button"
+            class="dm-row dm-row-support"
+            :class="{ unread: supportUnread > 0 }"
+            @click="openDmFromPanel(supportContact)"
+          >
+            <div class="dm-avatar dm-avatar-support">
+              <i class="fas fa-headset" />
+            </div>
+            <div class="dm-info">
+              <span class="dm-name">ผู้ดูแลระบบ</span>
+              <span class="dm-last-message">สอบถาม · แจ้งปัญหาการใช้งาน</span>
+            </div>
+            <span v-if="supportUnread" class="dm-count">{{ supportUnread > 99 ? '99+' : supportUnread }}</span>
+          </button>
+
+          <div v-if="filteredDMs.length === 0" class="dm-launcher-empty">
+            <i class="fas fa-comments" />
+            <span>{{ dmSearch.trim() ? 'ไม่พบแชทที่ค้นหา' : 'ยังไม่มีข้อความส่วนตัว' }}</span>
+            <small v-if="!dmSearch.trim()">แตะชื่อเพื่อนในแถบข้างเพื่อเริ่มแชท</small>
+          </div>
+          <button
+            v-for="dm in filteredDMs"
+            :key="dm.friendId"
+            type="button"
+            class="dm-row"
+            :class="{ unread: dm.unreadCount > 0 }"
+            @click="openDmFromPanel(dm)"
+          >
+            <div class="dm-avatar">
+              <img v-if="dm.avatar" :src="dm.avatar" :alt="dm.displayName">
+              <div v-else class="avatar-placeholder">
+                {{ getInitials(dm.displayName) }}
+              </div>
+              <span v-if="dm.status === 'online'" class="dm-online-dot" />
+            </div>
+            <div class="dm-info">
+              <span class="dm-name">{{ dm.displayName }}</span>
+              <span class="dm-last-message">
+                <i v-if="dm.lastFromMe" class="fas fa-reply dm-you-icon" />{{ dm.lastMessage || 'เริ่มการสนทนา...' }}
+              </span>
+            </div>
+            <span v-if="dm.unreadCount" class="dm-count">
+              {{ dm.unreadCount > 99 ? '99+' : dm.unreadCount }}
+            </span>
+          </button>
+        </div>
+      </div>
+    </transition>
+
+    <button
+      class="dm-fab"
+      :class="{ open: dmPanelOpen, pulse: dmFabPulse && !dmPanelOpen }"
+      type="button"
+      aria-label="ข้อความส่วนตัว"
+      @click="toggleDmPanel"
+    >
+      <i :class="dmPanelOpen ? 'fas fa-times' : 'fas fa-comment-dots'" />
+      <span v-if="totalUnreadDM && !dmPanelOpen" class="dm-fab-badge">
+        {{ totalUnreadDM > 99 ? '99+' : totalUnreadDM }}
+      </span>
+    </button>
   </div>
 </template>
 
@@ -913,6 +950,10 @@ export default {
       cancellingRequest: null,
       friendMenu: { open: false, friend: null, x: 0, y: 0 },
       roomMenu: { open: false, room: null, x: 0, y: 0 },
+      dmPanelOpen: false,
+      dmSearch: '',
+      dmFabPulse: false,
+      supportContact: null,
       showProfileModal: false,
       profileFriend: null,
       profileData: null,
@@ -1035,6 +1076,23 @@ export default {
     activeDMs () {
       return this.dmConversations
     },
+    filteredDMs () {
+      const supportId = this.supportContact ? String(this.supportContact.friendId) : null
+      const base = supportId
+        ? this.activeDMs.filter(dm => String(dm.friendId) !== supportId)
+        : this.activeDMs
+      const q = this.dmSearch.trim().toLowerCase()
+      if (!q) { return base }
+      return base.filter(dm =>
+        (dm.displayName || '').toLowerCase().includes(q) ||
+        (dm.lastMessage || '').toLowerCase().includes(q)
+      )
+    },
+    supportUnread () {
+      if (!this.supportContact) { return 0 }
+      const c = this.dmConversations.find(x => String(x.friendId) === String(this.supportContact.friendId))
+      return c ? (c.unreadCount || 0) : 0
+    },
     allFriends () {
       return [...this.onlineFriends, ...this.offlineFriends]
     },
@@ -1098,6 +1156,7 @@ export default {
 
     await this.loadFriends()
     await this.loadDMConversations()
+    this.loadSupportContact()
 
     this._onResize = () => {
       this.closeFriendMenu()
@@ -1135,6 +1194,7 @@ export default {
   },
   beforeDestroy () {
     clearTimeout(this.idleTimer)
+    clearTimeout(this._dmPulseT)
     if (this._idleEvents) {
       this._idleEvents.forEach(e => window.removeEventListener(e, this._idleReset))
     }
@@ -1184,6 +1244,20 @@ export default {
       })
       const conv = this.dmConversations.find(c => c.friendId === friend.friendId)
       if (conv) { conv.unreadCount = 0 }
+    },
+    toggleDmPanel () {
+      this.dmPanelOpen = !this.dmPanelOpen
+      if (this.dmPanelOpen) {
+        this.dmSearch = ''
+        this.loadDMConversations()
+        this.closeSidebar()
+        this.closeFriendMenu()
+        this.closeRoomMenu()
+      }
+    },
+    openDmFromPanel (dm) {
+      this.dmPanelOpen = false
+      this.openDirectMessage(dm)
     },
     handleDmQuery () {
       const dmId = this.$route.query.dm
@@ -1372,6 +1446,22 @@ export default {
       })
     },
 
+    async loadSupportContact () {
+      try {
+        const res = await this.$axios.$get(process.env.API_SUPPORT_CONTACT)
+        const s = res.result
+        if (!s || !s.userId) { return }
+        if (String(s.userId) === String(this.user._id)) { return }
+        this.supportContact = {
+          friendId: s.userId,
+          displayName: 'ผู้ดูแลระบบ',
+          fullname: s.displayName || 'ผู้ดูแลระบบ',
+          avatar: s.avatar ? this.resolveAsset(s.avatar) : null,
+          status: s.online ? 'online' : 'offline'
+        }
+      } catch (e) {}
+    },
+
     async loadDMConversations () {
       try {
         const res = await this.$axios.$get(process.env.API_DM_CONVERSATIONS)
@@ -1409,7 +1499,11 @@ export default {
       this.loadDMConversations()
 
       if (!isOpen) {
-        const name = conv ? conv.displayName : 'เพื่อน'
+        this.dmFabPulse = true
+        clearTimeout(this._dmPulseT)
+        this._dmPulseT = setTimeout(() => { this.dmFabPulse = false }, 1600)
+        const isSupport = this.supportContact && String(m.friendId) === String(this.supportContact.friendId)
+        const name = isSupport ? 'ผู้ดูแลระบบ' : (conv ? conv.displayName : 'เพื่อน')
         this.showNotification(`ข้อความใหม่จาก ${name}`, m.content)
         this.$swal({
           toast: true,
@@ -3989,35 +4083,217 @@ select.cr-input option {
 .friend-menu button.danger { color: var(--coral); }
 .friend-menu button.danger:hover { background: rgba(255, 90, 69, 0.16); color: #ff8a76; }
 
-.dm-list { padding: 0 12px; }
+.dm-fab {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--coral), var(--violet));
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s ease;
+}
 
-.empty-dm {
+.dm-fab:hover { transform: translateY(-2px) scale(1.04); }
+.dm-fab.open { background: var(--bg-panel-raised); border: 1px solid var(--border-hair); }
+.dm-fab.pulse { animation: dm-fab-pulse 0.5s ease 2; }
+
+@keyframes dm-fab-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45); }
+  50% { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(255, 90, 69, 0.18), 0 10px 28px rgba(0, 0, 0, 0.45); }
+}
+
+.dm-fab-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--coral);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--fw-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-app);
+}
+
+.dm-launcher-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 102;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+}
+
+.dm-launcher-panel {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 103;
+  width: 344px;
+  max-width: calc(100vw - 32px);
+  height: min(560px, calc(100dvh - 140px));
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hair);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dm-launcher-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-hair);
+}
+
+.dm-launcher-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: var(--fw-black);
+  color: var(--text-cream);
+}
+
+.dm-launcher-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dm-launcher-close:hover { background: rgba(255, 255, 255, 0.07); color: var(--text-cream); }
+
+.dm-launcher-search {
+  position: relative;
+  padding: 10px 12px;
+}
+
+.dm-launcher-search i {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.dm-launcher-search input {
+  width: 100%;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-hair);
+  border-radius: 999px;
+  color: var(--text-cream);
+  font-size: 13px;
+  padding: 8px 14px 8px 34px;
+  outline: none;
+}
+
+.dm-launcher-search input:focus { border-color: var(--violet); }
+
+.dm-launcher-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px 10px;
+}
+
+.dm-launcher-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 18px 12px;
-  color: var(--text-muted);
-  font-size: var(--fs-body);
+  gap: 6px;
+  padding: 40px 20px;
   text-align: center;
+  color: var(--text-muted);
 }
 
-.empty-dm i { font-size: 22px; margin-bottom: 8px; opacity: 0.6; }
+.dm-launcher-empty i { font-size: 26px; opacity: 0.5; }
+.dm-launcher-empty small { font-size: 11px; opacity: 0.7; }
 
-.dm-item {
+.dm-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  margin: 2px 0;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: transparent;
   border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  text-align: left;
+  transition: background-color 0.15s ease;
 }
 
-.dm-item:hover { background: rgba(255, 255, 255, 0.06); }
-.dm-item.active { background: rgba(124, 108, 245, 0.2); }
-.dm-item.unread { background: rgba(255, 90, 69, 0.08); }
+.dm-row:hover { background: rgba(255, 255, 255, 0.06); }
+.dm-row.unread { background: rgba(255, 90, 69, 0.08); }
+.dm-row.unread .dm-name { color: var(--text-cream); font-weight: var(--fw-black); }
+.dm-row.unread .dm-last-message { color: var(--text-body); font-weight: var(--fw-semibold); }
+
+.dm-row-support {
+  border-radius: 0;
+  margin: 0 -8px 4px;
+  padding-left: 18px;
+  padding-right: 18px;
+  border-bottom: 1px solid var(--border-hair);
+}
+
+.dm-row-support .dm-name { color: var(--text-cream); }
+
+.dm-avatar-support {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--violet), var(--coral));
+  color: #fff;
+  font-size: 13px;
+}
+
+.dm-launcher-enter-active,
+.dm-launcher-leave-active { transition: opacity 0.18s ease, transform 0.18s ease; }
+.dm-launcher-enter,
+.dm-launcher-leave-to { opacity: 0; transform: translateY(12px) scale(0.98); }
+
+@media (max-width: 768px) {
+  .dm-launcher-backdrop { display: block; }
+  .dm-launcher-panel {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    height: 82dvh;
+    border-radius: 18px 18px 0 0;
+  }
+  .dm-fab {
+    width: 52px;
+    height: 52px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: calc(16px + env(safe-area-inset-right));
+  }
+}
 
 .dm-avatar {
   position: relative;
@@ -4058,11 +4334,6 @@ select.cr-input option {
   text-overflow: ellipsis;
 }
 
-.dm-item.unread .dm-name {
-  color: var(--text-cream);
-  font-weight: var(--fw-black);
-}
-
 .dm-last-message {
   display: block;
   font-size: var(--fs-small);
@@ -4071,11 +4342,6 @@ select.cr-input option {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
-}
-
-.dm-item.unread .dm-last-message {
-  color: var(--text-body);
-  font-weight: var(--fw-semibold);
 }
 
 .dm-you-icon { font-size: 9px; margin-right: 4px; opacity: 0.6; }
