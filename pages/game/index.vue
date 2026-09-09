@@ -74,8 +74,8 @@
             v-for="room in rooms"
             :key="room.roomId"
             class="room-card"
-            :class="{ 'room-over': room.gameOver }"
-            @click="!room.gameOver && joinRoom(room.roomId)"
+            :class="{ 'room-over': room.gameOver || room.playerCount >= maxPlayers }"
+            @click="!room.gameOver && room.playerCount < maxPlayers && joinRoom(room.roomId)"
           >
             <div class="room-card-top">
               <span class="room-name">{{ room.roomId }}</span>
@@ -86,18 +86,21 @@
             <div class="room-card-stats">
               <div class="stat">
                 <i class="fas fa-users" />
-                <span>{{ room.playerCount }} ผู้เล่น</span>
+                <span>{{ room.playerCount }}/{{ maxPlayers }} ผู้เล่น</span>
               </div>
               <div class="stat">
                 <i class="fas fa-skull-crossbones" />
                 <span>Wave {{ room.wave }}</span>
               </div>
             </div>
-            <button v-if="!room.gameOver" class="join-btn">
+            <button v-if="!room.gameOver && room.playerCount < maxPlayers" class="join-btn">
               เข้าร่วม <i class="fas fa-chevron-right" />
             </button>
-            <div v-else class="ended-label">
+            <div v-else-if="room.gameOver" class="ended-label">
               จบเกมแล้ว
+            </div>
+            <div v-else class="ended-label">
+              ห้องเต็ม ({{ maxPlayers }}/{{ maxPlayers }})
             </div>
           </div>
         </div>
@@ -201,7 +204,8 @@ export default {
       pollInterval: null,
       leaderboard: [],
       myStats: null,
-      avatarBroken: false
+      avatarBroken: false,
+      maxPlayers: 8
     }
   },
   computed: {

@@ -1,5 +1,10 @@
 <template>
-  <div ref="gamePage" class="game-page" tabindex="0">
+  <div
+    ref="gamePage"
+    class="game-page"
+    tabindex="0"
+    @pointerdown="refocusGame"
+  >
     <div class="hud">
       <div class="hud-left">
         <div class="hp-bar-wrap">
@@ -46,7 +51,7 @@
     </div>
 
     <div class="mini-scoreboard">
-      <div v-for="score in leaderboard" :key="score.playerId" class="sb-row" :class="{ 'sb-me': score.playerId === myId }">
+      <div v-for="score in topLeaderboard" :key="score.playerId" class="sb-row" :class="{ 'sb-me': score.playerId === myId }">
         <span class="sb-name">{{ score.username || getPlayerName(score.playerId) }}</span>
         <span class="sb-score">{{ score.score }}</span>
         <span class="sb-kills">☠ {{ score.kills }}</span>
@@ -94,6 +99,18 @@
         <div class="reconnect-box">
           <i class="fas fa-wifi" />
           <p>การเชื่อมต่อหลุด — กำลังเชื่อมต่อใหม่...</p>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="fatalError" class="reconnect-overlay">
+        <div class="reconnect-box">
+          <i class="fas fa-triangle-exclamation" />
+          <p>{{ fatalError }}</p>
+          <button class="go-btn go-leave" @click="leaveGame">
+            <i class="fas fa-door-open" /> กลับไปที่ล็อบบี้
+          </button>
         </div>
       </div>
     </transition>
@@ -200,7 +217,7 @@
               <span>คะแนน</span>
               <span>ฆ่า</span>
             </div>
-            <div v-for="(p, i) in leaderboard" :key="p.playerId || i" class="lb-row" :class="{ 'lb-first': i === 0 }">
+            <div v-for="(p, i) in topLeaderboard" :key="p.playerId || i" class="lb-row" :class="{ 'lb-first': i === 0 }">
               <span class="lb-rank">#{{ i + 1 }}</span>
               <span class="lb-name">{{ p.username || getPlayerName(p.playerId) }}</span>
               <span class="lb-score">{{ p.score }}</span>
@@ -227,6 +244,8 @@ import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
 import heroMShoot from '~/assets/images/hero_m_shoot.png'
 import heroMDead from '~/assets/images/hero_m_dead.png'
+import heroFShoot from '~/assets/images/hero_f_shoot.png'
+import heroFDead from '~/assets/images/hero_f_dead.png'
 import heroSpriteMeta from '~/assets/images/hero_sprites.json'
 
 const STICK_RADIUS = 46
@@ -288,7 +307,9 @@ export default {
       lastTouchShot: 0,
       shootFx: {},
       atkSeen: {},
-      deathFx: {}
+      deathFx: {},
+      fatalError: '',
+      mouseAimed: false
     }
   },
   computed: {
@@ -304,6 +325,9 @@ export default {
       if (pct > 60) { return '#00ff50' }
       if (pct > 30) { return '#ffcc00' }
       return '#ff4040'
+    },
+    topLeaderboard () {
+      return this.leaderboard.slice(0, 10)
     },
     sortedPlayers () {
       return this.leaderboard.map((score) => {
@@ -406,10 +430,14 @@ export default {
     this.user = stored ? JSON.parse(stored) : { username: 'Guest', fullname: 'Guest' }
 
     this.setupCanvas()
+    this.$nextTick(() => requestAnimationFrame(this.setupCanvas))
     this.setupSocketListeners()
     this.setupRenderer()
 
     this.joinGame()
+    this._joinRetry = setInterval(() => {
+      if (!this.joined) { this.joinGame() }
+    }, 3500)
 
     this.inputInterval = setInterval(() => this.sendInput(), 50)
 
@@ -418,6 +446,7 @@ export default {
     this.renderLoop()
 
     window.addEventListener('resize', this.setupCanvas)
+    window.addEventListener('orientationchange', this.setupCanvas)
     window.addEventListener('keydown', this.onKeyDown)
     window.addEventListener('keyup', this.onKeyUp)
     window.addEventListener('blur', this.clearKeys)
@@ -435,8 +464,10 @@ export default {
     clearInterval(this.inputInterval)
     clearInterval(this.countdownInterval)
     clearInterval(this.timerInterval)
+    clearInterval(this._joinRetry)
     clearTimeout(this._reinforceT)
     window.removeEventListener('resize', this.setupCanvas)
+    window.removeEventListener('orientationchange', this.setupCanvas)
     window.removeEventListener('keydown', this.onKeyDown)
     window.removeEventListener('keyup', this.onKeyUp)
     window.removeEventListener('blur', this.clearKeys)
@@ -448,17 +479,34 @@ export default {
     setupCanvas () {
       const canvas = this.$refs.canvas
       if (!canvas) { return }
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight - 60
-      this.canvasW = canvas.width
-      this.canvasH = canvas.height
+      // ใช้ขนาดจริงที่ canvas ถูก layout (flex) ไม่ใช่ innerHeight - 60 คงที่
+      // เพราะ HUD สูงไม่เท่า 60 เสมอ (safe-area จอมีติ่ง / จอย่อ) และ 100dvh != innerHeight บนมือถือ
+      const rect = canvas.getBoundingClientRect()
+      const w = Math.round(rect.width) || window.innerWidth
+      const h = Math.round(rect.height) || Math.max(1, window.innerHeight - 60)
+      canvas.width = w
+      canvas.height = h
+      this.canvasW = w
+      this.canvasH = h
+    },
+
+    canvasPoint (e) {
+      const canvas = this.$refs.canvas
+      if (!canvas) { return { x: 0, y: 0 } }
+      const rect = canvas.getBoundingClientRect()
+      const sx = rect.width ? canvas.width / rect.width : 1
+      const sy = rect.height ? canvas.height / rect.height : 1
+      return {
+        x: (e.clientX - rect.left) * sx,
+        y: (e.clientY - rect.top) * sy
+      }
     },
 
     setupRenderer () {
       this.renderer = new GameRenderer(this.$refs.canvas)
       this.renderer.loadHeroSprites({
         m: { walk: heroMWalk, shoot: heroMShoot, dead: heroMDead },
-        f: { walk: heroFWalk, shoot: heroMShoot, dead: heroMDead }
+        f: { walk: heroFWalk, shoot: heroFShoot, dead: heroFDead }
       }, heroSpriteMeta)
     },
 
@@ -509,12 +557,21 @@ export default {
     clearKeys () {
       this.keys = {}
     },
+    refocusGame () {
+      if (this.$refs.gamePage) { this.$refs.gamePage.focus({ preventScroll: true }) }
+    },
     onMouseMove (e) {
-      this.mouseX = e.clientX
-      this.mouseY = e.clientY - 60
+      const p = this.canvasPoint(e)
+      this.mouseX = p.x
+      this.mouseY = p.y
+      this.mouseAimed = true
     },
     onMouseDown (e) {
       if (e.button !== 0) { return }
+      const p = this.canvasPoint(e)
+      this.mouseX = p.x
+      this.mouseY = p.y
+      this.mouseAimed = true
       const angle = this.getShootAngle()
       this.$socket.emit('playerShoot', { angle })
       this._muzzle(angle)
@@ -540,37 +597,47 @@ export default {
     sendInput () {
       if (!this.myId) { return }
 
-      let dx, dy, angle
+      // รับทั้งคีย์บอร์ดและจอยพร้อมกันเสมอ — device mode ของ browser จำลอง touch
+      // ทำให้ isTouch เป็น true แล้วคีย์บอร์ดใช้ไม่ได้ถ้าแยกทางกันแบบเดิม
+      const kdx = (this.keys.d || this.keys.arrowright ? 1 : 0) -
+                  (this.keys.a || this.keys.arrowleft ? 1 : 0)
+      const kdy = (this.keys.s || this.keys.arrowdown ? 1 : 0) -
+                  (this.keys.w || this.keys.arrowup ? 1 : 0)
 
-      if (this.isTouch) {
+      const stickActive = this.moveStick.active && (this.moveStick.x !== 0 || this.moveStick.y !== 0)
+      const aiming = this.aimStick.active && (this.aimStick.x !== 0 || this.aimStick.y !== 0)
+
+      let dx = 0
+      let dy = 0
+      if (kdx !== 0 || kdy !== 0) {
+        dx = kdx
+        dy = kdy
+      } else if (stickActive) {
         dx = this.moveStick.x
         dy = this.moveStick.y
-        const aiming = this.aimStick.active && (this.aimStick.x || this.aimStick.y)
-        if (aiming) {
-          angle = Math.atan2(this.aimStick.y, this.aimStick.x)
-        } else if (dx || dy) {
-          angle = Math.atan2(dy, dx)
-        } else {
-          angle = this.myPlayer ? this.myPlayer.angle : 0
-        }
-        this.$socket.emit('playerMove', { dx, dy, angle })
-        if (aiming) {
-          const now = Date.now()
-          if (now - this.lastTouchShot > 140) {
-            this.lastTouchShot = now
-            this.$socket.emit('playerShoot', { angle })
-            this._muzzle(angle)
-          }
-        }
-        return
       }
 
-      dx = (this.keys.d || this.keys.arrowright ? 1 : 0) -
-           (this.keys.a || this.keys.arrowleft ? 1 : 0)
-      dy = (this.keys.s || this.keys.arrowdown ? 1 : 0) -
-           (this.keys.w || this.keys.arrowup ? 1 : 0)
-      angle = this.getShootAngle()
+      let angle
+      if (aiming) {
+        angle = Math.atan2(this.aimStick.y, this.aimStick.x)
+      } else if (this.mouseAimed) {
+        angle = this.getShootAngle()
+      } else if (dx !== 0 || dy !== 0) {
+        angle = Math.atan2(dy, dx)
+      } else {
+        angle = this.myPlayer ? this.myPlayer.angle : 0
+      }
+
       this.$socket.emit('playerMove', { dx, dy, angle })
+
+      if (aiming) {
+        const now = Date.now()
+        if (now - this.lastTouchShot > 140) {
+          this.lastTouchShot = now
+          this.$socket.emit('playerShoot', { angle })
+          this._muzzle(angle)
+        }
+      }
     },
 
     stickFor (which) {
@@ -663,8 +730,21 @@ export default {
         this.myId = playerId
         this.joined = true
         this.reconnecting = false
+        this.fatalError = ''
+        clearInterval(this._joinRetry)
         if (mapSize) { this.mapW = mapSize.w; this.mapH = mapSize.h }
         if (map && this.renderer) { this.renderer.setMap(map) }
+      })
+
+      this.$socket.on('gameError', ({ error }) => {
+        clearInterval(this._joinRetry)
+        if (error === 'unauthorized') {
+          this.fatalError = 'เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่'
+        } else if (error === 'room_full') {
+          this.fatalError = 'ห้องนี้เต็มแล้ว (สูงสุด 8 คน) — ลองห้องอื่นหรือสร้างใหม่'
+        } else {
+          this.fatalError = 'เข้าห้องเกมไม่สำเร็จ ลองกลับไปที่ล็อบบี้แล้วเข้าใหม่'
+        }
       })
 
       this.$socket.on('gameState', (state) => {
@@ -714,6 +794,8 @@ export default {
         if (p && this.renderer) { this.renderer.bloodSplat(p.x, p.y, true) }
         this.$set(this.deathFx, playerId, Date.now())
         if (playerId === this.myId) {
+          this.upgradeOffer = null
+          this.upgradeBusy = false
           if (this.renderer) { this.renderer.shake(12) }
           this.$nextTick(() => this.$forceUpdate())
         }
@@ -725,7 +807,11 @@ export default {
           this.renderer.bloodSplat(p.x, p.y, true)
           this.renderer.floatText(p.x, p.y - 24, 'DOWN!', '#ff4040')
         }
-        if (playerId === this.myId && this.renderer) { this.renderer.shake(10) }
+        if (playerId === this.myId) {
+          this.upgradeOffer = null
+          this.upgradeBusy = false
+          if (this.renderer) { this.renderer.shake(10) }
+        }
       })
 
       this.$socket.on('playerRevived', ({ playerId }) => {
@@ -827,7 +913,7 @@ export default {
 
     _offAll () {
       const events = [
-        'gameJoined', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
+        'gameJoined', 'gameError', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
         'playerDied', 'playerDowned', 'playerRevived', 'zombieKilled', 'gameOver',
         'gameRestarted', 'waveReinforce', 'pickupCollected', 'upgradeOffer', 'upgradeApplied'
       ]
@@ -1089,6 +1175,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .game-canvas {
   display: block;
   flex: 1;
+  min-height: 0;
+  min-width: 0;
   cursor: crosshair;
 }
 
@@ -1182,6 +1270,18 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   color: #ffcc00;
   margin-bottom: 12px;
   animation: pulse-warning 1s infinite;
+}
+
+.reconnect-box .go-btn {
+  margin: 16px auto 0;
+  min-width: 200px;
+  animation: none;
+}
+.reconnect-box .go-btn i {
+  font-size: 12px;
+  margin: 0;
+  color: inherit;
+  animation: none;
 }
 
 .wave-announce {

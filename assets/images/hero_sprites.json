@@ -34,5 +34,30 @@
       "cw": 295,
       "ch": 271
     }
+  },
+  "skins": {
+    "f": {
+      "anims": {
+        "shoot": {
+          "file": "hero_f_shoot.png",
+          "frames": 8,
+          "cols": 8,
+          "fps": 16,
+          "cw": 143,
+          "ch": 271,
+          "fireBase": 2,
+          "fireLoop": 3
+        },
+        "dead": {
+          "file": "hero_f_dead.png",
+          "frames": 8,
+          "cols": 8,
+          "fps": 10,
+          "cw": 276,
+          "ch": 255,
+          "downedFrame": 3
+        }
+      }
+    }
   }
 }

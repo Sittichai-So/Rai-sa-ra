@@ -487,26 +487,32 @@ export default class GameRenderer {
   }
 
   _drawHeroSprite (ctx, o) {
-    const set = this.hero[o.female ? 'f' : 'm']
+    const skin = o.female ? 'f' : 'm'
+    const set = this.hero[skin]
     const meta = this.heroMeta
+    const skinMeta = (meta.skins && meta.skins[skin]) || null
+    const animOf = name => (skinMeta && skinMeta.anims && skinMeta.anims[name]) || meta.anims[name]
+    const facingOf = name => (skinMeta && skinMeta.facing && skinMeta.facing[name]) || meta.facing[name]
     const now = o.now || Date.now()
     const facingRight = Math.cos(o.angle || 0) >= 0
 
     let img = set.walk
-    let a = meta.anims.walk
-    let sheetFacing = meta.facing.walk
+    let a = animOf('walk')
+    let sheetFacing = facingOf('walk')
     let fi = 0
 
     if (o.mode === 'dead' && set.dead && set.dead.complete && set.dead.naturalWidth) {
-      img = set.dead; a = meta.anims.dead; sheetFacing = meta.facing.dead
+      img = set.dead; a = animOf('dead'); sheetFacing = facingOf('dead')
       const t = o.deadElapsed != null ? o.deadElapsed : 9999
       fi = Math.min(a.frames - 1, Math.floor(t / (1000 / a.fps)))
     } else if (o.mode === 'downed' && set.dead && set.dead.complete && set.dead.naturalWidth) {
-      img = set.dead; a = meta.anims.dead; sheetFacing = meta.facing.dead
-      fi = 3
+      img = set.dead; a = animOf('dead'); sheetFacing = facingOf('dead')
+      fi = a.downedFrame != null ? a.downedFrame : 3
     } else if (o.shooting && set.shoot && set.shoot.complete && set.shoot.naturalWidth) {
-      img = set.shoot; a = meta.anims.shoot; sheetFacing = meta.facing.shoot
-      fi = 3 + Math.floor((now / (1000 / a.fps)) % 3)
+      img = set.shoot; a = animOf('shoot'); sheetFacing = facingOf('shoot')
+      const fb = a.fireBase != null ? a.fireBase : 3
+      const fl = a.fireLoop != null ? a.fireLoop : 3
+      fi = fb + Math.floor((now / (1000 / a.fps)) % fl)
     } else if (o.moving) {
       fi = Math.floor(now / (1000 / a.fps)) % a.frames
     }
@@ -514,8 +520,8 @@ export default class GameRenderer {
 
     const cw = a.cw || meta.cell.w
     const ch = a.ch || meta.cell.h
-    const sx = (fi % a.cols) * cw
-    const sy = Math.floor(fi / a.cols) * ch
+    const sx = Math.round((fi % a.cols) * cw) + (a.sx || 0)
+    const sy = (a.sy || 0) + Math.floor(fi / a.cols) * ch
 
     const drawH = o.rad * 3.0
     const drawW = drawH * (cw / ch)
