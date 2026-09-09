@@ -52,14 +52,14 @@
                 </div>
               </div>
 
-              <b-btn
-                variant="danger"
-                size="sm"
-                class="leave-channel-btn"
-                @click="removeJoinRoom(room._id)"
+              <button
+                class="channel-menu-btn"
+                type="button"
+                aria-label="จัดการห้อง"
+                @click.stop="openRoomMenu(room, $event)"
               >
-                <i class="fas fa-sign-out-alt" />
-              </b-btn>
+                <i class="fas fa-ellipsis-v" />
+              </button>
             </div>
           </div>
         </div>
@@ -847,6 +847,26 @@
         </button>
       </div>
     </div>
+
+    <div
+      v-if="roomMenu.open"
+      class="friend-menu-backdrop"
+      @click="closeRoomMenu"
+      @contextmenu.prevent="closeRoomMenu"
+    >
+      <div
+        class="friend-menu"
+        :style="roomMenuStyle"
+        @click.stop
+      >
+        <button type="button" @click="rmOpen">
+          <i class="fas fa-comments" /> ไปที่ห้องแชท
+        </button>
+        <button type="button" class="danger" @click="rmLeave">
+          <i class="fas fa-sign-out-alt" /> ออกจากห้อง
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -892,6 +912,7 @@ export default {
       loadingSent: false,
       cancellingRequest: null,
       friendMenu: { open: false, friend: null, x: 0, y: 0 },
+      roomMenu: { open: false, room: null, x: 0, y: 0 },
       showProfileModal: false,
       profileFriend: null,
       profileData: null,
@@ -1030,6 +1051,17 @@ export default {
         if (top + H > window.innerHeight - 8) { top = window.innerHeight - H - 8 }
       }
       return { top: top + 'px', left: left + 'px' }
+    },
+    roomMenuStyle () {
+      const W = 190
+      const H = 104
+      let left = this.roomMenu.x - W
+      let top = this.roomMenu.y
+      if (typeof window !== 'undefined') {
+        if (left < 8) { left = 8 }
+        if (top + H > window.innerHeight - 8) { top = window.innerHeight - H - 8 }
+      }
+      return { top: top + 'px', left: left + 'px' }
     }
   },
   watch: {
@@ -1069,13 +1101,17 @@ export default {
 
     this._onResize = () => {
       this.closeFriendMenu()
+      this.closeRoomMenu()
       if (window.innerWidth > 768 && this.sidebarOpen) {
         this.closeSidebar()
       }
     }
     window.addEventListener('resize', this._onResize)
 
-    this._onSidebarScroll = () => this.closeFriendMenu()
+    this._onSidebarScroll = () => {
+      this.closeFriendMenu()
+      this.closeRoomMenu()
+    }
     this.$nextTick(() => {
       const sc = this.$el.querySelector('.sidebar-content')
       if (sc) { sc.addEventListener('scroll', this._onSidebarScroll, { passive: true }) }
@@ -1210,6 +1246,31 @@ export default {
       const f = this.friendMenu.friend
       this.closeFriendMenu()
       if (f) { this.removeFriend(f.friendId) }
+    },
+
+    openRoomMenu (room, event) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      if (this.roomMenu.open && this.roomMenu.room && this.roomMenu.room._id === room._id) {
+        this.closeRoomMenu()
+        return
+      }
+      this.roomMenu = { open: true, room, x: rect.right, y: rect.bottom + 6 }
+    },
+
+    closeRoomMenu () {
+      this.roomMenu.open = false
+    },
+
+    rmOpen () {
+      const r = this.roomMenu.room
+      this.closeRoomMenu()
+      if (r) { this.goToRoom(r._id) }
+    },
+
+    rmLeave () {
+      const r = this.roomMenu.room
+      this.closeRoomMenu()
+      if (r) { this.removeJoinRoom(r._id) }
     },
 
     escapeHtml (s) {
@@ -1476,6 +1537,21 @@ export default {
       }
     },
     async removeJoinRoom (roomId) {
+      const room = this.rooms.find(r => r._id === roomId)
+      const c = await this.$swal({
+        title: 'ออกจากห้องนี้?',
+        text: room
+          ? `คุณจะออกจากห้อง "${room.name}" และไม่เห็นข้อความในห้องนี้อีก`
+          : 'คุณจะออกจากห้องนี้',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ออกจากห้อง',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!c.isConfirmed) { return }
+
       try {
         const token = localStorage.getItem('token')
 
@@ -1583,8 +1659,9 @@ export default {
         })
 
         if (result.status === 'success') {
-          await this.$swal({ icon: 'success', title: 'สำเร็จ', text: 'เข้าร่วมห้องสำเร็จ!' })
           await this.getRoom()
+          this.friendToast('success', 'เข้าร่วมห้องสำเร็จ!')
+          this.goToRoom(roomId)
         } else {
           await this.$swal({ icon: 'error', title: 'ผิดพลาด', text: result.message })
         }
@@ -2328,14 +2405,31 @@ export default {
   font-weight: var(--fw-black);
 }
 
-.leave-channel-btn {
-  opacity: 0;
-  transition: all 0.2s ease;
+.channel-menu-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   margin-left: 8px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  opacity: 0;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.2s ease;
 }
 
-.channel-item:hover .leave-channel-btn {
+.channel-item:hover .channel-menu-btn {
   opacity: 1;
+}
+
+.channel-menu-btn:hover {
+  background: rgba(124, 108, 245, 0.25);
+  color: #fff;
 }
 
 .channels-list,
@@ -3358,6 +3452,11 @@ select.cr-input {
   padding-right: 36px;
 }
 
+select.cr-input option {
+  background: #1D1B25;
+  color: #F6F1E7;
+}
+
 .cr-type-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3749,6 +3848,7 @@ select.cr-input {
   .filter-tabs { gap: 8px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 6px; }
   .filter-tab { padding: 9px 16px; font-size: 12px; }
   .categories-filter { padding: 12px 18px; }
+  .channel-menu-btn { opacity: 1; }
 }
 
 @media (max-width: 640px) {
