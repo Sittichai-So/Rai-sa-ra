@@ -1,4 +1,6 @@
-export default function ({ $axios, redirect, $swal }) {
+import { clearAuth } from '~/utils/auth'
+
+export default function ({ $axios, redirect, $swal, store }) {
   $axios.onRequest((config) => {
     const token = localStorage.getItem('token')
     if (token) {
@@ -20,8 +22,8 @@ export default function ({ $axios, redirect, $swal }) {
         confirmButtonText: 'ตกลง'
       })
 
-      localStorage.removeItem('token')
-      localStorage.removeItem('userData')
+      clearAuth()
+      if (store) { store.commit('setUserData', null) }
       redirect('/login')
       return
     }

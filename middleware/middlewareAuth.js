@@ -1,8 +1,10 @@
-export default function ({ store, redirect }) {
+import { ensureCleanSession } from '~/utils/auth'
+
+export default function ({ redirect }) {
   if (!process.client) { return }
 
-  const token = localStorage.getItem('token')
-  if (!token) {
+  const s = ensureCleanSession()
+  if (!s.valid) {
     return redirect('/login')
   }
 }

@@ -7,6 +7,7 @@
     </div>
 
     <div class="auth-card">
+      <already-signed-in />
       <div class="auth-header text-center">
         <span class="auth-eyebrow">RAI-SA-RA</span>
         <h2 class="title">
@@ -266,9 +267,12 @@
 </template>
 
 <script>
+import AlreadySignedIn from '~/components/AlreadySignedIn.vue'
+
 let usernameCheckTimeout = null
 
 export default {
+  components: { AlreadySignedIn },
   layout: 'login',
   middleware: 'guest',
   data () {

@@ -1,19 +1,17 @@
 import axios from 'axios'
+import { ensureCleanSession } from '~/utils/auth'
 
 export default async ({ store }) => {
   if (!process.client) { return }
 
-  const token = localStorage.getItem('token')
-  const userData = localStorage.getItem('userData')
-  if (!token || !userData) { return }
-
-  let parsedUser
-  try {
-    parsedUser = JSON.parse(userData)
-  } catch (e) {
-    localStorage.removeItem('userData')
+  const s = ensureCleanSession()
+  if (!s.valid) {
+    store.commit('setUserData', null)
     return
   }
+
+  const token = s.token
+  const parsedUser = s.user
 
   store.commit('setUserData', parsedUser)
 

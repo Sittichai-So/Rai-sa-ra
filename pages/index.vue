@@ -32,12 +32,22 @@
           </div>
 
           <b-navbar-nav class="ml-auto">
-            <b-nav-item class="nav-item-custom login-btn" @click="joinCommunity">
-              <i class="fa-solid fa-right-to-bracket" /> Login
-            </b-nav-item>
-            <b-nav-item class="nav-item-custom join-btn" @click="goRegister">
-              <i class="fas fa-user-plus mr-1" />สมัครเข้าร่วมกับเรา
-            </b-nav-item>
+            <template v-if="account">
+              <b-nav-item class="nav-item-custom login-btn" @click="enterApp">
+                <i class="fa-solid fa-right-to-bracket" /> เข้าแอป · {{ account.name }}
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom join-btn" @click="signOut">
+                <i class="fas fa-right-from-bracket mr-1" />ออกจากระบบ
+              </b-nav-item>
+            </template>
+            <template v-else>
+              <b-nav-item class="nav-item-custom login-btn" @click="joinCommunity">
+                <i class="fa-solid fa-right-to-bracket" /> Login
+              </b-nav-item>
+              <b-nav-item class="nav-item-custom join-btn" @click="goRegister">
+                <i class="fas fa-user-plus mr-1" />สมัครเข้าร่วมกับเรา
+              </b-nav-item>
+            </template>
           </b-navbar-nav>
         </b-collapse>
       </b-container>
@@ -348,10 +358,13 @@
 </template>
 
 <script>
+import { ensureCleanSession, clearAuth } from '~/utils/auth'
+
 export default {
   name: 'RaiSaRaLanding',
   data () {
     return {
+      account: null,
       onlineUsers: 1234,
       animatedStats: [0, 0, 0, 0],
       statsAnimated: false,
@@ -444,6 +457,7 @@ export default {
     }
   },
   mounted () {
+    this.refreshAccount()
     this.setupScrollAnimation()
     this.startChatAnimation()
     this.fetchStats()
@@ -457,6 +471,33 @@ export default {
   methods: {
     getValidationState ({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null
+    },
+    refreshAccount () {
+      const s = ensureCleanSession()
+      if (s.valid) {
+        const u = s.user || {}
+        this.account = {
+          name: u.displayName || u.fullname || u.username || 'ผู้ใช้',
+          isAdmin: (u.role || s.payload.role) === 'admin'
+        }
+      } else {
+        this.account = null
+      }
+    },
+    enterApp () {
+      this.$router.push('/chat/chat')
+    },
+    signOut () {
+      try {
+        if (this.$socket) {
+          this.$socket.emit('statusChanged', { status: 'offline' })
+          this.$socket.disconnect()
+          this.$socket.connect()
+        }
+      } catch (e) {}
+      clearAuth()
+      this.$store.commit('setUserData', null)
+      this.account = null
     },
     joinCommunity () {
       this.$router.push('/login')
