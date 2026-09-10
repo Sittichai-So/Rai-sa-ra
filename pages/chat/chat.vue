@@ -3982,9 +3982,10 @@ select.cr-input option {
   .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; height: 100dvh; width: 320px; z-index: 100; transition: left 0.3s ease; }
   .sidebar.open { left: 0; }
   .main-content { width: 100%; }
-  .main-header { flex-direction: column; gap: 14px; align-items: stretch; padding: 16px 18px; padding-top: calc(80px + env(safe-area-inset-top)); }
-  .header-left h1 { font-size: 22px; }
-  .header-left p { font-size: var(--fs-small); }
+  .main-header { flex-direction: column; gap: 10px; align-items: stretch; padding: 12px 18px; padding-top: calc(70px + env(safe-area-inset-top)); }
+  .header-left .eyebrow { margin-bottom: 2px; }
+  .header-left h1 { font-size: 20px; margin: 0; }
+  .header-left p { display: none; }
   .search-container { width: 100%; }
   .community-hero { display: none; }
   .rooms-grid { grid-template-columns: 1fr; gap: 16px; }
@@ -3998,8 +3999,8 @@ select.cr-input option {
 @media (max-width: 640px) {
   .workspace-icon { width: 38px; height: 38px; font-size: 16px; }
   .workspace-details h4 { font-size: 14px; }
-  .main-header { padding: calc(72px + env(safe-area-inset-top)) 16px 14px; }
-  .header-left h1 { font-size: 20px; }
+  .main-header { padding: calc(66px + env(safe-area-inset-top)) 16px 12px; }
+  .header-left h1 { font-size: 19px; }
   .rooms-container { padding: 12px 14px; }
   .room-card { padding: 20px; }
   .room-icon { width: 48px; height: 48px; font-size: 18px; }

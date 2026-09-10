@@ -26,7 +26,7 @@
         <div
           v-for="(message, index) in group"
           :key="message._id || (message.createdAt + '-' + index)"
-          :class="['message-wrapper', { 'own-message': message.userId === currentUserId }]"
+          :class="['message-wrapper', { 'own-message': message.userId === currentUserId, active: activeId === message._id }]"
           :data-message-id="message._id"
         >
           <div class="message-bubble-container d-flex align-items-start">
@@ -52,7 +52,7 @@
                 </div>
               </div>
 
-              <div :class="['message-bubble', message.userId === currentUserId ? 'own' : 'other']">
+              <div :class="['message-bubble', message.userId === currentUserId ? 'own' : 'other']" @click="onBubbleTap(message)">
                 <div v-if="message.userId !== currentUserId" class="sender-name">
                   {{ message.username }}
                 </div>
@@ -61,7 +61,7 @@
                   <div v-if="message.type === 'text'" class="message-text" v-text="message.content" />
 
                   <div v-else-if="message.type === 'image'" class="message-image">
-                    <img :src="message.fileUrl" :alt="message.content" class="img-fluid rounded" @click="showImageModal(message.fileUrl)">
+                    <img :src="message.fileUrl" :alt="message.content" class="img-fluid rounded" @click.stop="showImageModal(message.fileUrl)">
                     <div v-if="message.content" class="image-caption mt-1" v-text="message.content" />
                   </div>
 
@@ -214,6 +214,7 @@ export default {
       selectedImage: null,
       showReactionPickerModal: false,
       selectedMessageId: null,
+      activeId: null,
       reactionEmojis: ['❤️', '👍', '😂', '😮', '😢', '😡', '🎉', '🔥', '👏', '💯', '✨', '💪'],
       contextMenu: {
         show: false,
@@ -456,8 +457,19 @@ export default {
         message
       }
     },
-    hideContextMenu () {
+    hideContextMenu (e) {
       this.contextMenu.show = false
+      if (e && e.target && e.target.closest && !e.target.closest('.message-main')) {
+        this.activeId = null
+      }
+    },
+    onBubbleTap (message) {
+      if (this._hoverNone === undefined) {
+        this._hoverNone = typeof window !== 'undefined' && !!window.matchMedia &&
+          window.matchMedia('(hover: none)').matches
+      }
+      if (!this._hoverNone || !message) { return }
+      this.activeId = this.activeId === message._id ? null : message._id
     },
     copyMessage (message) {
       if (message.content) {
@@ -551,8 +563,13 @@ export default {
 }
 
 .message-wrapper {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
   max-width: 100%;
+}
+
+.message-wrapper.active {
+  position: relative;
+  z-index: 5;
 }
 
 .message-bubble-container {
@@ -779,7 +796,7 @@ export default {
 
 .quick-actions {
   position: absolute;
-  top: -17px;
+  top: -16px;
   display: flex;
   gap: 2px;
   padding: 2px;
@@ -797,17 +814,17 @@ export default {
 .message-main .quick-actions { right: 4px; }
 .message-wrapper.own-message .quick-actions { right: auto; left: 4px; }
 
-.message-wrapper:hover .quick-actions,
-.message-main:focus-within .quick-actions {
+.message-main:focus-within .quick-actions,
+.message-wrapper.active .quick-actions {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
 
-@media (hover: none) {
-  .quick-actions {
-    opacity: 0.55;
-    transform: none;
+@media (hover: hover) {
+  .message-wrapper:hover .quick-actions {
+    opacity: 1;
+    transform: translateY(0) scale(1);
     pointer-events: auto;
   }
 }
