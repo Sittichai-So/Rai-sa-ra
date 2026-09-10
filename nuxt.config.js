@@ -27,12 +27,12 @@ export default {
     },
     meta: [
       { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { hid: 'description', name: 'description', content: '' },
       { name: 'format-detection', content: 'telephone=no' }
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/3.png' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' }
     ]
   },
@@ -56,7 +56,8 @@ export default {
   components: true,
 
   buildModules: [
-    '@nuxtjs/eslint-module'
+    '@nuxtjs/eslint-module',
+    '@nuxtjs/pwa'
   ],
 
   modules: [
@@ -64,6 +65,27 @@ export default {
     '@nuxtjs/axios',
     'vue-sweetalert2/nuxt'
   ],
+
+  pwa: {
+    manifest: {
+      name: 'RAI-SA-RA',
+      short_name: 'RaiSaRa',
+      lang: 'th',
+      display: 'standalone',
+      start_url: '/chat/chat',
+      background_color: '#0c0b10',
+      theme_color: '#0c0b10'
+    },
+    meta: {
+      name: 'RAI-SA-RA',
+      theme_color: '#0c0b10',
+      mobileAppIOS: true,
+      appleStatusBarStyle: 'black-translucent',
+      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      favicon: false
+    },
+    workbox: false
+  },
 
   env: {
     NODE_ENV: process.env.NODE_ENV,
