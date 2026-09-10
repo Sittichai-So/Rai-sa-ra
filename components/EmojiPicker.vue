@@ -161,6 +161,7 @@ export default {
   --cream: #f6f3ed;
   --coral: #ff5c4d;
   --violet: #7c6ff5;
+  --violet-deep: #5b4fd6;
   --yellow: #ffc94d;
   --white: #ffffff;
   --line: 3px;
@@ -203,36 +204,9 @@ export default {
 }
 
 .picker-title {
-  font-family: 'Kanit', sans-serif;
+  font-family: 'Kanit', 'Noto Sans Thai', sans-serif;
   font-weight: 700;
-  font-size: 1rem;
-  color: var(--white);
-}
-
-.close-picker {
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid var(--ink);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--white);
   font-size: 0.9rem;
-}
-
-.close-picker:hover {
-  background: var(--coral);
-  transform: translate(-2px, -2px);
-  box-shadow: 2px 2px 0 var(--ink);
-}
-
-.picker-title {
-  font-size: 0.85rem;
-  font-weight: 700;
   color: var(--white);
 }
 
@@ -241,13 +215,13 @@ export default {
   border: var(--line-sm) solid var(--ink);
   color: var(--white);
   cursor: pointer;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   transition: transform 0.15s ease;
 }
 

@@ -39,7 +39,7 @@
           </div>
 
           <p class="rt-hint">
-            คุณมี <CoinIcon :size="12" /> {{ balance }} เหรียญ · ต่อจากวันหมดอายุเดิม +30 วัน
+            คุณมี <CoinIcon :size="12" /> {{ balance }} เหรียญ · เลือกจำนวนวันที่ต้องการเก็บข้อความ นับต่อจากวันหมดอายุเดิม
           </p>
         </div>
 
@@ -187,9 +187,12 @@ export default {
 .rt-title { margin: 0; font-weight: 700; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px; }
 
 .rt-close {
+  flex-shrink: 0;
   width: 34px; height: 34px; border-radius: 50%;
   border: 2px solid #101014; background: rgba(255, 255, 255, 0.18);
   color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; line-height: 1;
 }
 .rt-close:hover { background: #ff5c4d; }
 
