@@ -328,7 +328,7 @@ export default {
       fatalError: '',
       mouseAimed: false,
       dashReady: true,
-      dashCooldownMs: 1400
+      dashCooldownMs: 3000
     }
   },
   computed: {
@@ -1124,7 +1124,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   left: 0; right: 0; bottom: 0;
   background: rgba(255,255,255,0.14);
   height: 100%;
-  animation: dash-cd var(--dash-cd, 1400ms) linear forwards;
+  animation: dash-cd var(--dash-cd, 3000ms) linear forwards;
 }
 @keyframes dash-cd { from { height: 100%; } to { height: 0; } }
 .hp-bar {
