@@ -19,6 +19,14 @@
           <span v-if="myReloading" class="ammo-num">รีโหลด...</span>
           <span v-else class="ammo-num">{{ myAmmo }}<small>/{{ myMag }}</small></span>
         </div>
+        <div
+          class="dash-pip"
+          :class="{ cooling: !dashReady }"
+          :style="{ '--dash-cd': dashCooldownMs + 'ms' }"
+          title="สไลด์หลบ (Space)"
+        >
+          <i class="fas fa-person-running" />
+        </div>
       </div>
       <div class="hud-center">
         <div class="wave-display">
@@ -91,6 +99,13 @@
         @touchstart.prevent="$socket.emit('playerReload')"
       >
         <i class="fas fa-rotate" />
+      </button>
+      <button
+        class="dash-btn"
+        :class="{ cooling: !dashReady }"
+        @touchstart.prevent="doDash"
+      >
+        <i class="fas fa-person-running" />
       </button>
     </div>
 
@@ -246,6 +261,8 @@ import heroMShoot from '~/assets/images/hero_m_shoot.png'
 import heroMDead from '~/assets/images/hero_m_dead.png'
 import heroFShoot from '~/assets/images/hero_f_shoot.png'
 import heroFDead from '~/assets/images/hero_f_dead.png'
+import heroMSlide from '~/assets/images/hero_m_slide.png'
+import heroFSlide from '~/assets/images/hero_f_slide.png'
 import heroSpriteMeta from '~/assets/images/hero_sprites.json'
 
 const STICK_RADIUS = 46
@@ -309,7 +326,9 @@ export default {
       atkSeen: {},
       deathFx: {},
       fatalError: '',
-      mouseAimed: false
+      mouseAimed: false,
+      dashReady: true,
+      dashCooldownMs: 1400
     }
   },
   computed: {
@@ -470,6 +489,7 @@ export default {
     clearInterval(this.timerInterval)
     clearInterval(this._joinRetry)
     clearTimeout(this._reinforceT)
+    clearTimeout(this._dashCdT)
     window.removeEventListener('resize', this.setupCanvas)
     window.removeEventListener('orientationchange', this.setupCanvas)
     window.removeEventListener('keydown', this.onKeyDown)
@@ -509,8 +529,8 @@ export default {
     setupRenderer () {
       this.renderer = new GameRenderer(this.$refs.canvas)
       this.renderer.loadHeroSprites({
-        m: { walk: heroMWalk, shoot: heroMShoot, dead: heroMDead },
-        f: { walk: heroFWalk, shoot: heroFShoot, dead: heroFDead }
+        m: { walk: heroMWalk, shoot: heroMShoot, dead: heroMDead, slide: heroMSlide },
+        f: { walk: heroFWalk, shoot: heroFShoot, dead: heroFDead, slide: heroFSlide }
       }, heroSpriteMeta)
     },
 
@@ -551,9 +571,25 @@ export default {
       const gameKeys = ['w', 'a', 's', 'd', 'r', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ']
       if (e.key === 'Escape') { this.confirmLeave(); return }
       if (!gameKeys.includes(k)) { return }
+      const wasDown = this.keys[k]
       this.keys[k] = true
       if (k === 'r') { this.$socket.emit('playerReload') }
+      if (k === ' ' && !wasDown) { this.doDash() }
       e.preventDefault()
+    },
+
+    doDash () {
+      if (!this.myId) { return }
+      const dx = (this.keys.d || this.keys.arrowright ? 1 : 0) - (this.keys.a || this.keys.arrowleft ? 1 : 0)
+      const dy = (this.keys.s || this.keys.arrowdown ? 1 : 0) - (this.keys.w || this.keys.arrowup ? 1 : 0)
+      const stickMove = this.moveStick.active && (this.moveStick.x || this.moveStick.y)
+      const aiming = this.aimStick.active && (this.aimStick.x || this.aimStick.y)
+      const payload = { dx, dy, angle: undefined }
+      if (stickMove) { payload.dx = this.moveStick.x; payload.dy = this.moveStick.y }
+      if (!dx && !dy && !stickMove) {
+        payload.angle = aiming ? Math.atan2(this.aimStick.y, this.aimStick.x) : this.getShootAngle()
+      }
+      this.$socket.emit('playerDash', payload)
     },
     onKeyUp (e) {
       this.keys[e.key.toLowerCase()] = false
@@ -840,6 +876,16 @@ export default {
         }
       })
 
+      this.$socket.on('playerDash', ({ playerId, x, y, angle }) => {
+        if (this.renderer) { this.renderer.dashPuff(x, y, angle) }
+        if (playerId === this.myId) {
+          this.dashReady = false
+          clearTimeout(this._dashCdT)
+          this._dashCdT = setTimeout(() => { this.dashReady = true }, this.dashCooldownMs)
+          if (this.renderer) { this.renderer.shake(4) }
+        }
+      })
+
       this.$socket.on('zombieKilled', ({ playerId, score, kills, isCombo, zombieType, x, y, gained }) => {
         if (this.renderer && x != null) {
           const big = zombieType === 'boss' || zombieType === 'tank'
@@ -918,7 +964,7 @@ export default {
     _offAll () {
       const events = [
         'gameJoined', 'gameError', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
-        'playerDied', 'playerDowned', 'playerRevived', 'zombieKilled', 'gameOver',
+        'playerDied', 'playerDowned', 'playerRevived', 'playerDash', 'zombieKilled', 'gameOver',
         'gameRestarted', 'waveReinforce', 'pickupCollected', 'upgradeOffer', 'upgradeApplied'
       ]
       events.forEach(ev => this.$socket.off(ev))
@@ -1053,6 +1099,34 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .ammo-num small { font-size: 10px; opacity: 0.55; }
 .ammo-wrap.low { color: #ff6040; animation: pulse-warning 0.8s infinite; }
 .ammo-wrap.reloading { color: rgba(255,204,64,0.6); font-size: 12px; }
+
+.dash-pip {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(0,255,80,0.45);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00ff50;
+  font-size: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dash-pip.cooling {
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.35);
+}
+.dash-pip.cooling::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.14);
+  height: 100%;
+  animation: dash-cd var(--dash-cd, 1400ms) linear forwards;
+}
+@keyframes dash-cd { from { height: 100%; } to { height: 0; } }
 .hp-bar {
   width: 140px;
   height: 8px;
@@ -1258,6 +1332,28 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 .reload-btn.active {
   animation: pulse-warning 0.6s infinite;
+}
+
+.dash-btn {
+  position: absolute;
+  right: calc(112px + env(safe-area-inset-right));
+  bottom: calc(112px + env(safe-area-inset-bottom));
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(0, 255, 80, 0.16);
+  border: 2px solid rgba(0, 255, 80, 0.55);
+  color: #4dffa0;
+  font-size: 20px;
+  pointer-events: auto;
+  touch-action: none;
+  transition: opacity 0.15s ease;
+}
+.dash-btn.cooling {
+  opacity: 0.35;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .reconnect-overlay {

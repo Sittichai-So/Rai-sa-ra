@@ -199,6 +199,25 @@ export default class GameRenderer {
     this.burst(x, y, 8, [color, '#ffffff'], { speed: 120, life: 0.3, size: 2, drag: 0.8 })
   }
 
+  dashPuff (x, y, angle) {
+    const back = angle + Math.PI
+    for (let i = 0; i < 12; i++) {
+      const a = back + (Math.random() - 0.5) * 1.1
+      const v = 60 + Math.random() * 110
+      this.particles.push({
+        x: x + Math.cos(back) * 8,
+        y: y + Math.sin(back) * 8 + 6,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v * 0.5,
+        life: 0,
+        maxLife: 0.35 + Math.random() * 0.25,
+        size: 3 + Math.random() * 4,
+        color: ['#d9dee6', '#b9c2cf', '#e8ecf2'][(Math.random() * 3) | 0],
+        drag: 0.9
+      })
+    }
+  }
+
   muzzle (x, y, angle) {
     const mx = x + Math.cos(angle) * 20
     const my = y + Math.sin(angle) * 20
@@ -508,6 +527,11 @@ export default class GameRenderer {
     } else if (o.mode === 'downed' && set.dead && set.dead.complete && set.dead.naturalWidth) {
       img = set.dead; a = animOf('dead'); sheetFacing = facingOf('dead')
       fi = a.downedFrame != null ? a.downedFrame : 3
+    } else if (o.mode === 'slide' && set.slide && set.slide.complete && set.slide.naturalWidth) {
+      img = set.slide; a = animOf('slide'); sheetFacing = facingOf('slide')
+      const base = a.slideBase != null ? a.slideBase : 5
+      const count = a.slideCount != null ? a.slideCount : (a.frames - base)
+      fi = base + Math.min(count - 1, Math.floor((o.dashT || 0) * count))
     } else if (o.shooting && set.shoot && set.shoot.complete && set.shoot.naturalWidth) {
       img = set.shoot; a = animOf('shoot'); sheetFacing = facingOf('shoot')
       const fb = a.fireBase != null ? a.fireBase : 3
@@ -672,8 +696,9 @@ export default class GameRenderer {
 
       const isMe = p.id === myId
       const flashing = p.hitFlash > 0
+      const dashing = (p.dashT || 0) > 0
       const moving = Math.hypot(p.vx || 0, p.vy || 0) > 6
-      const shooting = !p.reloading && (shootFx[p.id] || 0) > wallNow
+      const shooting = !dashing && !p.reloading && (shootFx[p.id] || 0) > wallNow
       const step = moving ? Math.round(Math.sin(now / 90)) : 0
 
       ctx.save()
@@ -684,6 +709,21 @@ export default class GameRenderer {
       ctx.ellipse(0, rad * 0.7, rad * 0.9, rad * 0.34, 0, 0, Math.PI * 2)
       ctx.fillStyle = 'rgba(0,0,0,0.32)'
       ctx.fill()
+
+      // motion streak ระหว่างสไลด์
+      if (dashing) {
+        const dir = Math.atan2(p.vy || 0, p.vx || 0)
+        ctx.save()
+        ctx.rotate(dir)
+        const g = ctx.createLinearGradient(-rad * 2.6, 0, rad * 0.6, 0)
+        g.addColorStop(0, 'rgba(220,230,240,0)')
+        g.addColorStop(1, 'rgba(220,230,240,0.28)')
+        ctx.fillStyle = g
+        ctx.beginPath()
+        ctx.ellipse(-rad * 0.9, rad * 0.55, rad * 2.2, rad * 0.42, 0, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+      }
 
       if (isMe) {
         ctx.beginPath()
@@ -704,7 +744,9 @@ export default class GameRenderer {
         flashing,
         female: p.skin === 'f',
         ring: isMe ? color : null,
-        now
+        now,
+        mode: dashing ? 'slide' : undefined,
+        dashT: p.dashT || 0
       })
 
       ctx.restore()

@@ -7,7 +7,8 @@
   "facing": {
     "walk": "right",
     "shoot": "right",
-    "dead": "right"
+    "dead": "right",
+    "slide": "right"
   },
   "anims": {
     "walk": {
@@ -33,6 +34,16 @@
       "fps": 8,
       "cw": 295,
       "ch": 271
+    },
+    "slide": {
+      "file": "hero_m_slide.png",
+      "frames": 10,
+      "cols": 10,
+      "fps": 20,
+      "cw": 253,
+      "ch": 279,
+      "slideBase": 5,
+      "slideCount": 5
     }
   },
   "skins": {
@@ -56,6 +67,16 @@
           "cw": 276,
           "ch": 255,
           "downedFrame": 3
+        },
+        "slide": {
+          "file": "hero_f_slide.png",
+          "frames": 10,
+          "cols": 10,
+          "fps": 20,
+          "cw": 247,
+          "ch": 298,
+          "slideBase": 5,
+          "slideCount": 5
         }
       }
     }
