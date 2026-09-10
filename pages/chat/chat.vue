@@ -776,6 +776,7 @@
       ref="dmModal"
       :friend="selectedFriend"
       :current-user-id="user?._id"
+      :support-mode="dmSupportMode"
       @read="onDmRead"
       @sent="onDmSent"
     />
@@ -845,17 +846,17 @@
             v-if="supportContact && !dmSearch.trim()"
             type="button"
             class="dm-row dm-row-support"
-            :class="{ unread: supportUnread > 0 }"
-            @click="openDmFromPanel(supportContact)"
+            :class="{ unread: supportUnreadCount > 0 }"
+            @click="openSupportChat"
           >
             <div class="dm-avatar dm-avatar-support">
               <i class="fas fa-headset" />
             </div>
             <div class="dm-info">
-              <span class="dm-name">ผู้ดูแลระบบ</span>
+              <span class="dm-name">ฝ่ายช่วยเหลือ (แอดมิน)</span>
               <span class="dm-last-message">สอบถาม · แจ้งปัญหาการใช้งาน</span>
             </div>
-            <span v-if="supportUnread" class="dm-count">{{ supportUnread > 99 ? '99+' : supportUnread }}</span>
+            <span v-if="supportUnreadCount" class="dm-count">{{ supportUnreadCount > 99 ? '99+' : supportUnreadCount }}</span>
           </button>
 
           <div v-if="filteredDMs.length === 0" class="dm-launcher-empty">
@@ -900,8 +901,8 @@
       @click="toggleDmPanel"
     >
       <i :class="dmPanelOpen ? 'fas fa-times' : 'fas fa-comment-dots'" />
-      <span v-if="totalUnreadDM && !dmPanelOpen" class="dm-fab-badge">
-        {{ totalUnreadDM > 99 ? '99+' : totalUnreadDM }}
+      <span v-if="dmFabUnread && !dmPanelOpen" class="dm-fab-badge">
+        {{ dmFabUnread > 99 ? '99+' : dmFabUnread }}
       </span>
     </button>
   </div>
@@ -953,7 +954,9 @@ export default {
       dmPanelOpen: false,
       dmSearch: '',
       dmFabPulse: false,
+      dmSupportMode: false,
       supportContact: null,
+      supportUnreadCount: 0,
       showProfileModal: false,
       profileFriend: null,
       profileData: null,
@@ -1077,21 +1080,15 @@ export default {
       return this.dmConversations
     },
     filteredDMs () {
-      const supportId = this.supportContact ? String(this.supportContact.friendId) : null
-      const base = supportId
-        ? this.activeDMs.filter(dm => String(dm.friendId) !== supportId)
-        : this.activeDMs
       const q = this.dmSearch.trim().toLowerCase()
-      if (!q) { return base }
-      return base.filter(dm =>
+      if (!q) { return this.activeDMs }
+      return this.activeDMs.filter(dm =>
         (dm.displayName || '').toLowerCase().includes(q) ||
         (dm.lastMessage || '').toLowerCase().includes(q)
       )
     },
-    supportUnread () {
-      if (!this.supportContact) { return 0 }
-      const c = this.dmConversations.find(x => String(x.friendId) === String(this.supportContact.friendId))
-      return c ? (c.unreadCount || 0) : 0
+    dmFabUnread () {
+      return this.totalUnreadDM + this.supportUnreadCount
     },
     allFriends () {
       return [...this.onlineFriends, ...this.offlineFriends]
@@ -1231,6 +1228,7 @@ export default {
       document.body.style.overflow = ''
     },
     openDirectMessage (friend) {
+      this.dmSupportMode = false
       this.selectedFriend = {
         friendId: friend.friendId,
         displayName: friend.displayName || friend.fullname || 'เพื่อน',
@@ -1454,12 +1452,36 @@ export default {
         if (String(s.userId) === String(this.user._id)) { return }
         this.supportContact = {
           friendId: s.userId,
-          displayName: 'ผู้ดูแลระบบ',
+          displayName: 'ฝ่ายช่วยเหลือ (แอดมิน)',
           fullname: s.displayName || 'ผู้ดูแลระบบ',
           avatar: s.avatar ? this.resolveAsset(s.avatar) : null,
           status: s.online ? 'online' : 'offline'
         }
+        this.loadSupportUnread()
       } catch (e) {}
+    },
+
+    async loadSupportUnread () {
+      try {
+        const res = await this.$axios.$get(process.env.API_SUPPORT_UNREAD)
+        this.supportUnreadCount = (res.result && res.result.count) || 0
+      } catch (e) {}
+    },
+
+    openSupportChat () {
+      if (!this.supportContact) { return }
+      this.dmPanelOpen = false
+      this.dmSupportMode = true
+      this.selectedFriend = {
+        friendId: this.supportContact.friendId,
+        displayName: 'ฝ่ายช่วยเหลือ (แอดมิน)',
+        fullname: 'ฝ่ายช่วยเหลือ',
+        avatar: this.supportContact.avatar
+      }
+      this.$nextTick(() => {
+        if (this.$refs.dmModal) { this.$refs.dmModal.open() }
+      })
+      this.supportUnreadCount = 0
     },
 
     async loadDMConversations () {
@@ -1477,9 +1499,30 @@ export default {
     },
 
     onIncomingDM (m) {
+      if (m.channel === 'support') {
+        const supportOpen = this.$refs.dmModal && this.$refs.dmModal.showModal && this.dmSupportMode
+        if (!supportOpen) {
+          this.supportUnreadCount += 1
+          this.dmFabPulse = true
+          clearTimeout(this._dmPulseT)
+          this._dmPulseT = setTimeout(() => { this.dmFabPulse = false }, 1600)
+          this.showNotification('ข้อความใหม่จากฝ่ายช่วยเหลือ', m.content)
+          this.$swal({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `🎧 ฝ่ายช่วยเหลือ: ${m.content.slice(0, 40)}`,
+            showConfirmButton: false,
+            timer: 4000
+          })
+        }
+        return
+      }
+
       const isOpen =
         this.$refs.dmModal &&
         this.$refs.dmModal.showModal &&
+        !this.dmSupportMode &&
         this.selectedFriend &&
         this.selectedFriend.friendId === m.friendId
 
@@ -1502,8 +1545,7 @@ export default {
         this.dmFabPulse = true
         clearTimeout(this._dmPulseT)
         this._dmPulseT = setTimeout(() => { this.dmFabPulse = false }, 1600)
-        const isSupport = this.supportContact && String(m.friendId) === String(this.supportContact.friendId)
-        const name = isSupport ? 'ผู้ดูแลระบบ' : (conv ? conv.displayName : 'เพื่อน')
+        const name = conv ? conv.displayName : 'เพื่อน'
         this.showNotification(`ข้อความใหม่จาก ${name}`, m.content)
         this.$swal({
           toast: true,
@@ -1517,11 +1559,19 @@ export default {
     },
 
     onDmRead (friendId) {
+      if (this.dmSupportMode || (this.supportContact && String(friendId) === String(this.supportContact.friendId))) {
+        this.supportUnreadCount = 0
+        return
+      }
       const conv = this.dmConversations.find(c => c.friendId === friendId)
       if (conv) { conv.unreadCount = 0 }
     },
 
     onDmSent ({ friendId, content }) {
+      if (this.dmSupportMode || (this.supportContact && String(friendId) === String(this.supportContact.friendId))) {
+        this.supportUnreadCount = 0
+        return
+      }
       const idx = this.dmConversations.findIndex(c => c.friendId === friendId)
       if (idx > -1) {
         const conv = this.dmConversations[idx]

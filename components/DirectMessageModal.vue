@@ -4,14 +4,16 @@
     size="lg"
     centered
     hide-header
+    hide-footer
     modal-class="modern-dm-modal"
     body-class="p-0"
+    dialog-class="modern-dm-dialog"
     @hidden="closeModal"
   >
     <div class="dm-modal-header-custom">
       <div class="dm-modal-title">
-        <i class="fas fa-comments" />
-        <span>แชทกับ {{ friendName }}</span>
+        <i :class="supportMode ? 'fas fa-headset' : 'fas fa-comments'" />
+        <span>{{ supportMode && !supportPeerId ? 'ฝ่ายช่วยเหลือ' : friendName }}</span>
       </div>
       <button class="dm-modal-close-btn" @click="closeModal">
         <i class="fas fa-times" />
@@ -150,6 +152,14 @@ export default {
     currentUserId: {
       type: String,
       default: ''
+    },
+    supportMode: {
+      type: Boolean,
+      default: false
+    },
+    supportPeerId: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -173,6 +183,16 @@ export default {
   computed: {
     friendName () {
       return this.friend ? this.friend.displayName || this.friend.fullname : ''
+    },
+    messagesEndpoint () {
+      if (this.supportMode) {
+        return this.supportPeerId
+          ? process.env.API_SUPPORT_THREAD_MESSAGES.replace(':userId', this.supportPeerId)
+          : process.env.API_SUPPORT_MESSAGES
+      }
+      return this.friend
+        ? process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        : ''
     }
   },
   watch: {
@@ -245,7 +265,7 @@ export default {
       this.loading = true
       this.page = 1
       try {
-        const url = process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        const url = this.messagesEndpoint
         const res = await this.$axios.$get(url, { params: { page: 1, limit: 30 } })
         const list = res.result?.messages || []
         this.messages = list.map(m => this.mapMessage(m))
@@ -264,7 +284,7 @@ export default {
       const container = this.$refs.messagesContainer
       const prevHeight = container ? container.scrollHeight : 0
       try {
-        const url = process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        const url = this.messagesEndpoint
         const res = await this.$axios.$get(url, { params: { page: this.page + 1, limit: 30 } })
         const older = (res.result?.messages || []).map(m => this.mapMessage(m))
         if (older.length) {
@@ -296,7 +316,7 @@ export default {
       this.newMessage = ''
       this.emitStopTyping()
       try {
-        const url = process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        const url = this.messagesEndpoint
         const res = await this.$axios.$post(url, { content: text })
         if (res.result) {
           this.messages.push(this.mapMessage(res.result))
@@ -335,7 +355,7 @@ export default {
         const f = up.result
         if (!f) { throw new Error('upload failed') }
 
-        const url = process.env.API_DM_MESSAGES.replace(':friendId', this.friend.friendId)
+        const url = this.messagesEndpoint
         const res = await this.$axios.$post(url, {
           content: '',
           file: {
@@ -417,13 +437,19 @@ export default {
       this.typingSentAt = 0
     },
     onIncomingDM (m) {
-      if (!this.showModal || !this.friend) { return }
-      if (String(m.friendId) !== String(this.friend.friendId)) { return }
+      if (!this.showModal) { return }
+      if (this.supportMode) {
+        if (m.channel !== 'support') { return }
+        if (this.supportPeerId && String(m.friendId) !== String(this.supportPeerId)) { return }
+      } else {
+        if (m.channel === 'support') { return }
+        if (!this.friend || String(m.friendId) !== String(this.friend.friendId)) { return }
+      }
       this.friendTyping = false
       this.messages.push(this.mapMessage({ ...m, senderId: m.senderId }))
       this.$nextTick(() => this.scrollToBottom())
       this.markRead()
-      this.$emit('read', this.friend.friendId)
+      this.$emit('read', this.friend ? this.friend.friendId : '')
     },
     onDmEdited (m) {
       if (!this.friend || String(m.friendId) !== String(this.friend.friendId)) { return }
@@ -450,8 +476,14 @@ export default {
       clearTimeout(this.friendTypingTimer)
     },
     markRead () {
-      if (!this.friend || !process.env.API_DM_READ) { return }
-      const url = process.env.API_DM_READ.replace(':friendId', this.friend.friendId)
+      let url
+      if (this.supportMode) {
+        if (this.supportPeerId) { return }
+        url = process.env.API_SUPPORT_MESSAGES_READ
+      } else {
+        if (!this.friend) { return }
+        url = process.env.API_DM_READ.replace(':friendId', this.friend.friendId)
+      }
       this.$axios.$post(url).catch(() => {})
     },
     openImage (url) {
@@ -506,10 +538,21 @@ export default {
 
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+:deep(.modern-dm-modal) { padding: 0 !important; }
+
+:deep(.modern-dm-dialog) {
+  max-width: 620px;
+  width: 100%;
+  height: min(90dvh, 880px);
+  margin: auto;
 }
 
 :deep(.modern-dm-modal .modal-content) {
+  height: 100%;
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: 20px;
@@ -517,13 +560,40 @@ export default {
   overflow: hidden;
 }
 
+:deep(.modern-dm-modal .modal-body) {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  :deep(.modern-dm-dialog) {
+    max-width: 100%;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+  }
+
+  :deep(.modern-dm-modal .modal-content) {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+  }
+}
+
 .dm-modal-header-custom {
   background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   border-bottom: 2px solid var(--ink);
-  padding: 18px 24px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .dm-modal-title {
@@ -558,6 +628,7 @@ export default {
 
 .dm-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 18px;
   background: var(--paper);
@@ -783,7 +854,9 @@ export default {
 .dm-input-area {
   border-top: 3px solid var(--ink);
   padding: 14px 16px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   background: #1b1b25;
+  flex-shrink: 0;
 }
 
 .input-container {
@@ -859,45 +932,5 @@ export default {
   color: rgba(16, 16, 20, 0.4);
   cursor: not-allowed;
   box-shadow: none;
-}
-</style>
-
-<style>
-.dm-modal .modal-content {
-  background: #f6f3ed;
-  border: 3px solid #101014;
-  border-radius: 20px;
-  box-shadow: 6px 6px 0 #101014;
-  overflow: hidden;
-}
-
-.dm-modal .dm-modal-header {
-  background: #7c6ff5;
-  border-bottom: 3px solid #101014;
-  padding: 16px 20px;
-}
-
-.dm-modal .dm-modal-header .modal-title {
-  font-family: 'Space Grotesk', 'Noto Sans Thai', sans-serif;
-  font-weight: 800;
-  color: #ffffff;
-  font-size: 1rem;
-}
-
-.dm-modal .dm-modal-header .close {
-  color: #ffffff;
-  opacity: 0.9;
-  text-shadow: none;
-}
-
-.dm-modal .dm-modal-body {
-  padding: 0;
-  height: 70vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.dm-modal .modal-backdrop {
-  background: rgba(16, 16, 20, 0.6);
 }
 </style>

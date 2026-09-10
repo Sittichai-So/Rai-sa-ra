@@ -27,7 +27,7 @@
 
         <button
           v-for="t in threads"
-          :key="t.friendId"
+          :key="t.userId"
           class="sp-thread"
           :class="{ unread: t.unreadCount > 0 }"
           @click="openThread(t)"
@@ -42,7 +42,7 @@
           <div class="sp-thread-info">
             <span class="sp-name">{{ t.displayName }}</span>
             <span class="sp-last">
-              <i v-if="t.lastFromMe" class="fas fa-reply sp-you" />{{ t.lastMessage || 'เริ่มการสนทนา...' }}
+              <i v-if="t.lastFromSupport" class="fas fa-reply sp-you" />{{ t.lastMessage || 'เริ่มการสนทนา...' }}
             </span>
           </div>
           <div class="sp-thread-meta">
@@ -57,6 +57,8 @@
       ref="dmModal"
       :friend="selected"
       :current-user-id="me._id"
+      :support-mode="true"
+      :support-peer-id="selectedPeerId"
       @read="onRead"
       @sent="onSent"
     />
@@ -76,7 +78,8 @@ export default {
       threads: [],
       loading: false,
       notSupport: false,
-      selected: null
+      selected: null,
+      selectedPeerId: ''
     }
   },
   head () {
@@ -135,8 +138,9 @@ export default {
     },
 
     openThread (t) {
+      this.selectedPeerId = t.userId
       this.selected = {
-        friendId: t.friendId,
+        friendId: t.userId,
         displayName: t.displayName,
         fullname: t.displayName,
         avatar: t.avatar ? this.resolveAsset(t.avatar) : null
@@ -148,13 +152,15 @@ export default {
     },
 
     onIncoming (m) {
-      const idx = this.threads.findIndex(t => String(t.friendId) === String(m.friendId))
+      if (m.channel !== 'support') { return }
+      const uid = String(m.friendId)
+      const idx = this.threads.findIndex(t => String(t.userId) === uid)
       if (idx > -1) {
         const t = this.threads[idx]
         t.lastMessage = m.content
         t.lastMessageAt = m.createdAt || new Date().toISOString()
-        t.lastFromMe = false
-        const open = this.selected && String(this.selected.friendId) === String(m.friendId)
+        t.lastFromSupport = false
+        const open = this.selectedPeerId && String(this.selectedPeerId) === uid && this.$refs.dmModal && this.$refs.dmModal.showModal
         if (!open) { t.unreadCount = (t.unreadCount || 0) + 1 }
         this.threads.splice(idx, 1)
         this.threads.unshift(t)
@@ -163,17 +169,17 @@ export default {
       }
     },
 
-    onRead (friendId) {
-      const t = this.threads.find(x => String(x.friendId) === String(friendId))
+    onRead () {
+      const t = this.threads.find(x => String(x.userId) === String(this.selectedPeerId))
       if (t) { t.unreadCount = 0 }
     },
 
-    onSent ({ friendId, content }) {
-      const t = this.threads.find(x => String(x.friendId) === String(friendId))
+    onSent ({ content }) {
+      const t = this.threads.find(x => String(x.userId) === String(this.selectedPeerId))
       if (t) {
         t.lastMessage = content
         t.lastMessageAt = new Date().toISOString()
-        t.lastFromMe = true
+        t.lastFromSupport = true
       }
     }
   }
