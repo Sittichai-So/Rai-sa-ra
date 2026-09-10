@@ -38,7 +38,7 @@
       <div class="hud-right">
         <div class="score-display">
           <span class="hud-label">SCORE</span>
-          <span class="score-num">{{ myPlayer ? myPlayer.score : 0 }}</span>
+          <span class="score-num">{{ myScore }}</span>
         </div>
         <div v-if="combo > 1" class="combo-display" :class="comboClass">
           <span class="combo-label">COMBO</span>
@@ -315,6 +315,10 @@ export default {
   computed: {
     myPlayer () {
       return this.players.find(p => p.id === this.myId) || null
+    },
+    myScore () {
+      const s = this.leaderboard.find(x => x.playerId === this.myId)
+      return s ? s.score : (this.myPlayer ? this.myPlayer.score : 0)
     },
     hpPct () {
       if (!this.myPlayer) { return 0 }
@@ -928,7 +932,14 @@ export default {
 
     onSocketReconnect () {
       if (!this.joined) { return }
+      // เซิร์ฟเวอร์อาจรีสตาร์ต (ห้องหาย) — บังคับ join ใหม่ + ลองซ้ำจนกว่าจะได้ gameJoined
+      this.joined = false
+      this.myId = null
       this.joinGame()
+      clearInterval(this._joinRetry)
+      this._joinRetry = setInterval(() => {
+        if (!this.joined) { this.joinGame() } else { clearInterval(this._joinRetry) }
+      }, 3000)
     },
 
     _startCountdown () {
