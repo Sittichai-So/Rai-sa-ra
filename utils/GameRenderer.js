@@ -264,7 +264,7 @@ export default class GameRenderer {
   }
 
   // ── main draw ────────────────────────────────────────
-  draw ({ players, zombies, bullets, projectiles, pickups, shootFx, deathFx, myId, camX, camY, mapW, mapH }) {
+  draw ({ players, zombies, bullets, projectiles, pickups, shootFx, deathFx, myId, camX, camY, mapW, mapH, showMinimap = true }) {
     const ctx = this.ctx
     const W = this.canvas.width
     const H = this.canvas.height
@@ -305,7 +305,9 @@ export default class GameRenderer {
 
     ctx.restore()
 
-    this._drawMinimap(ctx, players, zombies, myId, camX, camY, W, H, mapW, mapH)
+    if (showMinimap) {
+      this._drawMinimap(ctx, players, zombies, myId, camX, camY, W, H, mapW, mapH)
+    }
   }
 
   _drawDecals (ctx) {

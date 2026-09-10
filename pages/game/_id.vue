@@ -12,7 +12,7 @@
           <div class="hp-bar">
             <div class="hp-fill" :style="{ width: hpPct + '%', background: hpColor }" />
           </div>
-          <span class="hp-num">{{ myPlayer ? myPlayer.hp : 0 }}</span>
+          <span class="hp-num">{{ myHp }}</span>
         </div>
         <div class="ammo-wrap" :class="{ reloading: myReloading, low: !myReloading && myAmmo <= myMag * 0.25 }">
           <i class="fas fa-bolt" />
@@ -59,10 +59,10 @@
     </div>
 
     <div class="mini-scoreboard">
-      <div v-for="score in topLeaderboard" :key="score.playerId" class="sb-row" :class="{ 'sb-me': score.playerId === myId }">
+      <div v-for="score in miniLeaderboard" :key="score.playerId" class="sb-row" :class="{ 'sb-me': score.playerId === myId }">
         <span class="sb-name">{{ score.username || getPlayerName(score.playerId) }}</span>
         <span class="sb-score">{{ score.score }}</span>
-        <span class="sb-kills">☠ {{ score.kills }}</span>
+        <span class="sb-kills"><i class="fas fa-skull" /> {{ score.kills }}</span>
       </div>
     </div>
 
@@ -96,7 +96,7 @@
       <button
         class="reload-btn"
         :class="{ active: myReloading }"
-        @touchstart.prevent="$socket.emit('playerReload')"
+        @touchstart.prevent="emitReload"
       >
         <i class="fas fa-rotate" />
       </button>
@@ -108,6 +108,15 @@
         <i class="fas fa-person-running" />
       </button>
     </div>
+
+    <transition name="fade">
+      <div v-if="!joined && !fatalError && !forcedDead && !reconnecting" class="reconnect-overlay loading-overlay">
+        <div class="reconnect-box">
+          <i class="fas fa-circle-notch" />
+          <p>กำลังเข้าเกม...</p>
+        </div>
+      </div>
+    </transition>
 
     <transition name="fade">
       <div v-if="reconnecting" class="reconnect-overlay">
@@ -211,10 +220,18 @@
       <div v-if="isDead && !gameOver" class="dead-overlay">
         <div class="dead-box">
           <div class="dead-icon">
-            ☠
+            <i class="fas fa-skull" />
           </div>
           <h2>คุณตายแล้ว</h2>
-          <p>รอผู้เล่นคนอื่นต่อสู้...</p>
+          <p v-if="forcedDead">
+            รีเฟรชหน้าไม่ทำให้ฟื้น — รอเกมรอบใหม่
+          </p>
+          <p v-else>
+            รอผู้เล่นคนอื่นต่อสู้...
+          </p>
+          <button class="go-btn go-leave" @click="leaveGame">
+            <i class="fas fa-door-open" /> กลับไปที่ล็อบบี้
+          </button>
         </div>
       </div>
     </transition>
@@ -328,7 +345,8 @@ export default {
       fatalError: '',
       mouseAimed: false,
       dashReady: true,
-      dashCooldownMs: 3000
+      dashCooldownMs: 3000,
+      forcedDead: false
     }
   },
   computed: {
@@ -343,6 +361,10 @@ export default {
       if (!this.myPlayer) { return 0 }
       return (this.myPlayer.hp / this.myPlayer.maxHp) * 100
     },
+    myHp () {
+      const hp = this.myPlayer ? this.myPlayer.hp : 0
+      return Math.round(hp * 100) / 100
+    },
     hpColor () {
       const pct = this.hpPct
       if (pct > 60) { return '#00ff50' }
@@ -351,6 +373,9 @@ export default {
     },
     topLeaderboard () {
       return this.leaderboard.slice(0, 10)
+    },
+    miniLeaderboard () {
+      return this.leaderboard.slice(0, this.isTouch ? 4 : 6)
     },
     sortedPlayers () {
       return this.leaderboard.map((score) => {
@@ -364,6 +389,7 @@ export default {
       }).sort((a, b) => b.score - a.score)
     },
     isDead () {
+      if (this.forcedDead) { return true }
       return this.myPlayer ? (!this.myPlayer.alive && !this.myPlayer.downed) : false
     },
     isDowned () {
@@ -452,6 +478,8 @@ export default {
     const stored = localStorage.getItem('userData')
     this.user = stored ? JSON.parse(stored) : { username: 'Guest', fullname: 'Guest' }
 
+    this.forcedDead = this._readDeadFlag()
+
     this.setupCanvas()
     this.$nextTick(() => requestAnimationFrame(this.setupCanvas))
     this.setupSocketListeners()
@@ -490,6 +518,7 @@ export default {
     clearInterval(this._joinRetry)
     clearTimeout(this._reinforceT)
     clearTimeout(this._dashCdT)
+    clearTimeout(this._comboT)
     window.removeEventListener('resize', this.setupCanvas)
     window.removeEventListener('orientationchange', this.setupCanvas)
     window.removeEventListener('keydown', this.onKeyDown)
@@ -550,7 +579,8 @@ export default {
           camX: this.camX,
           camY: this.camY,
           mapW: this.mapW,
-          mapH: this.mapH
+          mapH: this.mapH,
+          showMinimap: !this.isTouch
         })
       }
     },
@@ -573,13 +603,18 @@ export default {
       if (!gameKeys.includes(k)) { return }
       const wasDown = this.keys[k]
       this.keys[k] = true
-      if (k === 'r') { this.$socket.emit('playerReload') }
+      if (k === 'r' && !wasDown) { this.emitReload() }
       if (k === ' ' && !wasDown) { this.doDash() }
       e.preventDefault()
     },
 
+    emitReload () {
+      if (this.forcedDead) { return }
+      this.$socket.emit('playerReload')
+    },
+
     doDash () {
-      if (!this.myId) { return }
+      if (!this.myId || this.forcedDead) { return }
       const dx = (this.keys.d || this.keys.arrowright ? 1 : 0) - (this.keys.a || this.keys.arrowleft ? 1 : 0)
       const dy = (this.keys.s || this.keys.arrowdown ? 1 : 0) - (this.keys.w || this.keys.arrowup ? 1 : 0)
       const stickMove = this.moveStick.active && (this.moveStick.x || this.moveStick.y)
@@ -607,7 +642,7 @@ export default {
       this.mouseAimed = true
     },
     onMouseDown (e) {
-      if (e.button !== 0) { return }
+      if (e.button !== 0 || this.forcedDead) { return }
       const p = this.canvasPoint(e)
       this.mouseX = p.x
       this.mouseY = p.y
@@ -625,7 +660,7 @@ export default {
     },
 
     pickUpgrade (key) {
-      if (this.upgradeBusy) { return }
+      if (this.upgradeBusy || this.forcedDead) { return }
       this.upgradeBusy = true
       this.$socket.emit('upgradePick', { key })
       this.clearKeys()
@@ -635,7 +670,7 @@ export default {
     },
 
     sendInput () {
-      if (!this.myId) { return }
+      if (!this.myId || this.forcedDead) { return }
 
       // รับทั้งคีย์บอร์ดและจอยพร้อมกันเสมอ — device mode ของ browser จำลอง touch
       // ทำให้ isTouch เป็น true แล้วคีย์บอร์ดใช้ไม่ได้ถ้าแยกทางกันแบบเดิม
@@ -766,7 +801,7 @@ export default {
       this.$socket.on('connect', this.onSocketReconnect)
       this.$socket.on('disconnect', this.onSocketDrop)
 
-      this.$socket.on('gameJoined', ({ playerId, mapSize, map }) => {
+      this.$socket.on('gameJoined', ({ playerId, mapSize, map, gameOver, leaderboard }) => {
         this.myId = playerId
         this.joined = true
         this.reconnecting = false
@@ -774,6 +809,10 @@ export default {
         clearInterval(this._joinRetry)
         if (mapSize) { this.mapW = mapSize.w; this.mapH = mapSize.h }
         if (map && this.renderer) { this.renderer.setMap(map) }
+        if (gameOver) {
+          this.gameOver = true
+          if (leaderboard) { this.leaderboard = leaderboard }
+        }
       })
 
       this.$socket.on('gameError', ({ error }) => {
@@ -836,6 +875,9 @@ export default {
         if (playerId === this.myId) {
           this.upgradeOffer = null
           this.upgradeBusy = false
+          this.combo = 0
+          clearTimeout(this._comboT)
+          this._setDeadFlag()
           if (this.renderer) { this.renderer.shake(12) }
           this.$nextTick(() => this.$forceUpdate())
         }
@@ -902,6 +944,8 @@ export default {
             this.combo = 1
           }
           this.lastKillTime = now
+          clearTimeout(this._comboT)
+          this._comboT = setTimeout(() => { this.combo = 0 }, this.comboTimeWindow)
 
           const player = this.players.find(p => p.id === playerId)
           if (player) {
@@ -915,11 +959,14 @@ export default {
         this.wave = wave
         this.leaderboard = leaderboard || []
         this.gameOver = true
+        this._clearDeadFlag()
         clearInterval(this.countdownInterval)
       })
 
       this.$socket.on('gameRestarted', () => {
         this.gameOver = false
+        this.forcedDead = false
+        this._clearDeadFlag()
         this.wave = 0
         this.combo = 0
         this.maxCombo = 0
@@ -1033,6 +1080,24 @@ export default {
     getPlayerName (playerId) {
       const player = this.players.find(p => p.id === playerId)
       return player ? player.username : 'Unknown'
+    },
+
+    _deadKey () {
+      return 'raisara:gameDead:' + this.roomId
+    },
+    _readDeadFlag () {
+      try {
+        const t = parseInt(sessionStorage.getItem(this._deadKey()) || '0', 10)
+        if (t && Date.now() - t < 15 * 60 * 1000) { return true }
+        sessionStorage.removeItem(this._deadKey())
+        return false
+      } catch (e) { return false }
+    },
+    _setDeadFlag () {
+      try { sessionStorage.setItem(this._deadKey(), String(Date.now())) } catch (e) {}
+    },
+    _clearDeadFlag () {
+      try { sessionStorage.removeItem(this._deadKey()) } catch (e) {}
     }
   }
 }
@@ -1196,18 +1261,12 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   color: #00ff50;
   text-shadow: 0 0 10px rgba(0,255,80,0.5);
 }
-.combo-display.combo-x1\.2 {
-  border-color: rgba(0,200,255,0.5);
-  .combo-num { color: #00c8ff; text-shadow: 0 0 10px rgba(0,200,255,0.6); }
-}
-.combo-display.combo-x1\.5 {
-  border-color: rgba(255,180,0,0.5);
-  .combo-num { color: #ffb400; text-shadow: 0 0 12px rgba(255,180,0,0.7); }
-}
-.combo-display.combo-x2 {
-  border-color: rgba(255,0,100,0.6);
-  .combo-num { color: #ff0064; text-shadow: 0 0 15px rgba(255,0,100,0.8); animation: combo-shake 0.5s ease-in-out; }
-}
+.combo-display.combo-x1\.2 { border-color: rgba(0,200,255,0.5); }
+.combo-display.combo-x1\.2 .combo-num { color: #00c8ff; text-shadow: 0 0 10px rgba(0,200,255,0.6); }
+.combo-display.combo-x1\.5 { border-color: rgba(255,180,0,0.5); }
+.combo-display.combo-x1\.5 .combo-num { color: #ffb400; text-shadow: 0 0 12px rgba(255,180,0,0.7); }
+.combo-display.combo-x2 { border-color: rgba(255,0,100,0.6); }
+.combo-display.combo-x2 .combo-num { color: #ff0064; text-shadow: 0 0 15px rgba(255,0,100,0.8); animation: combo-shake 0.5s ease-in-out; }
 @keyframes combo-shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
@@ -1238,6 +1297,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   flex-direction: column;
   gap: 4px;
   min-width: 200px;
+  max-height: 42vh;
+  overflow: hidden;
 }
 .sb-row {
   display: flex;
@@ -1267,7 +1328,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .touch-controls {
   position: absolute;
-  inset: 60px 0 0 0;
+  inset: 0;
   pointer-events: none;
   z-index: 15;
 }
@@ -1309,6 +1370,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   background: rgba(0, 255, 80, 0.35);
   border: 2px solid rgba(0, 255, 80, 0.7);
   will-change: transform;
+  transition: none;
 }
 
 .aim-knob {
@@ -1336,8 +1398,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .dash-btn {
   position: absolute;
-  right: calc(112px + env(safe-area-inset-right));
-  bottom: calc(112px + env(safe-area-inset-bottom));
+  right: calc(24px + env(safe-area-inset-right));
+  bottom: calc(174px + env(safe-area-inset-bottom));
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -1378,6 +1440,12 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   margin-bottom: 12px;
   animation: pulse-warning 1s infinite;
 }
+
+.loading-overlay .reconnect-box i {
+  color: #00ff50;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .reconnect-box .go-btn {
   margin: 16px auto 0;
@@ -1459,16 +1527,20 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .upgrade-overlay {
   position: absolute;
-  inset: 60px 0 0 0;
+  inset: 0;
   background: rgba(4,8,10,0.82);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  padding: calc(58px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
   z-index: 45;
 }
 .upgrade-panel {
   text-align: center;
   padding: 28px;
+  margin: auto;
+  max-width: 100%;
 }
 .upgrade-head { margin-bottom: 22px; }
 .uh-tag {
@@ -1580,10 +1652,11 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .dead-overlay {
   position: absolute;
   inset: 0;
-  top: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  padding: calc(66px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
   background: rgba(0,0,0,0.5);
   z-index: 18;
 }
@@ -1592,17 +1665,22 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   background: rgba(0,0,0,0.8);
   border: 1px solid rgba(255,80,80,0.3);
   padding: 40px 60px;
+  max-width: min(360px, 100%);
+  margin: auto;
 }
-.dead-icon { font-size: 52px; margin-bottom: 12px; opacity: 0.5; }
+.dead-icon { font-size: 52px; color: #ff5050; margin-bottom: 12px; opacity: 0.6; }
 .dead-box h2 { font-family: 'Orbitron', sans-serif; font-size: 22px; color: #ff5050; margin-bottom: 8px; }
 .dead-box p { font-size: 13px; color: rgba(224,240,224,0.4); font-family: 'Share Tech Mono', monospace; }
+.dead-box .go-btn { margin: 18px auto 0; min-width: 180px; }
+.dead-box .go-btn i { font-size: 12px; }
 
 .downed-overlay {
   position: absolute;
-  inset: 60px 0 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: calc(66px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom));
   background: rgba(60,0,0,0.35);
   z-index: 18;
   pointer-events: none;
@@ -1612,6 +1690,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   background: rgba(10,0,0,0.78);
   border: 1px solid rgba(255,64,64,0.45);
   padding: 30px 44px;
+  max-width: min(340px, 100%);
+  margin: auto;
 }
 .downed-icon { font-size: 40px; color: #ff4040; margin-bottom: 10px; animation: pulse-warning 0.9s infinite; }
 .downed-box h2 { font-family: 'Orbitron', sans-serif; font-size: 20px; color: #ff5050; margin-bottom: 6px; }
@@ -1628,10 +1708,11 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .gameover-overlay {
   position: absolute;
   inset: 0;
-  top: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  padding: calc(56px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
   background: rgba(0,0,0,0.82);
   z-index: 30;
 }
@@ -1639,7 +1720,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   background: rgba(8,12,16,0.98);
   border: 1px solid rgba(0,255,80,0.2);
   padding: 40px 52px;
-  min-width: 420px;
+  width: min(420px, 100%);
+  margin: auto;
   text-align: center;
 }
 .go-tag {
@@ -1740,6 +1822,14 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .sb-row { font-size: 10.5px; padding: 4px 8px; }
   .sb-kills { display: none; }
 
+  .boss-bar {
+    top: 62px;
+    left: 12px;
+    right: 170px;
+    width: auto;
+    transform: none;
+  }
+
   .wave-announce-inner { padding: 20px 32px; }
   .wave-announce-inner h2 { font-size: 32px; }
   .wa-tag { font-size: 10px; }
@@ -1747,6 +1837,10 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .dead-box { padding: 28px 36px; }
   .dead-icon { font-size: 40px; }
   .dead-box h2 { font-size: 18px; }
+
+  .downed-box { padding: 22px 26px; }
+  .downed-icon { font-size: 34px; }
+  .downed-box h2 { font-size: 17px; }
 
   .gameover-box {
     min-width: 0;
@@ -1780,6 +1874,12 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .dead-box { padding: 20px 24px; }
   .dead-box h2 { font-size: 16px; }
   .dead-box p { font-size: 11px; }
+
+  .downed-box { padding: 16px 18px; }
+  .downed-icon { font-size: 30px; }
+  .downed-box h2 { font-size: 15px; }
+  .downed-box p { font-size: 11px; margin-bottom: 10px; }
+  .bleed-track { width: 170px; }
 
   .gameover-box { width: 94vw; padding: 20px 16px; }
   .go-actions { flex-direction: column; }
