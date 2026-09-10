@@ -198,7 +198,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: calc(16px + env(safe-area-inset-top)) 18px 16px;
+  padding: calc(16px + env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 16px max(18px, env(safe-area-inset-left));
   background: linear-gradient(135deg, #7c6ff5, #ff5c4d);
   position: sticky;
   top: 0;

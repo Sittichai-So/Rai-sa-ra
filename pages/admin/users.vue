@@ -265,7 +265,7 @@ export default {
 .au-page { min-height: 100vh; min-height: 100dvh; background: #121218; color: #f6f3ed; font-family: 'Kanit', sans-serif; }
 .au-header {
   display: flex; align-items: center; gap: 12px;
-  padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: linear-gradient(135deg, #ff5c4d, #7c6ff5);
+  padding: calc(16px + env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 16px max(18px, env(safe-area-inset-left)); background: linear-gradient(135deg, #ff5c4d, #7c6ff5);
   position: sticky; top: 0; z-index: 5;
 }
 .au-header h1 { flex: 1; margin: 0; font-size: 18px; font-weight: 700; }

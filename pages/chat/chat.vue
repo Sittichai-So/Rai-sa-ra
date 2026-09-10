@@ -1104,8 +1104,9 @@ export default {
       if (typeof window !== 'undefined') {
         if (left < 8) { left = 8 }
         if (top + H > window.innerHeight - 8) { top = window.innerHeight - H - 8 }
+        if (top < 8) { top = 8 }
       }
-      return { top: top + 'px', left: left + 'px' }
+      return { top: `max(${top}px, env(safe-area-inset-top))`, left: `max(${left}px, env(safe-area-inset-left))` }
     },
     roomMenuStyle () {
       const W = 190
@@ -1115,8 +1116,9 @@ export default {
       if (typeof window !== 'undefined') {
         if (left < 8) { left = 8 }
         if (top + H > window.innerHeight - 8) { top = window.innerHeight - H - 8 }
+        if (top < 8) { top = 8 }
       }
-      return { top: top + 'px', left: left + 'px' }
+      return { top: `max(${top}px, env(safe-area-inset-top))`, left: `max(${left}px, env(safe-area-inset-left))` }
     }
   },
   watch: {
@@ -2407,10 +2409,11 @@ export default {
   border-right: 1px solid var(--border-hair);
   position: relative;
   z-index: 1;
+  padding-left: env(safe-area-inset-left);
 }
 
 .sidebar-header {
-  padding: 22px 20px;
+  padding: calc(22px + env(safe-area-inset-top)) 20px 22px;
   border-bottom: 1px solid var(--border-hair);
   display: flex;
   justify-content: space-between;
@@ -2847,7 +2850,7 @@ export default {
 }
 
 .main-header {
-  padding: 24px 32px;
+  padding: 24px max(32px, env(safe-area-inset-right)) 24px 32px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border-hair);
   display: flex;
@@ -3982,7 +3985,7 @@ select.cr-input option {
   .sidebar { position: fixed; left: -320px; top: 0; bottom: 0; height: 100dvh; width: 320px; z-index: 100; transition: left 0.3s ease; }
   .sidebar.open { left: 0; }
   .main-content { width: 100%; }
-  .main-header { flex-direction: column; gap: 10px; align-items: stretch; padding: 12px 18px; padding-top: calc(70px + env(safe-area-inset-top)); }
+  .main-header { flex-direction: column; gap: 10px; align-items: stretch; padding: 12px max(18px, env(safe-area-inset-right)) 12px max(18px, env(safe-area-inset-left)); padding-top: calc(70px + env(safe-area-inset-top)); }
   .header-left .eyebrow { margin-bottom: 2px; }
   .header-left h1 { font-size: 20px; margin: 0; }
   .header-left p { display: none; }
@@ -3999,7 +4002,7 @@ select.cr-input option {
 @media (max-width: 640px) {
   .workspace-icon { width: 38px; height: 38px; font-size: 16px; }
   .workspace-details h4 { font-size: 14px; }
-  .main-header { padding: calc(66px + env(safe-area-inset-top)) 16px 12px; }
+  .main-header { padding: calc(66px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left)); }
   .header-left h1 { font-size: 19px; }
   .rooms-container { padding: 12px 14px; }
   .room-card { padding: 20px; }

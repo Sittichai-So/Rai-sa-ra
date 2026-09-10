@@ -314,14 +314,14 @@ export default {
   background: #121218;
   color: #f6f3ed;
   font-family: 'Kanit', sans-serif;
-  padding-bottom: 40px;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
 }
 
 .w-header {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 18px 20px;
+  padding: 18px max(20px, env(safe-area-inset-right)) 18px max(20px, env(safe-area-inset-left));
   padding-top: calc(18px + env(safe-area-inset-top));
   background: linear-gradient(135deg, #ff5c4d, #7c6ff5);
   position: sticky;

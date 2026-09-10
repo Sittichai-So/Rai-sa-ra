@@ -215,7 +215,7 @@ export default {
 
   position: relative;
   background: var(--paper-soft);
-  padding: 14px 20px 18px;
+  padding: 14px max(20px, env(safe-area-inset-right)) 18px max(20px, env(safe-area-inset-left));
   padding-bottom: calc(18px + env(safe-area-inset-bottom));
 }
 
@@ -435,7 +435,7 @@ export default {
 .send-btn i { font-size: 1.05rem; }
 
 @media (max-width: 768px) {
-  .message-input-container { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
+  .message-input-container { padding: 12px max(16px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   .action-btn.emoji-btn { width: 30px; height: 30px; font-size: 0.85rem; }
   .action-btn.attach-btn { width: 34px; height: 34px; font-size: 0.85rem; margin-right: 6px; }
   .send-btn { width: 40px; height: 40px; }

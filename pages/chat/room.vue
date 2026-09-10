@@ -1103,7 +1103,7 @@ export default {
 .chat-header {
   background: var(--violet);
   border-bottom: var(--line) solid var(--ink);
-  padding: 18px 24px;
+  padding: 18px max(24px, env(safe-area-inset-right)) 18px max(24px, env(safe-area-inset-left));
   padding-top: calc(18px + env(safe-area-inset-top));
   flex-shrink: 0;
 }
@@ -1908,7 +1908,7 @@ export default {
     border-left: none;
     border-top: var(--line) solid var(--ink);
   }
-  .chat-header { padding: calc(8px + env(safe-area-inset-top)) 12px 8px; }
+  .chat-header { padding: calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)); }
   .room-avatar { width: 32px; height: 32px; }
   .room-name { font-size: 0.85rem; }
   .room-status { font-size: 0.65rem; }

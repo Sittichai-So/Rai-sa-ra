@@ -71,7 +71,7 @@ export default {
   align-items: center;
   justify-content: center;
   background: #121218;
-  padding: 24px;
+  padding: calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
   font-family: 'Kanit', sans-serif;
 }
 

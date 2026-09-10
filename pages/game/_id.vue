@@ -497,7 +497,7 @@ export default {
     this.renderLoop()
 
     window.addEventListener('resize', this.setupCanvas)
-    window.addEventListener('orientationchange', this.setupCanvas)
+    window.addEventListener('orientationchange', this._onOrientationChange)
     window.addEventListener('keydown', this.onKeyDown)
     window.addEventListener('keyup', this.onKeyUp)
     window.addEventListener('blur', this.clearKeys)
@@ -519,8 +519,9 @@ export default {
     clearTimeout(this._reinforceT)
     clearTimeout(this._dashCdT)
     clearTimeout(this._comboT)
+    clearTimeout(this._orientT)
     window.removeEventListener('resize', this.setupCanvas)
-    window.removeEventListener('orientationchange', this.setupCanvas)
+    window.removeEventListener('orientationchange', this._onOrientationChange)
     window.removeEventListener('keydown', this.onKeyDown)
     window.removeEventListener('keyup', this.onKeyUp)
     window.removeEventListener('blur', this.clearKeys)
@@ -529,6 +530,12 @@ export default {
     window.removeEventListener('touchcancel', this.onStickEnd)
   },
   methods: {
+    _onOrientationChange () {
+      this.setupCanvas()
+      clearTimeout(this._orientT)
+      this._orientT = setTimeout(() => this.setupCanvas(), 300)
+    },
+
     setupCanvas () {
       const canvas = this.$refs.canvas
       if (!canvas) { return }
@@ -1129,7 +1136,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   border-bottom: 1px solid rgba(0,255,80,0.2);
   display: flex;
   align-items: center;
-  padding: env(safe-area-inset-top) 20px 0;
+  padding: env(safe-area-inset-top) max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
   gap: 24px;
   z-index: 10;
   flex-shrink: 0;
@@ -1291,7 +1298,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .mini-scoreboard {
   position: absolute;
   top: 70px;
-  right: 14px;
+  right: max(14px, env(safe-area-inset-right));
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -1329,13 +1336,14 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .touch-controls {
   position: absolute;
   inset: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   pointer-events: none;
   z-index: 15;
 }
 
 .joystick-pad {
   position: absolute;
-  bottom: calc(28px + env(safe-area-inset-bottom));
+  bottom: 28px;
   width: 132px;
   height: 132px;
   pointer-events: auto;
@@ -1345,8 +1353,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   justify-content: center;
 }
 
-.move-pad { left: calc(24px + env(safe-area-inset-left)); }
-.aim-pad { right: calc(24px + env(safe-area-inset-right)); }
+.move-pad { left: 24px; }
+.aim-pad { right: 24px; }
 
 .joystick-base {
   position: absolute;
@@ -1380,8 +1388,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .reload-btn {
   position: absolute;
-  right: calc(168px + env(safe-area-inset-right));
-  bottom: calc(40px + env(safe-area-inset-bottom));
+  right: 168px;
+  bottom: 40px;
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -1398,8 +1406,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .dash-btn {
   position: absolute;
-  right: calc(24px + env(safe-area-inset-right));
-  bottom: calc(174px + env(safe-area-inset-bottom));
+  right: 24px;
+  bottom: 174px;
   width: 54px;
   height: 54px;
   border-radius: 50%;
@@ -1533,7 +1541,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  padding: calc(58px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+  padding: calc(58px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   z-index: 45;
 }
 .upgrade-panel {
@@ -1596,7 +1604,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 .upgrade-tags {
   position: absolute;
-  left: 14px;
+  left: max(14px, env(safe-area-inset-left));
   top: 72px;
   display: flex;
   flex-direction: column;
@@ -1656,7 +1664,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  padding: calc(66px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  padding: calc(66px + env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
   background: rgba(0,0,0,0.5);
   z-index: 18;
 }
@@ -1680,7 +1688,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(66px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom));
+  padding: calc(66px + env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
   background: rgba(60,0,0,0.35);
   z-index: 18;
   pointer-events: none;
@@ -1712,7 +1720,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  padding: calc(56px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  padding: calc(56px + env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
   background: rgba(0,0,0,0.82);
   z-index: 30;
 }
@@ -1796,7 +1804,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 @media (max-width: 900px) {
   .hud {
-    padding: env(safe-area-inset-top) 12px 0;
+    padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
     gap: 10px;
   }
   .hud-left, .hud-right {
@@ -1816,7 +1824,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
   .mini-scoreboard {
     top: 64px;
-    right: 8px;
+    right: max(8px, env(safe-area-inset-right));
     min-width: 150px;
   }
   .sb-row { font-size: 10.5px; padding: 4px 8px; }
@@ -1824,8 +1832,8 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
   .boss-bar {
     top: 62px;
-    left: 12px;
-    right: 170px;
+    left: max(12px, env(safe-area-inset-left));
+    right: calc(160px + env(safe-area-inset-right));
     width: auto;
     transform: none;
   }
@@ -1852,7 +1860,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 
 @media (max-width: 480px) {
-  .hud { min-height: 50px; padding: calc(5px + env(safe-area-inset-top)) 8px 5px; gap: 6px; }
+  .hud { min-height: 50px; padding: calc(5px + env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 5px max(8px, env(safe-area-inset-left)); gap: 6px; }
   .hud-label { font-size: 7.5px; }
   .wave-display { align-items: center; }
   .timer-display { margin-top: 2px; padding: 1px 6px; }
@@ -1884,5 +1892,29 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .gameover-box { width: 94vw; padding: 20px 16px; }
   .go-actions { flex-direction: column; }
   .go-btn { font-size: 11px; padding: 11px; }
+}
+
+@media (orientation: landscape) and (max-height: 460px) {
+  .hud { min-height: 40px; }
+  .hud-label { font-size: 8px; }
+  .hp-bar { width: 72px; }
+  .hp-num { font-size: 11px; }
+  .wave-display { align-items: center; }
+  .wave-num { font-size: 15px; }
+  .wave-label { font-size: 8px; }
+  .wave-countdown, .timer-display { font-size: 9px; padding: 1px 6px; margin-top: 0; }
+  .score-num { font-size: 12px; }
+  .combo-display { padding: 2px 8px; }
+  .combo-num { font-size: 14px; }
+  .escape-btn { width: 26px; height: 26px; }
+
+  .joystick-pad { width: 112px; height: 112px; bottom: 12px; }
+  .joystick-knob { width: 46px; height: 46px; }
+  .reload-btn { right: 140px; bottom: 22px; width: 44px; height: 44px; font-size: 17px; }
+  .dash-btn { right: 18px; bottom: 132px; width: 44px; height: 44px; font-size: 17px; }
+
+  .mini-scoreboard { top: 44px; max-height: 56vh; }
+  .upgrade-tags { top: 46px; }
+  .boss-bar { top: 44px; }
 }
 </style>

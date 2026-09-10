@@ -147,7 +147,7 @@ export default {
   justify-content: center;
   align-items: center;
   background: #121218 !important;
-  padding: 20px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
   overflow: hidden;
 }
 

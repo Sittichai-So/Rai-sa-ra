@@ -635,12 +635,12 @@ i.fa-solid {
 
 .custom-navbar {
   background: transparent !important;
-  padding-top: 18px;
+  padding-top: calc(18px + env(safe-area-inset-top));
   transition: padding 0.25s ease;
 }
 
 .custom-navbar.scrolled {
-  padding-top: 10px;
+  padding-top: calc(10px + env(safe-area-inset-top));
 }
 
 .custom-navbar .container {
@@ -1207,7 +1207,7 @@ i.fa-solid {
 .footer {
   background: #121218 !important;
   color: #cbd5e1;
-  padding: 50px 0 25px;
+  padding: 50px 0 calc(25px + env(safe-area-inset-bottom));
   border-top: 2px solid #000;
 }
 

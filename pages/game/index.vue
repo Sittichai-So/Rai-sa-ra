@@ -319,7 +319,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 24px 40px;
+  padding: calc(24px + env(safe-area-inset-top)) 40px 24px;
   border-bottom: 1px solid rgba(0, 255, 80, 0.15);
   background: rgba(8, 12, 16, 0.9);
 }
@@ -391,7 +391,7 @@ export default {
   z-index: 1;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 36px 40px;
+  padding: 36px 40px calc(36px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: 340px 1fr;
   grid-template-rows: auto auto;
@@ -667,16 +667,16 @@ section h2 {
 @media (max-width: 900px) {
   .lobby-body {
     grid-template-columns: 1fr;
-    padding: 24px 20px;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
   }
   .rooms-panel { grid-column: 1; grid-row: auto; }
   .leaderboard-panel { grid-column: 1; }
-  .lobby-header { padding: 16px 20px; }
+  .lobby-header { padding: calc(16px + env(safe-area-inset-top)) 20px 16px; }
   .title-block h1 { font-size: 24px; }
 }
 
 @media (max-width: 420px) {
-  .lobby-body { padding: 20px 14px; }
+  .lobby-body { padding: 20px 14px calc(20px + env(safe-area-inset-bottom)); }
   .create-panel, .rooms-panel, .howto-panel, .leaderboard-panel { padding: 20px 16px; }
   .controls-grid { grid-template-columns: 1fr; }
   .title-block h1 { font-size: 20px; }

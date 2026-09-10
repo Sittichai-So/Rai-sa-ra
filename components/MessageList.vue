@@ -137,7 +137,7 @@
       </span>
     </button>
 
-    <div v-if="contextMenu.show" class="context-menu" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }" @click="hideContextMenu">
+    <div v-if="contextMenu.show" class="context-menu" :style="{ top: `max(${contextMenu.y}px, env(safe-area-inset-top))`, left: `max(${contextMenu.x}px, env(safe-area-inset-left))` }" @click="hideContextMenu">
       <button class="context-menu-item" @click="showReactionPicker(contextMenu.message._id)">
         <i class="far fa-smile" /> เพิ่มรีแอคชัน
       </button>
@@ -450,6 +450,9 @@ export default {
         y = windowHeight - menuHeight - 10
       }
 
+      x = Math.max(12, x)
+      y = Math.max(12, y)
+
       this.contextMenu = {
         show: true,
         x,
@@ -512,7 +515,7 @@ export default {
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: 20px max(24px, env(safe-area-inset-right)) 20px max(24px, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
 }
@@ -962,7 +965,7 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .message-list { padding: 14px 16px; }
+  .message-list { padding: 14px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left)); }
   .message-main { max-width: 78%; }
   .message-bubble { padding: 8px 12px; font-size: 13px; }
   .message-avatar { width: 26px !important; height: 26px !important; font-size: 11px !important; }
