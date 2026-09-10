@@ -280,7 +280,7 @@ export default {
 * { box-sizing: border-box; }
 
 .game-lobby {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #080c10;
   color: #e0f0e0;
   font-family: 'Share Tech Mono', monospace;

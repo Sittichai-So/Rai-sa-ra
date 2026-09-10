@@ -784,7 +784,7 @@ i.fa-solid {
 }
 
 .hero-section {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   position: relative;
   display: flex;
   align-items: center;

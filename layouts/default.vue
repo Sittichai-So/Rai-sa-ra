@@ -33,9 +33,10 @@ body{
   padding: 0;
   position: relative;
   font-family: 'thai_sans_literegular';
-  background-color: #f5f8fa;
+  background-color: #0c0b10;
   font-size: 1rem;
-  min-height:100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .center{

@@ -127,7 +127,7 @@ export default {
 </script>
 
 <style scoped>
-.ar-page { min-height: 100vh; background: #121218; color: #f6f3ed; font-family: 'Kanit', sans-serif; }
+.ar-page { min-height: 100vh; min-height: 100dvh; background: #121218; color: #f6f3ed; font-family: 'Kanit', sans-serif; }
 .ar-header {
   display: flex; align-items: center; gap: 12px;
   padding: calc(16px + env(safe-area-inset-top)) 18px 16px; background: linear-gradient(135deg, #ff5c4d, #7c6ff5);

@@ -2785,11 +2785,11 @@ export default {
 
 .main-content {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   position: relative;
-  height: 100vh;
-  height: 100dvh;
   overflow-y: auto;
   z-index: 1;
 }

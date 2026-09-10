@@ -151,7 +151,7 @@ export default {
 .auth-page {
   font-family: 'Kanit', sans-serif;
   position: relative;
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
