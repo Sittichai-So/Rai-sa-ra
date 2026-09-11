@@ -539,8 +539,6 @@ export default {
     setupCanvas () {
       const canvas = this.$refs.canvas
       if (!canvas) { return }
-      // ใช้ขนาดจริงที่ canvas ถูก layout (flex) ไม่ใช่ innerHeight - 60 คงที่
-      // เพราะ HUD สูงไม่เท่า 60 เสมอ (safe-area จอมีติ่ง / จอย่อ) และ 100dvh != innerHeight บนมือถือ
       const rect = canvas.getBoundingClientRect()
       const w = Math.round(rect.width) || window.innerWidth
       const h = Math.round(rect.height) || Math.max(1, window.innerHeight - 60)
@@ -679,8 +677,6 @@ export default {
     sendInput () {
       if (!this.myId || this.forcedDead) { return }
 
-      // รับทั้งคีย์บอร์ดและจอยพร้อมกันเสมอ — device mode ของ browser จำลอง touch
-      // ทำให้ isTouch เป็น true แล้วคีย์บอร์ดใช้ไม่ได้ถ้าแยกทางกันแบบเดิม
       const kdx = (this.keys.d || this.keys.arrowright ? 1 : 0) -
                   (this.keys.a || this.keys.arrowleft ? 1 : 0)
       const kdy = (this.keys.s || this.keys.arrowdown ? 1 : 0) -
@@ -1032,7 +1028,6 @@ export default {
 
     onSocketReconnect () {
       if (!this.joined) { return }
-      // เซิร์ฟเวอร์อาจรีสตาร์ต (ห้องหาย) — บังคับ join ใหม่ + ลองซ้ำจนกว่าจะได้ gameJoined
       this.joined = false
       this.myId = null
       this.joinGame()

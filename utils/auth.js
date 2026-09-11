@@ -22,8 +22,6 @@ export function decodeJwt (token) {
   }
 }
 
-// อ่าน + ตรวจ session ฝั่ง client (backend ยังตรวจ signature จริงอีกชั้น)
-// reason: 'missing' | 'malformed' | 'expired' — ทุกกรณีที่ไม่ใช่ 'missing' ควรล้าง localStorage
 export function readSession () {
   let token, rawUser
   try {
@@ -50,7 +48,6 @@ export function readSession () {
   return { valid: true, token, payload, user }
 }
 
-// ล้าง session ถ้าเสีย/หมดอายุ — คืน true ถ้ายัง valid
 export function ensureCleanSession () {
   const s = readSession()
   if (!s.valid && s.reason !== 'missing') { clearAuth() }

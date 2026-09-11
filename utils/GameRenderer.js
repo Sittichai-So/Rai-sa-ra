@@ -22,10 +22,10 @@ function shade (hex, f) {
 }
 
 const TILE_COL = {
-  a: '#22242a', // ถนน
-  s: '#2f3138', // ฟุตบาท
-  g: '#1f3020', // หญ้า
-  d: '#2e2820' // ดิน
+  a: '#22242a',
+  s: '#2f3138',
+  g: '#1f3020',
+  d: '#2e2820'
 }
 
 export default class GameRenderer {
@@ -57,7 +57,6 @@ export default class GameRenderer {
     }
   }
 
-  // ── สร้างชั้นแมพ (พื้น + ของ) ครั้งเดียว แล้ว blit ทุกเฟรม ──
   setMap (map) {
     if (!map || !map.tiles) { return }
     this.map = map
@@ -74,7 +73,6 @@ export default class GameRenderer {
       const cy = Math.floor(i / cols) * t
       c.fillStyle = TILE_COL[ch] || '#202228'
       c.fillRect(cx, cy, t, t)
-      // texture พิกเซลเล็กน้อย
       c.fillStyle = 'rgba(0,0,0,0.16)'
       for (let k = 0; k < 3; k++) {
         const px = cx + ((i * 7 + k * 13) % t)
@@ -89,7 +87,6 @@ export default class GameRenderer {
       c.strokeRect(cx + 0.5, cy + 0.5, t, t)
     }
 
-    // เส้นถนน
     c.fillStyle = 'rgba(220,200,90,0.5)'
     for (let y = 0; y < map.h; y += 64) { c.fillRect(map.w / 2 - 3, y + 14, 6, 30) }
     for (let x = 0; x < map.w; x += 64) { c.fillRect(x + 14, map.h / 2 - 3, 30, 6) }
@@ -104,7 +101,6 @@ export default class GameRenderer {
     c.translate(p.x, p.y)
     const w = p.w || (p.r ? p.r * 2 : 40)
     const h = p.h || (p.r ? p.r * 2 : 40)
-    // เงา
     c.fillStyle = 'rgba(0,0,0,0.35)'
     c.fillRect(-w / 2 + 4, -h / 2 + 6, w, h)
 
@@ -147,7 +143,7 @@ export default class GameRenderer {
       for (let i = 0; i < 6; i++) {
         c.fillRect(-w / 2 + 4 + (i * (w - 8)) / 6, -h / 2 - 4, 6, 12)
       }
-    } else { // crate
+    } else {
       c.fillStyle = '#6b4a2a'
       c.fillRect(-w / 2, -h / 2, w, h)
       c.strokeStyle = '#3f2c18'
@@ -161,7 +157,6 @@ export default class GameRenderer {
     c.restore()
   }
 
-  // ── effect triggers (เรียกจาก component) ─────────────
   burst (x, y, count, colors, opts = {}) {
     const spd = opts.speed || 140
     for (let i = 0; i < count; i++) {
@@ -263,7 +258,6 @@ export default class GameRenderer {
     if (this.shakeAmt < 0.3) { this.shakeAmt = 0 }
   }
 
-  // ── main draw ────────────────────────────────────────
   draw ({ players, zombies, bullets, projectiles, pickups, shootFx, deathFx, myId, camX, camY, mapW, mapH, showMinimap = true }) {
     const ctx = this.ctx
     const W = this.canvas.width
@@ -429,7 +423,6 @@ export default class GameRenderer {
       ctx.save()
       ctx.translate(Math.round(z.x), Math.round(z.y))
 
-      // ground shadow
       ctx.beginPath()
       ctx.ellipse(0, rad * 0.55, rad * 0.85, rad * 0.35, 0, 0, Math.PI * 2)
       ctx.fillStyle = 'rgba(0,0,0,0.28)'
@@ -449,7 +442,6 @@ export default class GameRenderer {
         ctx.fill()
       }
 
-      // ── ตัวซอมบี้แบบพิกเซล ──
       const base = flashing ? '#ffffff' : style.color
       const dark = flashing ? '#dddddd' : style.dark
       const u = Math.max(3, Math.round(rad / 3.6))
@@ -471,7 +463,6 @@ export default class GameRenderer {
         ctx.strokeRect(-rad * 0.5, -rad * 0.5 + bob, rad, rad)
       }
 
-      // ตา (ด้านที่หันเข้าหาเป้า)
       const ex = Math.round(Math.cos(z.angle) * rad * 0.4)
       const ey = Math.round(Math.sin(z.angle) * rad * 0.4) + bob
       const perpX = Math.round(-Math.sin(z.angle) * rad * 0.28)
@@ -493,7 +484,6 @@ export default class GameRenderer {
     }
   }
 
-  // นักเอาชีวิตรอดมุมมองบน — อ้างอิง assets/images/charector.png
   heroReady (female) {
     const set = this.hero && this.hero[female ? 'f' : 'm']
     const w = set && set.walk
@@ -577,35 +567,31 @@ export default class GameRenderer {
       : { jacket: '#5a5f3a', jacketD: '#3f4428', pack: '#6b5335' }
     const skin = flashing ? '#ffcaca' : '#d9a97e'
     const hair = female ? '#b5824a' : '#2e241c'
-    const s = rad / 15 // สเกลสไปรต์ (ใหญ่กว่า hitbox เล็กน้อย)
+    const s = rad / 15
 
     ctx.save()
     ctx.rotate(angle)
     const bob = step ? step * 0.8 * s : 0
     ctx.translate(0, bob)
 
-    // เป้สะพายหลัง (อยู่ด้านหลัง = -x)
     ctx.fillStyle = flashing ? '#e0b0b0' : P.pack
     ctx.fillRect(-13 * s, -7 * s, 7 * s, 14 * s)
     ctx.fillStyle = shade(P.pack, 0.7)
     ctx.fillRect(-13 * s, -2 * s, 7 * s, 4 * s)
 
-    // ปืนไรเฟิล (ถือขวางด้านหน้า)
     ctx.fillStyle = flashing ? '#ff9090' : '#23262d'
     ctx.fillRect(2 * s, -2.3 * s, 20 * s, 4.6 * s)
     ctx.fillStyle = flashing ? '#ffb0b0' : '#3a3f49'
     ctx.fillRect(1 * s, -3.5 * s, 6 * s, 7 * s)
     ctx.fillRect(-3 * s, -2 * s, 5 * s, 4 * s)
 
-    // ลำตัว (เสื้อแจ็คเก็ต)
     ctx.fillStyle = flashing ? '#ff6b6b' : P.jacket
     ctx.beginPath()
     ctx.ellipse(0, 0, 10 * s, 8.5 * s, 0, 0, Math.PI * 2)
     ctx.fill()
     ctx.fillStyle = flashing ? '#e05555' : P.jacketD
-    ctx.fillRect(-2 * s, -8 * s, 4 * s, 16 * s) // ซิปกลาง
+    ctx.fillRect(-2 * s, -8 * s, 4 * s, 16 * s)
 
-    // แขนถือปืน
     ctx.fillStyle = flashing ? '#ff8080' : P.jacketD
     ctx.fillRect(2 * s, -5 * s, 8 * s, 3 * s)
     ctx.fillRect(2 * s, 2 * s, 8 * s, 3 * s)
@@ -613,21 +599,20 @@ export default class GameRenderer {
     ctx.fillRect(9 * s, -4 * s, 3 * s, 2.5 * s)
     ctx.fillRect(9 * s, 2 * s, 3 * s, 2.5 * s)
 
-    // หัว (มองจากบน: ผม + หน้านิดหน่อยด้านหน้า)
     ctx.fillStyle = skin
     ctx.beginPath(); ctx.arc(3 * s, 0, 5 * s, 0, Math.PI * 2); ctx.fill()
     ctx.fillStyle = flashing ? '#ffdede' : hair
     ctx.beginPath(); ctx.arc(0.5 * s, 0, 5.4 * s, 0, Math.PI * 2); ctx.fill()
     if (female) {
       ctx.fillStyle = hair
-      ctx.fillRect(-6 * s, -2.5 * s, 5 * s, 5 * s) // หางม้า
+      ctx.fillRect(-6 * s, -2.5 * s, 5 * s, 5 * s)
     }
 
     ctx.restore()
   }
 
   _drawPlayers (ctx, players, myId, now, shootFx, deathFx) {
-    const wallNow = Date.now() // shootFx/deathFx เก็บเป็น Date.now() — ต้องเทียบฐานเวลาเดียวกัน
+    const wallNow = Date.now()
     for (const p of players) {
       const color = p.color || '#7c6ff5'
       const rad = p.radius || 18
@@ -706,13 +691,11 @@ export default class GameRenderer {
       ctx.save()
       ctx.translate(Math.round(p.x), Math.round(p.y))
 
-      // shadow
       ctx.beginPath()
       ctx.ellipse(0, rad * 0.7, rad * 0.9, rad * 0.34, 0, 0, Math.PI * 2)
       ctx.fillStyle = 'rgba(0,0,0,0.32)'
       ctx.fill()
 
-      // motion streak ระหว่างสไลด์
       if (dashing) {
         const dir = Math.atan2(p.vy || 0, p.vx || 0)
         ctx.save()
@@ -753,14 +736,12 @@ export default class GameRenderer {
 
       ctx.restore()
 
-      // name
       ctx.font = isMe ? 'bold 11px Share Tech Mono, monospace' : '10px Share Tech Mono, monospace'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
       ctx.fillStyle = isMe ? '#fff' : 'rgba(255,255,255,0.55)'
       ctx.fillText(p.username, p.x, p.y - rad - 8)
 
-      // hp bar
       const barW = 38
       const bx = p.x - barW / 2
       const by = p.y + rad + 6
@@ -770,7 +751,6 @@ export default class GameRenderer {
       ctx.fillStyle = hpPct > 0.5 ? '#00ff50' : hpPct > 0.25 ? '#ffcc00' : '#ff4040'
       ctx.fillRect(bx, by, barW * Math.max(0, hpPct), 4)
 
-      // reload ring (แสดง progress จริง)
       if (p.reloading) {
         const prog = p.reloadStart
           ? Math.max(0, Math.min(1, (wallNow - p.reloadStart) / (p.reloadMs || 1600)))
