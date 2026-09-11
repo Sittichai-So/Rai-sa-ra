@@ -80,12 +80,17 @@
 
       <TypingIndicator :typing-users="typingNames" class="typing-slot" />
 
+      <div v-if="currentRoom.isOpen === false" class="room-closed-banner">
+        <i class="fas fa-lock" /> ห้องนี้ปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ — เข้าร่วมหรือส่งข้อความไม่ได้
+      </div>
+
       <div class="message-input-container">
         <MessageInput
           ref="messageInput"
           :room-id="roomId"
           :reply-to="replyTo"
           :chat-theme="chatTheme"
+          :disabled="currentRoom.isOpen === false"
           @send-message="sendMessage"
           @cancel-reply="cancelReply"
           @send-file="handleSendFile"
@@ -259,7 +264,8 @@ export default {
         iconGradient: '',
         categoryName: '',
         retentionDays: null,
-        retentionPaidUntil: null
+        retentionPaidUntil: null,
+        isOpen: true
       },
       showRetentionModal: false,
       showManageModal: false,
@@ -454,6 +460,7 @@ export default {
       this.$socket.off('roomMembers', this.onRoomMembers)
       this.$socket.off('roomKicked', this.onRoomKicked)
       this.$socket.off('roomClosed', this.onRoomClosed)
+      this.$socket.off('roomStatusChanged', this.onRoomStatusChanged)
       this.$socket.off('connect', this.onSocketConnect)
       this.$socket.off('disconnect', this.onSocketDisconnect)
       this.$socket.emit('leaveRoom', { roomId: this.roomId, user: this.user })
@@ -631,7 +638,8 @@ export default {
             createdBy: r.createdBy || this.currentRoom.createdBy,
             iconGradient: r.iconGradient || this.currentRoom.iconGradient,
             retentionDays: r.retentionDays ?? null,
-            retentionPaidUntil: r.retentionPaidUntil ?? null
+            retentionPaidUntil: r.retentionPaidUntil ?? null,
+            isOpen: r.isOpen !== false
           }
         }
       } catch (err) {
@@ -718,6 +726,7 @@ export default {
       this.$socket.on('roomMembers', this.onRoomMembers)
       this.$socket.on('roomKicked', this.onRoomKicked)
       this.$socket.on('roomClosed', this.onRoomClosed)
+      this.$socket.on('roomStatusChanged', this.onRoomStatusChanged)
 
       this.$socket.emit('joinRoom', { roomId: this.roomId, user: this.user })
       this.$socket.on('receiveMessage', (msg) => {
@@ -777,6 +786,7 @@ export default {
     },
 
     sendMessage (messageData) {
+      if (this.currentRoom.isOpen === false) { return }
       const payload = {
         roomId: this.roomId,
         message: messageData.content,
@@ -1002,6 +1012,15 @@ export default {
         confirmButtonText: 'ตกลง'
       })
       this.$router.push('/chat/chat')
+    },
+
+    onRoomStatusChanged ({ roomId, isOpen }) {
+      if (String(roomId) !== String(this.roomId)) { return }
+      this.currentRoom.isOpen = isOpen !== false
+      this.$bvToast.toast(
+        this.currentRoom.isOpen ? 'ห้องนี้เปิดใช้งานแล้ว' : 'ผู้ดูแลปิดใช้งานห้องนี้ชั่วคราว',
+        { variant: this.currentRoom.isOpen ? 'success' : 'warning', solid: true }
+      )
     },
 
     onRetentionExtended (result) {
@@ -1381,6 +1400,19 @@ export default {
 
 .typing-slot {
   padding: 0 16px 4px;
+}
+
+.room-closed-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 92, 77, 0.12);
+  border-top: 1px solid rgba(255, 92, 77, 0.3);
+  color: #ff8f84;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .message-input-container {

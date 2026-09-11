@@ -84,6 +84,22 @@
           </div>
 
           <div class="rmp-field">
+            <label>สถานะห้อง</label>
+            <button
+              type="button"
+              class="rmp-toggle"
+              :class="{ on: form.isOpen }"
+              @click="form.isOpen = !form.isOpen"
+            >
+              <span class="rmp-toggle-track"><span class="rmp-toggle-knob" /></span>
+              <span class="rmp-toggle-label">
+                <i :class="form.isOpen ? 'fas fa-lock-open' : 'fas fa-lock'" />
+                {{ form.isOpen ? 'เปิดใช้งาน — สมาชิกเข้าและแชทได้ตามปกติ' : 'ปิดใช้งาน — ห้ามเข้าร่วม/ส่งข้อความชั่วคราว' }}
+              </span>
+            </button>
+          </div>
+
+          <div class="rmp-field">
             <label>สีไอคอนห้อง</label>
             <div class="rmp-swatches">
               <button
@@ -128,7 +144,7 @@ export default {
   },
   data () {
     return {
-      form: { name: '', category: '', description: '', tags: [], type: 'public', password: '', iconGradient: '' },
+      form: { name: '', category: '', description: '', tags: [], type: 'public', password: '', iconGradient: '', isOpen: true },
       tagInput: '',
       busy: false,
       gradients: [
@@ -156,7 +172,8 @@ export default {
         tags: Array.isArray(r.tags) ? [...r.tags] : [],
         type: r.type === 'private' ? 'private' : 'public',
         password: '',
-        iconGradient: r.iconGradient || ''
+        iconGradient: r.iconGradient || '',
+        isOpen: r.isOpen !== false
       }
       this.tagInput = ''
     },
@@ -177,7 +194,8 @@ export default {
         description: this.form.description,
         tags: this.form.tags,
         type: this.form.type,
-        iconGradient: this.form.iconGradient
+        iconGradient: this.form.iconGradient,
+        isOpen: this.form.isOpen
       }
       if (this.form.type === 'private' && this.form.password) {
         payload.password = this.form.password
@@ -317,6 +335,31 @@ textarea.rmp-input { resize: vertical; }
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .rmp-type.active { background: #7c6ff5; color: #fff; }
+
+.rmp-toggle {
+  width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  border: 2px solid #101014; border-radius: 12px; padding: 10px 12px;
+  background: #fff; cursor: pointer; text-align: left;
+}
+.rmp-toggle.on { background: rgba(124, 111, 245, 0.08); border-color: #7c6ff5; }
+.rmp-toggle-track {
+  flex-shrink: 0;
+  width: 40px; height: 22px; border-radius: 999px;
+  background: #d9d5cc; border: 2px solid #101014;
+  position: relative;
+  transition: background 0.15s ease;
+}
+.rmp-toggle.on .rmp-toggle-track { background: #7c6ff5; }
+.rmp-toggle-knob {
+  position: absolute;
+  top: 1px; left: 1px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; border: 2px solid #101014;
+  transition: transform 0.15s ease;
+}
+.rmp-toggle.on .rmp-toggle-knob { transform: translateX(18px); }
+.rmp-toggle-label { font-size: 0.82rem; font-weight: 600; color: #101014; display: flex; align-items: center; gap: 6px; }
 
 .rmp-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
 .rmp-swatch { width: 34px; height: 34px; border-radius: 10px; border: 2px solid #101014; cursor: pointer; }

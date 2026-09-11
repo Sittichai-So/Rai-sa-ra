@@ -20,7 +20,7 @@
           class="action-btn attach-btn"
           type="button"
           title="แนบไฟล์หรือรูปภาพ"
-          :disabled="uploading"
+          :disabled="uploading || disabled"
           @click="$refs.fileInput.click()"
         >
           <i v-if="uploading" class="fas fa-spinner fa-spin" />
@@ -39,14 +39,15 @@
             ref="textarea"
             v-model="messageText"
             class="form-control message-input"
-            :placeholder="replyTo ? `ตอบกลับ ${replyTo.username}...` : 'พิมพ์ข้อความ...'"
+            :disabled="disabled"
+            :placeholder="disabled ? 'ห้องนี้ปิดใช้งานชั่วคราว' : (replyTo ? `ตอบกลับ ${replyTo.username}...` : 'พิมพ์ข้อความ...')"
             rows="1"
             @keydown.enter.exact.prevent="onEnter"
             @keydown.shift.enter.exact="addNewLine"
             @input="handleInput"
           />
 
-          <button class="action-btn emoji-btn position-absolute" @click="toggleEmojiPicker">
+          <button class="action-btn emoji-btn position-absolute" :disabled="disabled" @click="toggleEmojiPicker">
             <i class="fas fa-smile" />
           </button>
         </div>
@@ -80,6 +81,10 @@ export default {
     chatTheme: {
       type: String,
       default: 'default'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -92,7 +97,7 @@ export default {
   },
   computed: {
     canSend () {
-      return this.messageText.trim().length > 0
+      return !this.disabled && this.messageText.trim().length > 0
     }
   },
   methods: {
@@ -142,7 +147,7 @@ export default {
     onFileSelected (e) {
       const file = e.target.files && e.target.files[0]
       e.target.value = ''
-      if (!file) { return }
+      if (!file || this.disabled) { return }
 
       const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
@@ -339,6 +344,8 @@ export default {
   font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
   box-shadow: none !important;
 }
+.message-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.attach-btn:disabled, .emoji-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .message-input:focus {
   box-shadow: none;

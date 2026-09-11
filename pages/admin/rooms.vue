@@ -32,6 +32,9 @@
               <i :class="room.type === 'private' ? 'fas fa-lock' : 'fas fa-globe-asia'" />
               {{ room.type === 'private' ? 'ส่วนตัว' : 'สาธารณะ' }}
             </span>
+            <span v-if="room.isOpen === false" class="ar-badge closed">
+              <i class="fas fa-ban" /> ปิดใช้งาน
+            </span>
           </div>
           <div class="ar-meta">
             <span>{{ room.categoryName || room.category }}</span>
@@ -167,6 +170,7 @@ export default {
 }
 .ar-badge.private { background: rgba(255, 201, 77, 0.2); color: #ffc94d; }
 .ar-badge.public { background: rgba(124, 111, 245, 0.2); color: #a99bff; }
+.ar-badge.closed { background: rgba(255, 92, 77, 0.2); color: #ff8f84; }
 .ar-meta { font-size: 12px; color: rgba(246, 243, 237, 0.55); margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
 .ar-desc { font-size: 12px; color: rgba(246, 243, 237, 0.45); margin: 6px 0 0; }
 

@@ -302,8 +302,8 @@
                 <span>{{ room.messageCount || 0 }}</span>
               </div>
               <div class="stat-item status">
-                <div class="status-dot" :class="room.status === 'ออนไลน์' ? 'online' : 'offline'" />
-                <span>{{ room.status }}</span>
+                <div class="status-dot" :class="room.status === 'ออนไลน์' && room.isOpen !== false ? 'online' : 'offline'" />
+                <span>{{ room.isOpen === false ? 'ปิดใช้งาน' : room.status }}</span>
               </div>
             </div>
 
@@ -323,7 +323,7 @@
 
             <div class="room-actions">
               <button
-                v-if="room.status === 'ออนไลน์'"
+                v-if="room.status === 'ออนไลน์' && room.isOpen !== false"
                 class="join-btn"
                 :disabled="joiningRoom === room._id || isUserInRoom(room._id)"
                 @click="joinRoom(room._id)"
@@ -334,7 +334,7 @@
               </button>
               <button v-else class="join-btn disabled" disabled>
                 <i class="fas fa-lock" />
-                ไม่พร้อมใช้งาน
+                {{ room.isOpen === false ? 'ปิดใช้งานชั่วคราว' : 'ไม่พร้อมใช้งาน' }}
               </button>
             </div>
           </div>
