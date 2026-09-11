@@ -501,7 +501,6 @@
       </div>
     </transition>
 
-    <!-- Add Friend -->
     <transition name="af-fade">
       <div v-if="showAddFriend" class="af-overlay" @click.self="closeModal">
         <div class="af-panel" role="dialog" aria-modal="true">
@@ -771,7 +770,6 @@
       </div>
     </transition>
 
-    <!-- Direct Message Modal -->
     <DirectMessageModal
       ref="dmModal"
       :friend="selectedFriend"
@@ -3173,7 +3171,6 @@ export default {
 
 .af-close:hover { background: rgba(255, 255, 255, 0.35); transform: rotate(90deg); }
 
-/* ── Friend profile modal ── */
 .pf-panel {
   position: relative;
   width: 100%;
@@ -3893,10 +3890,10 @@ select.cr-input option {
 .community-hero {
   background: linear-gradient(135deg, var(--coral), var(--coral-dark));
   text-align: center;
-  padding: 30px 26px;
+  padding: 18px 26px;
   margin: 0 32px;
   border-radius: var(--radius-lg);
-  box-shadow: 0 18px 40px rgba(255, 90, 69, 0.22);
+  box-shadow: 0 12px 28px rgba(255, 90, 69, 0.22);
   position: relative;
   overflow: hidden;
 }
@@ -3907,27 +3904,27 @@ select.cr-input option {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 58px;
-  height: 58px;
+  width: 40px;
+  height: 40px;
   background: rgba(255, 255, 255, 0.18);
   border-radius: 50%;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: white;
 }
 
-.community-icon-large i { font-size: 22px; color: white; }
-
 .community-title {
-  font-size: var(--fs-display);
+  font-size: 20px;
   font-weight: var(--fw-black);
   color: #ffffff;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   letter-spacing: -0.01em;
 }
 
 .community-subtitle {
-  font-size: var(--fs-body);
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.88);
-  line-height: 1.65;
+  line-height: 1.55;
   max-width: 520px;
   margin: 0 auto;
 }

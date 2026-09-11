@@ -145,7 +145,7 @@ export default {
   border-radius: 10px; padding: 8px 12px;
 }
 .ar-search i { color: rgba(246, 243, 237, 0.4); font-size: 13px; }
-.ar-search input { flex: 1; background: transparent; border: none; outline: none; color: #f6f3ed; font-family: inherit; font-size: 14px; }
+.ar-search input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f6f3ed; font-family: inherit; font-size: 14px; }
 
 .ar-state { text-align: center; color: rgba(246, 243, 237, 0.5); padding: 40px 0; }
 

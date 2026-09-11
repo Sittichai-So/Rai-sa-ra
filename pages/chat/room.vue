@@ -1,4 +1,3 @@
-<!-- pages/chat/room.vue -->
 <template>
   <div
     class="chat-room-page"
@@ -1431,6 +1430,7 @@ export default {
 
 .search-input-box {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1443,6 +1443,7 @@ export default {
 
 .search-input-box input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;

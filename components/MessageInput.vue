@@ -1,4 +1,3 @@
-<!-- MessageInput.vue -->
 <template>
   <div class="message-input-container" :class="{ 'has-reply': !!replyTo }">
     <transition name="reply-slide">
@@ -320,6 +319,7 @@ export default {
 
 .text-input-wrapper {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: flex-end;
 }
@@ -334,6 +334,7 @@ export default {
   max-height: 120px;
   overflow-y: auto;
   flex: 1;
+  min-width: 0;
   color: var(--field-text);
   font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Arial Unicode MS', sans-serif;
   box-shadow: none !important;

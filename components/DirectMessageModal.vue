@@ -884,6 +884,7 @@ export default {
 
 .message-input {
   flex: 1;
+  min-width: 0;
   padding: 11px 16px;
   background: var(--white);
   border: var(--line-sm) solid var(--ink);

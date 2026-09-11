@@ -114,7 +114,6 @@ export default {
   --violet-deep: #5b4fd6;
   --line: 2px;
 
-  /* !important: ต้องหลุดออกจากทุก container ของหน้า chat/room เสมอ */
   position: fixed !important;
   inset: 0;
   z-index: 3000;

@@ -281,7 +281,7 @@ export default {
   border-radius: 10px; padding: 8px 12px;
 }
 .au-search i { color: rgba(246, 243, 237, 0.4); font-size: 13px; }
-.au-search input { flex: 1; background: transparent; border: none; outline: none; color: #f6f3ed; font-family: inherit; font-size: 14px; }
+.au-search input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f6f3ed; font-family: inherit; font-size: 14px; }
 .au-search-clear { border: none; background: transparent; color: rgba(246, 243, 237, 0.4); cursor: pointer; }
 .au-select {
   background: #1c1c26; border: 1px solid rgba(255, 255, 255, 0.1); color: #f6f3ed;
