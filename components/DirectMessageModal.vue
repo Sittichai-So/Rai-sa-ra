@@ -584,15 +584,21 @@ export default {
     border-right: 0;
     box-shadow: none;
   }
+
+  .dm-modal-header-custom { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); padding-bottom: 12px; }
+  .dm-modal-title { font-size: 1.05rem; gap: 8px; }
+  .dm-modal-close-btn { width: 32px; height: 32px; }
 }
 
 .dm-modal-header-custom {
   background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
   border-bottom: 2px solid var(--ink);
-  padding: 16px 20px;
+  padding: 16px max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
+  padding-top: calc(16px + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -604,9 +610,16 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+.dm-modal-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dm-modal-close-btn {
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid var(--ink);
   border-radius: 50%;
