@@ -65,6 +65,7 @@
         <div class="au-avatar">
           <img v-if="avatarUrl(u)" :src="avatarUrl(u)" :alt="displayName(u)">
           <span v-else>{{ initials(u) }}</span>
+          <span class="au-online-dot" :class="u.status || 'offline'" :title="onlineLabel(u)" />
         </div>
 
         <div class="au-info">
@@ -77,6 +78,9 @@
           <div class="au-meta">
             <span>@{{ u.username }}</span>
             <span v-if="u.email">· {{ u.email }}</span>
+          </div>
+          <div class="au-meta">
+            <span class="au-online-text" :class="{ on: u.status === 'online' }">{{ onlineLabel(u) }}</span>
           </div>
           <div class="au-meta au-meta-sub">
             <span>สมัคร {{ fmtDate(u.createdAt) }}</span>
@@ -174,6 +178,23 @@ export default {
     },
     fmtDate (d) {
       return d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+    },
+    fmtLastSeen (d) {
+      if (!d) { return 'ไม่ทราบ' }
+      const diff = Date.now() - new Date(d).getTime()
+      if (diff < 60000) { return 'เมื่อสักครู่' }
+      const m = Math.floor(diff / 60000)
+      if (m < 60) { return `${m} นาทีที่แล้ว` }
+      const h = Math.floor(m / 60)
+      if (h < 24) { return `${h} ชั่วโมงที่แล้ว` }
+      const days = Math.floor(h / 24)
+      if (days < 30) { return `${days} วันที่แล้ว` }
+      return this.fmtDate(d)
+    },
+    onlineLabel (u) {
+      const labels = { online: 'ออนไลน์', away: 'ไม่อยู่หน้าจอ', busy: 'ไม่ว่าง' }
+      if (labels[u.status]) { return labels[u.status] }
+      return 'ออฟไลน์ · เห็นล่าสุด ' + this.fmtLastSeen(u.lastSeen)
     },
     async load () {
       this.loading = true
@@ -298,11 +319,23 @@ export default {
 .au-card.suspended { opacity: 0.6; }
 
 .au-avatar {
+  position: relative;
   width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
   background: #7c6ff5; display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 15px; overflow: hidden;
 }
 .au-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.au-online-dot {
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid #1c1c26;
+  background: #6b7280;
+}
+.au-online-dot.online { background: #4dd07a; }
+.au-online-dot.away { background: #ffc94d; }
+.au-online-dot.busy { background: #ff5c4d; }
 
 .au-info { flex: 1; min-width: 0; }
 .au-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -321,6 +354,8 @@ export default {
 .au-meta-sub { font-size: 11px; color: rgba(246, 243, 237, 0.4); }
 .au-verified { color: #4dd07a; }
 .au-unverified { color: rgba(255, 201, 77, 0.8); }
+.au-online-text { font-size: 11px; color: rgba(246, 243, 237, 0.45); }
+.au-online-text.on { color: #4dd07a; }
 
 .au-actions { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; align-items: stretch; }
 .au-role-select {
