@@ -438,6 +438,14 @@
         </div>
       </div>
     </div>
+
+    <AvatarCropper
+      :show="showCropper"
+      :file="cropperFile"
+      @confirm="onCropConfirmed"
+      @cancel="onCropCancelled"
+      @error="onCropError"
+    />
   </b-modal>
 </template>
 
@@ -471,6 +479,8 @@ export default {
       },
       profile: [],
       uploadingAvatar: false,
+      showCropper: false,
+      cropperFile: null,
       showPassword: false,
       showConfirmPassword: false,
       password: {
@@ -571,7 +581,7 @@ export default {
       }
       this.$refs.avatarInput.click()
     },
-    async onAvatarSelected (e) {
+    onAvatarSelected (e) {
       const file = e.target.files && e.target.files[0]
       e.target.value = ''
       if (!file) {
@@ -581,7 +591,26 @@ export default {
         this.$swal({ icon: 'error', title: 'ไฟล์ไม่ถูกต้อง', text: 'กรุณาเลือกไฟล์รูปภาพ' })
         return
       }
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > 15 * 1024 * 1024) {
+        this.$swal({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'เลือกรูปที่มีขนาดไม่เกิน 15MB' })
+        return
+      }
+      this.cropperFile = file
+      this.showCropper = true
+    },
+    onCropCancelled () {
+      this.showCropper = false
+      this.cropperFile = null
+    },
+    onCropError (message) {
+      this.showCropper = false
+      this.cropperFile = null
+      this.$swal({ icon: 'error', title: 'ครอปรูปไม่สำเร็จ', text: message || 'ลองใหม่อีกครั้ง' })
+    },
+    async onCropConfirmed (blob) {
+      this.showCropper = false
+      this.cropperFile = null
+      if (blob.size > 2 * 1024 * 1024) {
         this.$swal({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'รูปโปรไฟล์ต้องไม่เกิน 2MB' })
         return
       }
@@ -589,7 +618,7 @@ export default {
       this.uploadingAvatar = true
       try {
         const fd = new FormData()
-        fd.append('file', file)
+        fd.append('file', blob, 'avatar.jpg')
         const res = await this.$axios.$post(process.env.API_USER_AVATAR, fd)
         const r = res.result || {}
         if (!r.avatar) {
