@@ -81,7 +81,8 @@
       <TypingIndicator :typing-users="typingNames" class="typing-slot" />
 
       <div v-if="currentRoom.isOpen === false" class="room-closed-banner">
-        <i class="fas fa-lock" /> ห้องนี้ปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ — เข้าร่วมหรือส่งข้อความไม่ได้
+        <i class="fas fa-lock" />
+        <span>ห้องนี้ปิดใช้งานชั่วคราวโดยผู้ดูแลระบบ — เข้าร่วมหรือส่งข้อความไม่ได้</span>
       </div>
 
       <div class="message-input-container">
@@ -1414,6 +1415,8 @@ export default {
   font-size: 0.82rem;
   font-weight: 600;
 }
+.room-closed-banner i { flex-shrink: 0; }
+.room-closed-banner span { min-width: 0; overflow-wrap: break-word; }
 
 .message-input-container {
   flex-shrink: 0;

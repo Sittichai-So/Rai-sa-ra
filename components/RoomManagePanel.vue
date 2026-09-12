@@ -359,7 +359,7 @@ textarea.rmp-input { resize: vertical; }
   transition: transform 0.15s ease;
 }
 .rmp-toggle.on .rmp-toggle-knob { transform: translateX(18px); }
-.rmp-toggle-label { font-size: 0.82rem; font-weight: 600; color: #101014; display: flex; align-items: center; gap: 6px; }
+.rmp-toggle-label { min-width: 0; font-size: 0.82rem; font-weight: 600; color: #101014; display: flex; align-items: center; gap: 6px; }
 
 .rmp-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
 .rmp-swatch { width: 34px; height: 34px; border-radius: 10px; border: 2px solid #101014; cursor: pointer; }

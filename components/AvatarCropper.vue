@@ -53,7 +53,6 @@
 </template>
 
 <script>
-const STAGE_SIZE = 280
 const OUTPUT_SIZE = 512
 
 export default {
@@ -70,7 +69,8 @@ export default {
       offsetY: 0,
       dpr: (typeof window !== 'undefined' && window.devicePixelRatio) || 1,
       img: null,
-      baseScale: 1
+      baseScale: 1,
+      stageSize: 280
     }
   },
   watch: {
@@ -105,9 +105,10 @@ export default {
       const img = new Image()
       img.onload = () => {
         this.img = img
-        this.baseScale = Math.max(STAGE_SIZE / img.width, STAGE_SIZE / img.height)
-        this.ready = true
         this.$nextTick(() => {
+          this.measureStage()
+          this.baseScale = Math.max(this.stageSize / img.width, this.stageSize / img.height)
+          this.ready = true
           this.setupCanvas()
           this.draw()
         })
@@ -118,27 +119,32 @@ export default {
       }
       img.src = this._url
     },
+    measureStage () {
+      const stage = this.$refs.stage
+      const w = stage && stage.clientWidth
+      this.stageSize = w && w > 0 ? Math.round(w) : 280
+    },
     setupCanvas () {
       const canvas = this.$refs.canvas
       if (!canvas) { return }
-      canvas.width = STAGE_SIZE * this.dpr
-      canvas.height = STAGE_SIZE * this.dpr
-      canvas.style.width = STAGE_SIZE + 'px'
-      canvas.style.height = STAGE_SIZE + 'px'
+      canvas.width = this.stageSize * this.dpr
+      canvas.height = this.stageSize * this.dpr
+      canvas.style.width = this.stageSize + 'px'
+      canvas.style.height = this.stageSize + 'px'
     },
     drawParams (size) {
-      const scale = this.baseScale * this.zoom * (size / STAGE_SIZE)
+      const scale = this.baseScale * this.zoom * (size / this.stageSize)
       const drawW = this.img.width * scale
       const drawH = this.img.height * scale
-      const cx = size / 2 + this.offsetX * (size / STAGE_SIZE)
-      const cy = size / 2 + this.offsetY * (size / STAGE_SIZE)
+      const cx = size / 2 + this.offsetX * (size / this.stageSize)
+      const cy = size / 2 + this.offsetY * (size / this.stageSize)
       return { drawW, drawH, x: cx - drawW / 2, y: cy - drawH / 2 }
     },
     draw () {
       const canvas = this.$refs.canvas
       if (!canvas || !this.img) { return }
       const ctx = canvas.getContext('2d')
-      const size = STAGE_SIZE * this.dpr
+      const size = this.stageSize * this.dpr
       ctx.clearRect(0, 0, size, size)
       ctx.fillStyle = '#1c1c26'
       ctx.fillRect(0, 0, size, size)
@@ -146,9 +152,9 @@ export default {
       ctx.drawImage(this.img, x, y, drawW, drawH)
     },
     clampOffset () {
-      const { drawW, drawH } = this.drawParams(STAGE_SIZE)
-      const maxX = Math.max(0, (drawW - STAGE_SIZE) / 2)
-      const maxY = Math.max(0, (drawH - STAGE_SIZE) / 2)
+      const { drawW, drawH } = this.drawParams(this.stageSize)
+      const maxX = Math.max(0, (drawW - this.stageSize) / 2)
+      const maxY = Math.max(0, (drawH - this.stageSize) / 2)
       this.offsetX = Math.max(-maxX, Math.min(maxX, this.offsetX))
       this.offsetY = Math.max(-maxY, Math.min(maxY, this.offsetY))
     },
@@ -250,8 +256,8 @@ export default {
 
 .ac-stage {
   position: relative;
-  width: 280px;
-  height: 280px;
+  width: min(280px, 100%);
+  aspect-ratio: 1 / 1;
   border-radius: 16px;
   overflow: hidden;
   border: 2px solid #101014;
@@ -300,4 +306,9 @@ export default {
 
 .ac-fade-enter-active, .ac-fade-leave-active { transition: opacity 0.18s ease; }
 .ac-fade-enter, .ac-fade-leave-to { opacity: 0; }
+
+@media (max-width: 360px) {
+  .ac-body { padding: 16px 14px; }
+  .ac-footer { padding: 12px 14px; }
+}
 </style>
