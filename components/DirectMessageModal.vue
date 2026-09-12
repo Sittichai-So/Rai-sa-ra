@@ -610,6 +610,7 @@ export default {
 
 .dm-modal-header-custom {
   background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 100%);
+  background-color: currentcolor;
   border-bottom: 2px solid var(--ink);
   padding: 16px max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
   padding-top: calc(16px + env(safe-area-inset-top));
