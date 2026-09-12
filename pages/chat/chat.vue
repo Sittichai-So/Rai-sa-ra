@@ -22,61 +22,69 @@
       <div class="sidebar-content">
         <div class="section">
           <div class="section-header">
-            <h6>ช่องแชทรวมของฉัน</h6>
+            <button class="section-toggle" type="button" @click="toggleRoomsSection">
+              <i class="fas fa-chevron-down" :class="{ collapsed: roomsCollapsed }" />
+              <h6>ช่องแชทรวมของฉัน</h6>
+            </button>
             <button class="add-channel-btn" @click="showCreateRoom = true">
               <i class="fas fa-plus" />
             </button>
           </div>
-          <div v-if="joinedRooms.length > 6" class="sidebar-search">
-            <i class="fas fa-search" />
-            <input v-model="roomSearch" type="text" placeholder="ค้นหาห้อง...">
-          </div>
-          <div v-if="roomSearch.trim() && !filteredJoinedRooms.length" class="friends-empty">
-            ไม่พบห้องที่ค้นหา
-          </div>
-          <div class="channels-list">
-            <div
-              v-for="room in filteredJoinedRooms"
-              :key="room._id"
-              class="channel-item"
-              :class="{ active: activeRoomId === room._id }"
-            >
+          <div v-show="!roomsCollapsed">
+            <div v-if="joinedRooms.length > 6" class="sidebar-search">
+              <i class="fas fa-search" />
+              <input v-model="roomSearch" type="text" placeholder="ค้นหาห้อง...">
+            </div>
+            <div v-if="roomSearch.trim() && !filteredJoinedRooms.length" class="friends-empty">
+              ไม่พบห้องที่ค้นหา
+            </div>
+            <div class="channels-list">
               <div
-                class="channel-main"
-                @click="goToRoom(room._id)"
+                v-for="room in filteredJoinedRooms"
+                :key="room._id"
+                class="channel-item"
+                :class="{ active: activeRoomId === room._id }"
               >
-                <span class="channel-prefix">#</span>
-
-                <span class="channel-name">
-                  {{ room.name }}
-                </span>
-
                 <div
-                  v-if="room.unreadCount"
-                  class="unread-badge"
+                  class="channel-main"
+                  @click="goToRoom(room._id)"
                 >
-                  {{ room.unreadCount }}
-                </div>
-              </div>
+                  <span class="channel-prefix">#</span>
 
-              <button
-                class="channel-menu-btn"
-                type="button"
-                aria-label="จัดการห้อง"
-                @click.stop="openRoomMenu(room, $event)"
-              >
-                <i class="fas fa-ellipsis-v" />
-              </button>
+                  <span class="channel-name">
+                    {{ room.name }}
+                  </span>
+
+                  <div
+                    v-if="room.unreadCount"
+                    class="unread-badge"
+                  >
+                    {{ room.unreadCount }}
+                  </div>
+                </div>
+
+                <button
+                  class="channel-menu-btn"
+                  type="button"
+                  aria-label="จัดการห้อง"
+                  @click.stop="openRoomMenu(room, $event)"
+                >
+                  <i class="fas fa-ellipsis-v" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="section">
           <div class="section-header">
-            <h6>
-              เพื่อนของฉัน
-              <span v-if="friendRequests.length" class="hdr-badge">{{ friendRequests.length }}</span>
-            </h6>
+            <button class="section-toggle" type="button" @click="toggleFriendsSection">
+              <i class="fas fa-chevron-down" :class="{ collapsed: friendsCollapsed }" />
+              <h6>
+                เพื่อนของฉัน
+                <span v-if="friendRequests.length" class="hdr-badge">{{ friendRequests.length }}</span>
+              </h6>
+            </button>
             <div class="section-header-actions">
               <button class="add-channel-btn" title="ผู้ใช้ที่ถูกบล็อก" @click="openBlockedList">
                 <i class="fas fa-user-slash" />
@@ -87,74 +95,76 @@
             </div>
           </div>
 
-          <div v-if="friendRequests.length > 0" class="friend-requests">
-            <div
-              v-for="request in friendRequests"
-              :key="request._id"
-              class="friend-request"
-            >
-              <div class="user-avatar">
-                <img v-if="request.avatar" :src="request.avatar" :alt="request.userName">
-                <div v-else class="avatar-placeholder">
-                  {{ request.userInitials }}
+          <div v-show="!friendsCollapsed">
+            <div v-if="friendRequests.length > 0" class="friend-requests">
+              <div
+                v-for="request in friendRequests"
+                :key="request._id"
+                class="friend-request"
+              >
+                <div class="user-avatar">
+                  <img v-if="request.avatar" :src="request.avatar" :alt="request.userName">
+                  <div v-else class="avatar-placeholder">
+                    {{ request.userInitials }}
+                  </div>
                 </div>
-              </div>
-              <div class="request-info">
-                <span class="user-name">{{ request.userName }}</span>
-                <div class="request-actions">
-                  <button class="btn-accept" @click="acceptFriend(request._id)">
-                    <i class="fas fa-check" />
-                  </button>
-                  <button class="btn-reject" @click="rejectFriend(request._id)">
-                    <i class="fas fa-times" />
-                  </button>
+                <div class="request-info">
+                  <span class="user-name">{{ request.userName }}</span>
+                  <div class="request-actions">
+                    <button class="btn-accept" @click="acceptFriend(request._id)">
+                      <i class="fas fa-check" />
+                    </button>
+                    <button class="btn-reject" @click="rejectFriend(request._id)">
+                      <i class="fas fa-times" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div v-if="allFriends.length > 8" class="sidebar-search">
-            <i class="fas fa-search" />
-            <input v-model="friendSearch" type="text" placeholder="ค้นหาเพื่อน...">
-          </div>
+            <div v-if="allFriends.length > 8" class="sidebar-search">
+              <i class="fas fa-search" />
+              <input v-model="friendSearch" type="text" placeholder="ค้นหาเพื่อน...">
+            </div>
 
-          <div class="friends-list">
-            <div v-if="!allFriends.length" class="friends-empty">
-              ยังไม่มีเพื่อน — กด <i class="fas fa-user-plus" /> เพื่อค้นหาและเพิ่มเพื่อน
-            </div>
-            <div v-else-if="!filteredFriendsList.length" class="friends-empty">
-              ไม่พบเพื่อนที่ค้นหา
-            </div>
-            <div
-              v-for="friend in filteredFriendsList"
-              :key="friend.friendId"
-              class="friend-item"
-              :class="friend.isOnline ? 'online' : 'offline'"
-              @click="openDirectMessage(friend)"
-            >
-              <div class="user-avatar">
-                <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.displayName">
-                <div v-else class="avatar-placeholder">
-                  {{ getInitials(friend.displayName) }}
+            <div class="friends-list">
+              <div v-if="!allFriends.length" class="friends-empty">
+                ยังไม่มีเพื่อน — กด <i class="fas fa-user-plus" /> เพื่อค้นหาและเพิ่มเพื่อน
+              </div>
+              <div v-else-if="!filteredFriendsList.length" class="friends-empty">
+                ไม่พบเพื่อนที่ค้นหา
+              </div>
+              <div
+                v-for="friend in filteredFriendsList"
+                :key="friend.friendId"
+                class="friend-item"
+                :class="friend.isOnline ? 'online' : 'offline'"
+                @click="openDirectMessage(friend)"
+              >
+                <div class="user-avatar">
+                  <img v-if="friend.avatar" :src="friend.avatar" :alt="friend.displayName">
+                  <div v-else class="avatar-placeholder">
+                    {{ getInitials(friend.displayName) }}
+                  </div>
+                  <div class="status-indicator" :class="friend.isOnline ? 'online' : 'offline'" />
                 </div>
-                <div class="status-indicator" :class="friend.isOnline ? 'online' : 'offline'" />
-              </div>
-              <div class="friend-info">
-                <span class="friend-name">{{ friend.displayName }}</span>
-                <span v-if="friend.lastMessage" class="last-message">{{ friend.lastMessage }}</span>
-              </div>
-              <div v-if="friend.unreadCount" class="unread-badge">
-                {{ friend.unreadCount }}
-              </div>
-              <div class="friend-actions">
-                <button
-                  class="friend-menu-btn"
-                  type="button"
-                  aria-label="ตัวเลือก"
-                  @click.stop="openFriendMenu(friend, $event)"
-                >
-                  <i class="fas fa-ellipsis-v" />
-                </button>
+                <div class="friend-info">
+                  <span class="friend-name">{{ friend.displayName }}</span>
+                  <span v-if="friend.lastMessage" class="last-message">{{ friend.lastMessage }}</span>
+                </div>
+                <div v-if="friend.unreadCount" class="unread-badge">
+                  {{ friend.unreadCount }}
+                </div>
+                <div class="friend-actions">
+                  <button
+                    class="friend-menu-btn"
+                    type="button"
+                    aria-label="ตัวเลือก"
+                    @click.stop="openFriendMenu(friend, $event)"
+                  >
+                    <i class="fas fa-ellipsis-v" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -957,6 +967,8 @@ export default {
       offlineFriends: [],
       roomSearch: '',
       friendSearch: '',
+      roomsCollapsed: localStorage.getItem('sidebarRoomsCollapsed') === '1',
+      friendsCollapsed: localStorage.getItem('sidebarFriendsCollapsed') === '1',
       userSearchQuery: '',
       searchResults: [],
       isSearching: false,
@@ -1255,6 +1267,14 @@ export default {
     closeSidebar () {
       this.sidebarOpen = false
       document.body.style.overflow = ''
+    },
+    toggleRoomsSection () {
+      this.roomsCollapsed = !this.roomsCollapsed
+      localStorage.setItem('sidebarRoomsCollapsed', this.roomsCollapsed ? '1' : '0')
+    },
+    toggleFriendsSection () {
+      this.friendsCollapsed = !this.friendsCollapsed
+      localStorage.setItem('sidebarFriendsCollapsed', this.friendsCollapsed ? '1' : '0')
     },
     openDirectMessage (friend) {
       this.dmSupportMode = false
@@ -2497,6 +2517,31 @@ export default {
   align-items: center;
   padding: 6px 20px 12px;
 }
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-toggle i {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.section-toggle i.collapsed { transform: rotate(-90deg); }
 
 .section-header h6 {
   margin: 0;
