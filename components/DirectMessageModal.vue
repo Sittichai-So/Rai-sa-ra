@@ -26,19 +26,20 @@
         </div>
 
         <div
-          v-for="message in messages"
+          v-for="(message, index) in messages"
           :key="message._id"
           class="dm-message"
-          :class="{ 'own-message': message.senderId === currentUserId }"
+          :class="{ 'own-message': message.senderId === currentUserId, grouped: !isGroupEnd(index) }"
         >
-          <div class="message-avatar">
+          <div v-if="isGroupEnd(index)" class="message-avatar">
             <img v-if="message.senderAvatar" :src="message.senderAvatar" :alt="message.senderName">
             <div v-else class="avatar-placeholder">
-              {{ getInitials(message.senderName) }}
+              {{ getInitials(message.senderInitialsName) }}
             </div>
           </div>
+          <div v-else class="message-avatar-spacer" />
           <div class="message-content">
-            <div class="message-header">
+            <div v-if="isGroupEnd(index)" class="message-header">
               <span class="sender-name">{{ message.senderName }}</span>
               <span class="message-time">{{ formatTime(message.createdAt) }}</span>
             </div>
@@ -160,6 +161,14 @@ export default {
     supportPeerId: {
       type: String,
       default: ''
+    },
+    myName: {
+      type: String,
+      default: ''
+    },
+    myAvatar: {
+      type: String,
+      default: null
     }
   },
   data () {
@@ -255,9 +264,16 @@ export default {
         edited: m.edited || false,
         senderId: String(m.senderId),
         senderName: mine ? 'คุณ' : (this.friend?.displayName || this.friend?.fullname || 'เพื่อน'),
-        senderAvatar: mine ? null : (this.friend?.avatar || null),
+        senderInitialsName: mine ? (this.myName || 'คุณ') : (this.friend?.displayName || this.friend?.fullname || 'เพื่อน'),
+        senderAvatar: mine ? (this.myAvatar || null) : (this.friend?.avatar || null),
         createdAt: m.createdAt
       }
+    },
+    isGroupEnd (index) {
+      const cur = this.messages[index]
+      const next = this.messages[index + 1]
+      if (!next || next.senderId !== cur.senderId) { return true }
+      return new Date(next.createdAt) - new Date(cur.createdAt) > 5 * 60 * 1000
     },
     async loadMessages () {
       if (!this.friend) { return }
@@ -588,6 +604,8 @@ export default {
   .dm-modal-header-custom { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); padding-bottom: 12px; }
   .dm-modal-title { font-size: 1.05rem; gap: 8px; }
   .dm-modal-close-btn { width: 32px; height: 32px; }
+  .message-content { max-width: 82%; }
+  .dm-messages { padding: 14px; }
 }
 
 .dm-modal-header-custom {
@@ -658,6 +676,10 @@ export default {
   align-items: flex-start;
 }
 
+.dm-message.grouped {
+  margin-bottom: 3px;
+}
+
 .dm-message.own-message {
   flex-direction: row-reverse;
 }
@@ -682,6 +704,11 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.message-avatar-spacer {
+  width: 38px;
+  flex-shrink: 0;
 }
 
 .avatar-placeholder {

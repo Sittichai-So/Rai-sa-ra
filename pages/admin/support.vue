@@ -59,6 +59,8 @@
       :current-user-id="me._id"
       :support-mode="true"
       :support-peer-id="selectedPeerId"
+      :my-name="me.displayName || me.fullname"
+      :my-avatar="me.avatar ? resolveAsset(me.avatar) : null"
       @read="onRead"
       @sent="onSent"
     />

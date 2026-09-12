@@ -775,6 +775,8 @@
       :friend="selectedFriend"
       :current-user-id="user?._id"
       :support-mode="dmSupportMode"
+      :my-name="myDisplayName"
+      :my-avatar="myAvatar"
       @read="onDmRead"
       @sent="onDmSent"
     />
