@@ -2584,6 +2584,9 @@ export default {
 }
 
 .add-channel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border-hair);
   color: var(--text-body);
