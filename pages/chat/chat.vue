@@ -24,16 +24,19 @@
           <div class="section-header">
             <button class="section-toggle" type="button" @click="toggleRoomsSection">
               <i class="fas fa-chevron-down" :class="{ collapsed: roomsCollapsed }" />
-              <h6>ช่องแชทรวมของฉัน</h6>
+              <h6>ช่องแชทกลุ่มของฉัน</h6>
             </button>
             <button class="add-channel-btn" @click="showCreateRoom = true">
               <i class="fas fa-plus" />
             </button>
+            <button class="add-channel-btn" style="margin-left: 8px;" @click="toggleRoomSearchBox">
+              <i class="fas fa-search" />
+            </button>
           </div>
           <div v-show="!roomsCollapsed">
-            <div v-if="joinedRooms.length > 6" class="sidebar-search">
+            <div v-if="joinedRooms.length > 6 || showRoomSearchBox" class="sidebar-search">
               <i class="fas fa-search" />
-              <input v-model="roomSearch" type="text" placeholder="ค้นหาห้อง...">
+              <input ref="roomSearchInput" v-model="roomSearch" type="text" placeholder="ค้นหาห้อง...">
             </div>
             <div v-if="roomSearch.trim() && !filteredJoinedRooms.length" class="friends-empty">
               ไม่พบห้องที่ค้นหา
@@ -86,6 +89,9 @@
               </h6>
             </button>
             <div class="section-header-actions">
+              <button class="add-channel-btn" style="margin-left: 8px;" @click="toggleFriendSearchBox">
+                <i class="fas fa-search" />
+              </button>
               <button class="add-channel-btn" title="ผู้ใช้ที่ถูกบล็อก" @click="openBlockedList">
                 <i class="fas fa-user-slash" />
               </button>
@@ -122,9 +128,9 @@
               </div>
             </div>
 
-            <div v-if="allFriends.length > 8" class="sidebar-search">
+            <div v-if="allFriends.length > 8 || showFriendSearchBox" class="sidebar-search">
               <i class="fas fa-search" />
-              <input v-model="friendSearch" type="text" placeholder="ค้นหาเพื่อน...">
+              <input ref="friendSearchInput" v-model="friendSearch" type="text" placeholder="ค้นหาเพื่อน...">
             </div>
 
             <div class="friends-list">
@@ -967,6 +973,8 @@ export default {
       offlineFriends: [],
       roomSearch: '',
       friendSearch: '',
+      showRoomSearchBox: false,
+      showFriendSearchBox: false,
       roomsCollapsed: localStorage.getItem('sidebarRoomsCollapsed') === '1',
       friendsCollapsed: localStorage.getItem('sidebarFriendsCollapsed') === '1',
       userSearchQuery: '',
@@ -1275,6 +1283,24 @@ export default {
     toggleFriendsSection () {
       this.friendsCollapsed = !this.friendsCollapsed
       localStorage.setItem('sidebarFriendsCollapsed', this.friendsCollapsed ? '1' : '0')
+    },
+    toggleRoomSearchBox () {
+      this.showRoomSearchBox = !this.showRoomSearchBox
+      if (!this.showRoomSearchBox) {
+        this.roomSearch = ''
+        return
+      }
+      this.roomsCollapsed = false
+      this.$nextTick(() => this.$refs.roomSearchInput && this.$refs.roomSearchInput.focus())
+    },
+    toggleFriendSearchBox () {
+      this.showFriendSearchBox = !this.showFriendSearchBox
+      if (!this.showFriendSearchBox) {
+        this.friendSearch = ''
+        return
+      }
+      this.friendsCollapsed = false
+      this.$nextTick(() => this.$refs.friendSearchInput && this.$refs.friendSearchInput.focus())
     },
     openDirectMessage (friend) {
       this.dmSupportMode = false
