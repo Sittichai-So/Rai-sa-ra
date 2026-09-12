@@ -27,9 +27,16 @@
               <i class="fas fa-plus" />
             </button>
           </div>
+          <div v-if="joinedRooms.length > 6" class="sidebar-search">
+            <i class="fas fa-search" />
+            <input v-model="roomSearch" type="text" placeholder="ค้นหาห้อง...">
+          </div>
+          <div v-if="roomSearch.trim() && !filteredJoinedRooms.length" class="friends-empty">
+            ไม่พบห้องที่ค้นหา
+          </div>
           <div class="channels-list">
             <div
-              v-for="room in joinedRooms"
+              v-for="room in filteredJoinedRooms"
               :key="room._id"
               class="channel-item"
               :class="{ active: activeRoomId === room._id }"
@@ -106,12 +113,20 @@
             </div>
           </div>
 
+          <div v-if="allFriends.length > 8" class="sidebar-search">
+            <i class="fas fa-search" />
+            <input v-model="friendSearch" type="text" placeholder="ค้นหาเพื่อน...">
+          </div>
+
           <div class="friends-list">
             <div v-if="!allFriends.length" class="friends-empty">
               ยังไม่มีเพื่อน — กด <i class="fas fa-user-plus" /> เพื่อค้นหาและเพิ่มเพื่อน
             </div>
+            <div v-else-if="!filteredFriendsList.length" class="friends-empty">
+              ไม่พบเพื่อนที่ค้นหา
+            </div>
             <div
-              v-for="friend in allFriends"
+              v-for="friend in filteredFriendsList"
               :key="friend.friendId"
               class="friend-item"
               :class="friend.isOnline ? 'online' : 'offline'"
@@ -940,6 +955,8 @@ export default {
       friends: [],
       onlineFriends: [],
       offlineFriends: [],
+      roomSearch: '',
+      friendSearch: '',
       userSearchQuery: '',
       searchResults: [],
       isSearching: false,
@@ -1000,6 +1017,11 @@ export default {
     },
     joinedRooms () {
       return this.rooms.filter(room => this.isUserInRoom(room._id))
+    },
+    filteredJoinedRooms () {
+      const term = this.roomSearch.trim().toLowerCase()
+      if (!term) { return this.joinedRooms }
+      return this.joinedRooms.filter(r => (r.name || '').toLowerCase().includes(term))
     },
     unjoinedRooms () {
       return this.rooms.filter(room => !this.isUserInRoom(room._id))
@@ -1092,6 +1114,11 @@ export default {
     },
     allFriends () {
       return [...this.onlineFriends, ...this.offlineFriends]
+    },
+    filteredFriendsList () {
+      const term = this.friendSearch.trim().toLowerCase()
+      if (!term) { return this.allFriends }
+      return this.allFriends.filter(f => (f.displayName || '').toLowerCase().includes(term))
     },
     totalUnreadDM () {
       return this.dmConversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
@@ -2507,6 +2534,35 @@ export default {
   flex-direction: column;
   gap: 8px;
 }
+
+.sidebar-search {
+  position: relative;
+  padding: 0 20px 10px;
+}
+
+.sidebar-search i {
+  position: absolute;
+  left: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.sidebar-search input {
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-hair);
+  border-radius: 999px;
+  color: var(--text-cream);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 14px 7px 32px;
+  outline: none;
+}
+
+.sidebar-search input:focus { border-color: var(--violet); }
 
 .channel-item:hover {
   background: rgba(255, 255, 255, 0.05);
