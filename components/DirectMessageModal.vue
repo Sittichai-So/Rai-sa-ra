@@ -739,12 +739,12 @@ export default {
 
 .sender-name {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--cream);
 }
 
 .message-time {
-  font-size: 11px;
+  font-size: 12px;
   color: rgba(246, 243, 237, 0.5);
   margin-left: 8px;
 }
@@ -767,7 +767,7 @@ export default {
   border: var(--line-sm) solid var(--ink);
   box-shadow: var(--shadow-xs);
   word-wrap: break-word;
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 
 .own-message .message-text {
