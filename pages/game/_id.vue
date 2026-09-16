@@ -119,6 +119,59 @@
     </transition>
 
     <transition name="fade">
+      <div v-if="inLobby && joined && !fatalError" class="gameover-overlay lobby-overlay">
+        <div class="gameover-box lobby-box">
+          <div class="go-tag">
+            ห้องรอ
+          </div>
+          <h2>เตรียมพร้อมก่อนเริ่มเกม</h2>
+
+          <div class="lobby-players">
+            <div class="lb-header lobby-player-header">
+              <span>ผู้เล่น</span>
+              <span>สถานะ</span>
+            </div>
+            <div v-for="p in lobbyPlayers" :key="p.id" class="lb-row lobby-player-row">
+              <span class="lobby-player-name">
+                {{ p.username }}
+                <span v-if="String(p.userId) === String(lobbyHostId)" class="lobby-host-tag">HOST</span>
+              </span>
+              <span class="lobby-ready-tag" :class="{ on: p.ready }">
+                <i :class="p.ready ? 'fas fa-check' : 'fas fa-hourglass-half'" />
+                {{ p.ready ? 'พร้อม' : 'รอ...' }}
+              </span>
+            </div>
+          </div>
+
+          <p class="lobby-hint">
+            {{ lobbyHintText }}
+          </p>
+          <p v-if="lobbyError" class="lobby-error">
+            {{ lobbyError }}
+          </p>
+
+          <div class="go-actions">
+            <button class="go-btn lobby-ready-btn" :class="{ on: myReady }" @click="toggleReady">
+              <i :class="myReady ? 'fas fa-times' : 'fas fa-check'" />
+              {{ myReady ? 'ยกเลิกพร้อม' : 'พร้อมแล้ว' }}
+            </button>
+            <button
+              v-if="isLobbyHost"
+              class="go-btn lobby-start-btn"
+              :disabled="!allLobbyReady"
+              @click="startGame"
+            >
+              <i class="fas fa-play" /> เริ่มเกม
+            </button>
+          </div>
+          <button class="go-btn go-leave lobby-leave-btn" @click="leaveGame">
+            <i class="fas fa-door-open" /> ออกจากห้อง
+          </button>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
       <div v-if="reconnecting" class="reconnect-overlay">
         <div class="reconnect-box">
           <i class="fas fa-wifi" />
@@ -346,7 +399,11 @@ export default {
       mouseAimed: false,
       dashReady: true,
       dashCooldownMs: 3000,
-      forcedDead: false
+      forcedDead: false,
+      inLobby: false,
+      lobbyPlayers: [],
+      lobbyHostId: null,
+      lobbyError: ''
     }
   },
   computed: {
@@ -467,6 +524,22 @@ export default {
       if (this.combo >= 5) { return 'combo-x1.5' }
       if (this.combo >= 3) { return 'combo-x1.2' }
       return ''
+    },
+    myReady () {
+      const me = this.lobbyPlayers.find(p => p.id === this.myId)
+      return !!(me && me.ready)
+    },
+    isLobbyHost () {
+      return !!(this.user && this.lobbyHostId && String(this.lobbyHostId) === String(this.user._id))
+    },
+    allLobbyReady () {
+      return this.lobbyPlayers.length > 0 && this.lobbyPlayers.every(p => p.ready)
+    },
+    lobbyHintText () {
+      if (this.isLobbyHost) {
+        return this.allLobbyReady ? 'ผู้เล่นพร้อมครบแล้ว กดเริ่มเกมได้เลย' : 'รอผู้เล่นทุกคนกดพร้อมก่อนเริ่มเกม'
+      }
+      return 'รอหัวห้องกดเริ่มเกม'
     }
   },
   mounted () {
@@ -520,6 +593,7 @@ export default {
     clearTimeout(this._dashCdT)
     clearTimeout(this._comboT)
     clearTimeout(this._orientT)
+    clearTimeout(this._lobbyErrT)
     window.removeEventListener('resize', this.setupCanvas)
     window.removeEventListener('orientationchange', this._onOrientationChange)
     window.removeEventListener('keydown', this.onKeyDown)
@@ -804,7 +878,7 @@ export default {
       this.$socket.on('connect', this.onSocketReconnect)
       this.$socket.on('disconnect', this.onSocketDrop)
 
-      this.$socket.on('gameJoined', ({ playerId, mapSize, map, gameOver, leaderboard }) => {
+      this.$socket.on('gameJoined', ({ playerId, mapSize, map, gameOver, leaderboard, started, lobby }) => {
         this.myId = playerId
         this.joined = true
         this.reconnecting = false
@@ -816,14 +890,43 @@ export default {
           this.gameOver = true
           if (leaderboard) { this.leaderboard = leaderboard }
         }
+        this.inLobby = !started && !gameOver
+        if (lobby) {
+          this.lobbyHostId = lobby.hostId
+          this.lobbyPlayers = lobby.players || []
+        }
+      })
+
+      this.$socket.on('lobbyUpdate', ({ hostId, started, players }) => {
+        this.lobbyHostId = hostId
+        this.lobbyPlayers = players || []
+        if (started) { this.inLobby = false }
+      })
+
+      this.$socket.on('matchStarted', () => {
+        this.inLobby = false
       })
 
       this.$socket.on('gameError', ({ error }) => {
+        if (['not_host', 'not_all_ready', 'empty_room', 'already_started'].includes(error)) {
+          this.lobbyError = error === 'not_all_ready'
+            ? 'ผู้เล่นยังไม่พร้อมครบทุกคน'
+            : error === 'not_host'
+              ? 'มีแค่หัวห้องเท่านั้นที่เริ่มเกมได้'
+              : error === 'empty_room'
+                ? 'ห้องว่างไป ไม่สามารถเริ่มได้'
+                : 'เกมเริ่มไปแล้ว'
+          clearTimeout(this._lobbyErrT)
+          this._lobbyErrT = setTimeout(() => { this.lobbyError = '' }, 3000)
+          return
+        }
         clearInterval(this._joinRetry)
         if (error === 'unauthorized') {
           this.fatalError = 'เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่'
         } else if (error === 'room_full') {
           this.fatalError = 'ห้องนี้เต็มแล้ว (สูงสุด 8 คน) — ลองห้องอื่นหรือสร้างใหม่'
+        } else if (error === 'game_already_started') {
+          this.fatalError = 'ห้องนี้เริ่มเกมไปแล้ว เข้าร่วมเพิ่มไม่ได้ — ลองห้องอื่นหรือสร้างห้องใหม่'
         } else {
           this.fatalError = 'เข้าห้องเกมไม่สำเร็จ ลองกลับไปที่ล็อบบี้แล้วเข้าใหม่'
         }
@@ -1015,7 +1118,8 @@ export default {
       const events = [
         'gameJoined', 'gameError', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
         'playerDied', 'playerDowned', 'playerRevived', 'playerDash', 'zombieKilled', 'gameOver',
-        'gameRestarted', 'waveReinforce', 'pickupCollected', 'upgradeOffer', 'upgradeApplied'
+        'gameRestarted', 'waveReinforce', 'pickupCollected', 'upgradeOffer', 'upgradeApplied',
+        'lobbyUpdate', 'matchStarted'
       ]
       events.forEach(ev => this.$socket.off(ev))
       this.$socket.off('connect', this.onSocketReconnect)
@@ -1077,6 +1181,14 @@ export default {
 
     restart () {
       this.$socket.emit('gameRestart', { roomId: this.roomId })
+    },
+
+    toggleReady () {
+      this.$socket.emit('gameReady', { ready: !this.myReady })
+    },
+
+    startGame () {
+      this.$socket.emit('gameStart')
     },
 
     getPlayerName (playerId) {
@@ -1791,6 +1903,69 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 .go-restart:hover { background: #80ffb0; }
 .go-leave { background: transparent; border: 1px solid rgba(255,80,80,0.3); color: rgba(255,80,80,0.7); }
 .go-leave:hover { background: rgba(255,80,80,0.1); border-color: #ff5050; color: #ff5050; }
+
+.lobby-box { width: min(440px, 100%); }
+
+.lobby-players {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 18px;
+}
+
+.lobby-player-header { grid-template-columns: 1fr auto; }
+.lobby-player-row { grid-template-columns: 1fr auto; }
+
+.lobby-player-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-host-tag {
+  flex-shrink: 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #080c10;
+  background: #00ff50;
+  padding: 2px 6px;
+}
+
+.lobby-ready-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: rgba(224,240,224,0.4);
+  white-space: nowrap;
+}
+.lobby-ready-tag.on { color: #00ff50; }
+
+.lobby-hint {
+  font-size: 12.5px;
+  color: rgba(224,240,224,0.5);
+  margin-bottom: 8px;
+}
+
+.lobby-error {
+  font-size: 12px;
+  color: #ff6060;
+  margin-bottom: 8px;
+}
+
+.lobby-ready-btn { background: #00ff50; color: #080c10; }
+.lobby-ready-btn:hover { background: #80ffb0; }
+.lobby-ready-btn.on { background: transparent; border: 1px solid rgba(0,255,80,0.4); color: #00ff50; }
+.lobby-ready-btn.on:hover { background: rgba(0,255,80,0.1); }
+
+.lobby-start-btn { background: #ffcc00; color: #080c10; }
+.lobby-start-btn:hover:not(:disabled) { background: #ffe066; }
+.lobby-start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.lobby-leave-btn { width: 100%; margin-top: 12px; }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.4s; }
 .fade-enter, .fade-leave-to { opacity: 0; }

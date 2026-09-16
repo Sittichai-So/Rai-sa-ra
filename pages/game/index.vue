@@ -74,13 +74,13 @@
             v-for="room in rooms"
             :key="room.roomId"
             class="room-card"
-            :class="{ 'room-over': room.gameOver || room.playerCount >= maxPlayers }"
-            @click="!room.gameOver && room.playerCount < maxPlayers && joinRoom(room.roomId)"
+            :class="{ 'room-over': room.gameOver || room.started || room.playerCount >= maxPlayers }"
+            @click="canJoinRoom(room) && joinRoom(room.roomId)"
           >
             <div class="room-card-top">
               <span class="room-name">{{ room.roomId }}</span>
-              <span class="room-badge" :class="room.gameOver ? 'badge-over' : 'badge-live'">
-                {{ room.gameOver ? 'ENDED' : 'LIVE' }}
+              <span class="room-badge" :class="roomBadgeClass(room)">
+                {{ roomBadgeText(room) }}
               </span>
             </div>
             <div class="room-card-stats">
@@ -93,11 +93,14 @@
                 <span>Wave {{ room.wave }}</span>
               </div>
             </div>
-            <button v-if="!room.gameOver && room.playerCount < maxPlayers" class="join-btn">
+            <button v-if="canJoinRoom(room)" class="join-btn">
               เข้าร่วม <i class="fas fa-chevron-right" />
             </button>
             <div v-else-if="room.gameOver" class="ended-label">
               จบเกมแล้ว
+            </div>
+            <div v-else-if="room.started" class="ended-label">
+              เริ่มเกมไปแล้ว
             </div>
             <div v-else class="ended-label">
               ห้องเต็ม ({{ maxPlayers }}/{{ maxPlayers }})
@@ -269,6 +272,22 @@ export default {
 
     joinRoom (roomId) {
       this.$router.push(`/game/${roomId}`)
+    },
+
+    canJoinRoom (room) {
+      return !room.gameOver && !room.started && room.playerCount < this.maxPlayers
+    },
+
+    roomBadgeClass (room) {
+      if (room.gameOver) { return 'badge-over' }
+      if (room.started) { return 'badge-live' }
+      return 'badge-waiting'
+    },
+
+    roomBadgeText (room) {
+      if (room.gameOver) { return 'ENDED' }
+      if (room.started) { return 'LIVE' }
+      return 'รอเริ่ม'
     }
   }
 }
@@ -572,6 +591,7 @@ section h2 {
 }
 .badge-live { background: rgba(0,255,80,0.15); color: #00ff50; border: 1px solid rgba(0,255,80,0.3); }
 .badge-over { background: rgba(255,60,60,0.1); color: #ff6060; border: 1px solid rgba(255,60,60,0.2); }
+.badge-waiting { background: rgba(255,204,0,0.12); color: #ffcc00; border: 1px solid rgba(255,204,0,0.3); }
 
 .room-card-stats {
   display: flex;
