@@ -1,0 +1,38 @@
+Top-down tiles and sprites used by the /rpg/world Phaser prototype
+(separate from the isometric board-game assets in assets/images/rpg/).
+
+This replaces an earlier version of these files that used Kenney's
+"Roguelike/RPG Pack" and "Roguelike Characters" — swapped out because that
+combination looked flat and didn't match this project's tinier, thicker-outline
+"Tiny" art direction. Everything below is one consistent family: Kenney's own
+"Tiny" series plus two packs explicitly built as compatible expansions of it.
+
+village-tileset.png is a 9-frame strip cropped from Kenney's "Tiny Town"
+(kenney.nl/assets/tiny-town), source file Tilemap/tilemap.png.
+License: CC0 1.0 Universal (public domain, no attribution required).
+Frames, left to right: grass, dirt path, three tree/bush variants (used as
+forest/border obstacles), a roof-shingle tile, a roof gable-peak cap, a wall
+tile, and a door tile (the last four combined in code to draw one small house
+near spawn — see game/maps/villageMap.js buildHouseTiles()).
+
+hero.png is a single frame cropped from Kenney's "Tiny Dungeon"
+(kenney.nl/assets/tiny-dungeon), source file Tilemap/tilemap.png, frame at
+column 4, row 7 of that sheet. License: CC0 1.0 Universal. Used as-is, no
+recoloring (per-class color is applied at runtime via Phaser tint, see
+game/classTints.js).
+
+goblin.png and wolf.png are single frames cropped from Clint Bellanger's
+"Tiny Creatures" (opengameart.org/content/tiny-creatures, mirrored from
+clintbellanger.itch.io/tiny-creatures), source file Tilemap/tilemap.png,
+frames at column 0 row 1 (goblin) and column 3 row 9 (wolf). License: CC0 1.0
+Universal. This pack is explicitly built as an expansion of Kenney's Tiny
+Dungeon/Tiny Town "made with Kenney's permission", which is why it matches
+the tileset and hero sprite above with no further tinting needed. Used for
+the goblin_ambush and lost_pup encounter markers in game/maps/villageMap.js,
+replacing an earlier version that reused a tinted copy of hero.png as a
+placeholder for both.
+
+Only a static front-facing hero frame is used for now; no walk-cycle or
+per-direction frames yet (matches the "Phase 1 prototype" scope in
+docs/rpg-roadmap.md — sprite.flipX is toggled left/right in code instead of
+using art, and no animation exists yet).

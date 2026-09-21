@@ -1,0 +1,14 @@
+Asset pack: Open RPG Fantasy Tilesets (OpenRTP Tiles) by finalbossblues
+Source: https://finalbossblues.itch.io/openrtp-tiles
+License: CC0 1.0 (public domain, no credit required)
+
+Cropped from exterior.png (RPG Maker 2000/2003 "chipset" layout, 16x16 tiles).
+The sheet uses solid pink (255,103,139) as its transparent color; it was
+converted to real alpha before cropping.
+
+- tile_grass.png, tile_dirt.png, tile_water.png : 16x16 ground fills
+  (village-tileset-openrtp.png is these three joined into one 48x16 strip)
+- tree_big.png, tree_round.png, tree_dead.png : trees
+- bush_flower.png, bush_green.png, stump.png, flower_patch.png : ground decoration
+- fence_h.png, signpost.png, well.png, campfire.png, torch.png : village props
+- statue.png, monument.png, tent.png, bench.png, flowerpot.png, jug.png : landmarks and props

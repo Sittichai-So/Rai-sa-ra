@@ -1,0 +1,10 @@
+Interface sound effects (click, dice, event, treasure, damage, victory, defeat) come from
+Kenney's "RPG Audio", "UI Audio" and "Impact Sounds" packs (kenney.nl).
+License: CC0 1.0 Universal (public domain, no attribution required).
+
+Music (music/*.mp3) and jingles/effects (success, levelup, gameover, hit) come from the
+Ninja Adventure Asset Pack by pixel-boy (https://pixel-boy.itch.io/ninja-adventure-asset-pack).
+Music tracks: "Village", "Dark Forest", "Lost Village", "Dungeon", "Fight".
+License: CC0 1.0 Universal (public domain, no attribution required).
+
+All files are MP3 (converted from OGG/WAV where needed) for Safari/iOS compatibility.

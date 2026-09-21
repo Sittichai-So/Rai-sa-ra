@@ -1,0 +1,8 @@
+Asset pack: Serene Village (revamped) by LimeZu
+Source: https://limezu.itch.io/serenevillagerevamped
+License: CC-BY 4.0 (attribution required)
+Required credit line: "LimeZu (limezu.itch.io)"
+
+Only the four house sprites are used, cropped from Serene_Village_16x16.png:
+- house_red.png, house_green.png, house_blue.png : small cottage variants
+- house_big.png : larger building

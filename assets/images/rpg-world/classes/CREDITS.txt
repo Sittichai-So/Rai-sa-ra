@@ -1,0 +1,27 @@
+Per-class walk-cycle sprites for the village exploration scene (WorldScene.js).
+
+All files here are 8-frame strips (idle_anim_f0-3 followed by run_anim_f0-3,
+16x28 per frame) assembled from individual frames in 0x72's "16x16
+DungeonTileset II" (0x72.itch.io/dungeontileset-ii) v1.7 — the same CC0 pack
+already used for the /rpg/dungeon zone's tileset, knight and ogre. License:
+CC0 1.0 Universal (public domain, no attribution required).
+
+Each of the 4 RPG classes (utils/rpgClasses.js) maps to one of the pack's
+built-in player character archetypes, picked for the closest thematic fit
+rather than any new artwork:
+- warrior.png  <- knight_m (heavy armor, sword — same character already used
+  for the dungeon's player sprite, so the warrior class now looks exactly
+  like the dungeon knight, which reads as intentional rather than a mismatch)
+- rogue.png    <- elf_m (agile, green tunic — closest fit to a nimble
+  trap/lockpick specialist in this pack's roster)
+- mage.png     <- wizzard_m (pointed hat, robes — a literal wizard)
+- cleric.png   <- dwarf_m (no dedicated priest/cleric character exists in
+  this pack; the dwarf was the closest remaining 16x28 humanoid archetype
+  left after the other three were assigned, reflavored as a stout support
+  class rather than a new sprite)
+
+This replaces the old single "hero.png" static sprite (Kenney Tiny Dungeon,
+no animation) + solid-color tint per class. Every class now has a genuinely
+different character sprite with a real idle/run walk-cycle, instead of one
+shared sprite recolored — the same walk-cycle upgrade the dungeon's knight
+got earlier, now extended to the village.

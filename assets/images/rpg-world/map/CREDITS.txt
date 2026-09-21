@@ -1,0 +1,18 @@
+Hand-drawn fantasy map icons and parchment background used by the /rpg/map
+world map screen.
+
+All files here are cropped from Kenney's "Cartography Pack"
+(kenney.nl/assets/cartography-pack), source files
+Spritesheet/spritesheet_default.png (icons) and
+Textures/parchmentFolded.png (background), used unmodified except for
+cropping. License: CC0 1.0 Universal (public domain, no attribution
+required).
+
+Icon mapping used in game/maps/worldMapData.js:
+- compass.png <- compass.png (x384,y512 in the source sheet)
+- houses.png  <- houses.png (x320,y320) — the village region marker
+- forest.png  <- treePines.png (x64,y512) — the cursed forest region marker
+- mountain.png <- rocksMountain.png (x192,y320) — the desolate valley region marker
+- volcano.png <- vulcano.png (x0,y256) — the dragon's lair region marker
+- banner.png  <- banner.png (x512,y128) — title decoration
+- parchment.png <- Textures/parchmentFolded.png, used as-is as the page background

@@ -1,0 +1,63 @@
+Isometric dungeon tiles and character sprite sourced from Kenney's
+"Isometric Miniature Dungeon" pack (kenney.nl/assets/isometric-miniature-dungeon).
+License: CC0 1.0 Universal (public domain, no attribution required).
+
+hero-monster.png is Kenney's "Male_4_Idle0" miniature, recolored dark red via
+ColorMatrix tinting, used for the boss marker and for neutral (non-monster) human
+NPC event markers.
+
+hero-warrior.png / hero-rogue.png / hero-mage.png / hero-cleric.png were switched
+from the Kenney sprite above to single cropped frames from "Isometric Hero and
+Creatures" by Clint Bellanger (CC-BY 3.0, opengameart.org/content/isometric-hero-and-creatures)
+— the same pack used for the monster sprites below — so player characters and
+monsters now share one consistent art style on the board instead of two different
+ones sitting side by side. warrior uses "male_heavy", rogue uses "male_light", mage
+uses "magician", and cleric reuses the "magician" robe shape recolored pale gold
+instead of dark purple (no dedicated cleric/priest sprite exists in this pack), each
+with its own ColorMatrix tint on top of the source frame.
+
+Evaluated Kenney's "Isometric Tiles Landscape" and "Nature Kit" packs (both CC0) as
+a full forest tileset for zone 1, but their flat-shaded low-poly render style clashed
+visually with the shaded/textured "Isometric Miniature Dungeon" set already in use as
+the ground tiles, so they were not adopted for the floor. Instead, zone 1's forest look
+comes from the existing dungeon tiles with a green ColorMatrix tint plus swapping out
+its two building-like props (the entry archway and a table+chairs) for plain ground,
+so nothing in the forest zone reads as an indoor room.
+
+Three small standing trees ("tree_pineTallA_detailed" and "tree_oak", both from Kenney's
+Nature Kit, CC0) were added on top of a few zone-1 tiles as background scenery, recolored
+via ColorMatrix toward a more muted forest green so they sit better against the dungeon
+set's tone instead of their original bright cartoon teal.
+
+village-gate.png (lobby screen banner) is a new composite built from the same
+"Isometric Miniature Dungeon" pieces already used on the board (stoneWallGateOpen,
+stoneWallAged, stairsAged, barrelsStacked, woodenCrates) plus the same two tinted
+Nature Kit trees, arranged into a small "village gate courtyard" scene. Also evaluated
+Kenney's "Isometric Tiles Buildings" pack (CC0) for actual house sprites, but it's a
+modern city block style that didn't fit a medieval fantasy setting at all, so it
+wasn't used.
+
+monster-goblin.png / monster-ogre.png / monster-skeleton.png / monster-boss.png /
+monster-neutral.png are single cropped frames (one direction, one animation frame
+each) taken from "Isometric Hero and Creatures" by Clint Bellanger
+(opengameart.org/content/isometric-hero-and-creatures), a shaded low-poly isometric
+sprite set built for tactics-style RPGs. License: CC-BY 3.0 — attribution required
+and given here. goblin/ogre are used as-is for the goblin_ambush and troll_bridge
+event markers; skeleton is ColorMatrix-tinted pale blue for the ghost/wraith event
+markers; the pack's "elemental" creature is tinted fiery red-orange for the dragon
+boss marker (no dragon shape exists in any pack found, so this stands in for
+"something large and elemental guards the lair" rather than literally being a
+dragon); "male_light" is tinted cool blue-grey for the neutral (non-monster) human
+NPC markers, replacing the earlier Kenney-based hero-monster.png tint for full style
+consistency across every marker on the board. hero-monster.png itself is no longer
+used for any tier, only kept as a defensive fallback in code. Searched Kenney's full
+catalog and OpenGameArt's "Tiny Creatures" first; neither had monster shapes in a
+style close enough to the rest of the game's dungeon set (Kenney has none at all,
+Tiny Creatures is 16x16 pixel art).
+
+board-map.png was recomposited again (still the same Kenney dungeon tiles/props,
+green/warm ColorMatrix zone tints, and the two tinted Nature Kit trees as before) to
+show the board's new branching paths: each zone's fork now visibly splits into two
+diamond-shaped loops of tiles before rejoining, instead of one single-file path.
+Same isometric compositing technique used throughout (own PowerShell/GDI+ script,
+not a downloaded map).

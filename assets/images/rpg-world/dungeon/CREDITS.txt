@@ -1,0 +1,46 @@
+Dungeon room tiles and the knight player character used by the /rpg/dungeon
+scene.
+
+All files here are cropped, unmodified frames from 0x72's "16x16
+DungeonTileset II" (0x72.itch.io/dungeontileset-ii), version 1.7.
+License: CC0 1.0 Universal (public domain, no attribution required) — the
+page states "You can use this tileset for whatever you like (CC-0)."
+
+dungeon-tileset.png is an 7-frame strip assembled from individual frames in
+the pack's own frames/ folder (frame filenames match the pack's own naming,
+no cropping guesswork was needed here — unlike the earlier village assets,
+this pack ships every tile as its own pre-cropped PNG):
+0 floor_1.png, 1 wall_top_left.png, 2 wall_top_mid.png, 3 wall_top_right.png,
+4 wall_left.png, 5 wall_mid.png, 6 wall_right.png — see
+game/maps/dungeonMap.js for how the room is built from these.
+
+knight.png is an 8-frame strip: knight_m_idle_anim_f0-f3 followed by
+knight_m_run_anim_f0-f3, used as a real Phaser spritesheet with idle/run
+animations (this is the first player sprite in the project with an actual
+walk cycle, instead of a single static frame + flipX).
+
+Standalone decoration sprites, used as-is: chest_full_open_anim_f0.png
+(treasure chest), wall_banner_red.png / wall_banner_blue.png (wall banners),
+skull.png (floor clutter), floor_ladder.png (stairs-down flavor prop),
+doors_leaf_closed.png (a closed door prop, decorative), skelet_idle_anim_f0.png
+(skeleton marker in room 1, same "visible monster on the map" pattern as the
+village's goblin/wolf markers).
+
+ogre.png is an 8-frame strip: ogre_idle_anim_f0-f3 followed by
+ogre_run_anim_f0-f3 (32x36 per frame, larger than the 16x16 tile grid since
+it's the pack's "big" boss-tier monster), used as the boss marker guarding
+room 2 — reused for the `troll_bridge` encounter from Events.js (a large
+brute blocking the only way through fits "ogre" closely enough that no new
+event text was needed).
+
+flask_big_red.png (16x16, used as-is, no cropping needed) is the rest/heal
+marker in room 2 — works the same way the village's rest_1 spot does (walk
+up to it, get healed, same treasure/trap/rest roll formulas from
+`Events.js`, no new mechanic invented). The chest_full_open_anim_f0.png and
+skull.png sprites already loaded for room 1 now double as the
+treasure/trap markers too (same physical prop sprites, now wired to real
+`treasure`/`trap` encounters instead of being pure decoration).
+
+dungeon-tileset-openrtp.png: floor and wall tiles cut from the OpenRTP dungeon tileset by finalbossblues
+(https://finalbossblues.itch.io/openrtp-tiles). License: CC0 1.0 Universal (public domain).
+The torch sprite used on the dungeon walls is the OpenRTP torch from the village-openrtp folder.

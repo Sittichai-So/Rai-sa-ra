@@ -1,0 +1,30 @@
+Tiles and decorations for the /rpg/forest zone ("ป่าต้องคำสาป").
+
+Source: "Free Topdown Fantasy - Forest - Pixelart Tileset" by aamatniekss
+(aamatniekss.itch.io/topdown-fantasy-forest), a 16x16px topdown forest
+tileset. Downloaded free (the pack became free on release of the author's
+paid spiritual successor "Era of Fantasy: Grasslands").
+License: not CC0, but explicitly free for personal and commercial use with
+modification; credit appreciated but not required; redistribution/resale of
+the raw assets themselves is not allowed. This is the only pack used in this
+project so far that isn't CC0 — documented here for that reason.
+
+tile_grass.png, tile_dirt.png, tile_water.png, tile_darkgrass.png — single
+16x16 tiles cropped from the pack's Tileset.png sprite sheet, used as flat
+ground fills (this project does not implement the pack's full Wang-tile
+auto-tiling, same simplified approach as the village/dungeon ground layers).
+
+tree_bushy.png, tree_pine.png, bush_big.png, bush_small.png, log.png,
+reeds.png, boulder.png, tile_cliff.png, mushroom_cluster.png,
+mushroom_single.png — decoration sprites cropped from the pack's
+Decorations.png sheet, each isolated to its own tight bounding box. Used as
+regular scenery (trees/bushes/boulders/cliff — the cliff crop is placed as a
+decoration, not a full mountain range) as well as two of the "cursed forest"
+encounter markers (haunted_grove uses a mushroom cluster since that event's
+antagonist in Events.js is a bodiless whispering voice with no physical
+sprite to represent; bandit_camp reuses the log as a camp-fire-adjacent
+marker, since this pack has no bandit/humanoid character sprite).
+
+wild-tileset-openrtp.png: ground tiles (grass, dark grass, dirt, ridged dirt, water and generated shorelines)
+cut from the OpenRTP world tileset by finalbossblues (https://finalbossblues.itch.io/openrtp-tiles).
+License: CC0 1.0 Universal (public domain).

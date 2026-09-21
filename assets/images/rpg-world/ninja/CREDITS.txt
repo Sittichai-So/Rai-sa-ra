@@ -1,0 +1,6 @@
+Ninja Adventure Asset Pack by pixel-boy (with AAA)
+https://pixel-boy.itch.io/ninja-adventure-asset-pack
+License: CC0 1.0 Universal (public domain, no attribution required).
+
+Used here: character/monster face portraits (portraits/) and item icons (items/).
+sprites/ holds the character, NPC and creature sprite sheets used in the game world (4 directions x walk frames).
