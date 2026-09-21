@@ -100,6 +100,10 @@ export default class ZoneScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys()
     this.wasd = this.input.keyboard.addKeys('W,A,S,D')
+    this.touchVec = { x: 0, y: 0 }
+    const onTouchMove = (vec) => { this.touchVec = vec }
+    this.game.events.on('touchMove', onTouchMove)
+    this.events.once('shutdown', () => this.game.events.off('touchMove', onTouchMove))
 
     this.markers = new MarkerSet(this, this.objects)
     this.markerDefList = this.markerDefs()
@@ -190,8 +194,9 @@ export default class ZoneScene extends Phaser.Scene {
     })
   }
 
-  onWorldJoined ({ players, self, encounters, random }) {
+  onWorldJoined ({ players, self, encounters, random, cleared }) {
     (players || []).forEach(p => this.createOtherSprite(p))
+    ;(cleared || []).forEach(id => this.markers.complete(id))
     this.registerServerInteractables(encounters || [])
     this.game.events.emit('joined', { self, encounters, random, zone: this.zone })
     if (self) { this.game.events.emit('hpUpdate', { hp: self.hp, maxHp: self.maxHp }) }
@@ -304,8 +309,12 @@ export default class ZoneScene extends Phaser.Scene {
     const up = this.cursors.up.isDown || this.wasd.W.isDown
     const down = this.cursors.down.isDown || this.wasd.S.isDown
 
-    const vx = (right ? 1 : 0) - (left ? 1 : 0)
-    const vy = (down ? 1 : 0) - (up ? 1 : 0)
+    let vx = (right ? 1 : 0) - (left ? 1 : 0)
+    let vy = (down ? 1 : 0) - (up ? 1 : 0)
+    if (Math.abs(this.touchVec.x) > 0.25 || Math.abs(this.touchVec.y) > 0.25) {
+      vx = this.touchVec.x
+      vy = this.touchVec.y
+    }
     const velocity = new Phaser.Math.Vector2(vx, vy)
     const moving = velocity.length() > 0
     if (moving) {

@@ -9,6 +9,9 @@
       <nuxt-link to="/rpg/map" class="hub-link">
         <i class="fas fa-map" /> <span>แผนที่โลก</span>
       </nuxt-link>
+      <nuxt-link to="/rpg/leaderboard" class="hub-link">
+        <i class="fas fa-trophy" /> <span>กระดานผู้นำ</span>
+      </nuxt-link>
       <nuxt-link v-if="legacyBoardEnabled" to="/rpg/board" class="hub-link legacy-link">
         <i class="fas fa-dice-d20" /> <span>โหมดกระดานเดิม</span>
       </nuxt-link>

@@ -126,6 +126,7 @@ export default class WorldController {
       this.game.events.emit('sfx', 'levelup')
       pushToast('เลื่อนระดับ! ตอนนี้คุณคือเลเวล ' + level, 'level')
     }))
+    this.offs.push(on(EV.SAVE_RESTORED, () => pushToast('เซิร์ฟเวอร์ปรับเซฟของคุณให้ตรงกับข้อมูลล่าสุด', 'bad')))
     this.offs.push(on(EV.COMPLETE_OBJECTIVE, payload => this.onObjective(payload)))
     this.offs.push(on(EV.QUEST_COMPLETED, ({ questId }) => {
       this.game.events.emit('sfx', 'success')

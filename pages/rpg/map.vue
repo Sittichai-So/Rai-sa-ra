@@ -6,6 +6,9 @@
         <i class="fas fa-door-open" />
       </nuxt-link>
       <h1>แผนที่การผจญภัย</h1>
+      <nuxt-link to="/rpg/leaderboard" class="lb-link">
+        <i class="fas fa-trophy" /> <span>กระดานผู้นำ</span>
+      </nuxt-link>
     </header>
 
     <main class="map-body">
@@ -206,4 +209,18 @@ export default {
   .region-valley { top: 220px; left: 250px; }
   .region-dragon { top: 100px; left: 310px; }
 }
+.lb-link {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(232, 179, 74, 0.3);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #e8b34a;
+  text-decoration: none;
+}
+.lb-link:hover { background: rgba(232, 179, 74, 0.1); }
 </style>

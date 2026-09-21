@@ -21,10 +21,15 @@
         :value="sound.volume"
         @input="setVolume($event.target.value)"
       >
+      <button type="button" class="wh-icon-btn" title="เต็มจอ" @click="$emit('fullscreen')">
+        <i class="fas fa-expand" />
+      </button>
       <button type="button" class="wh-icon-btn" :title="sound.muted ? 'เปิดเสียง' : 'ปิดเสียง'" @click="toggleSound">
         <i :class="sound.muted ? 'fas fa-volume-xmark' : 'fas fa-volume-high'" />
       </button>
     </div>
+
+    <TouchControls v-if="touchEnabled" :game="game" :blocked="blocked" />
 
     <HudDebug :game="game" />
 
@@ -96,12 +101,22 @@ import HudMenu from '~/components/game/HudMenu.vue'
 import HudShop from '~/components/game/HudShop.vue'
 import HudBoard from '~/components/game/HudBoard.vue'
 import HudDebug from '~/components/game/HudDebug.vue'
+import TouchControls from '~/components/game/TouchControls.vue'
 import { ui, isBlocking, openPanel, closePanel } from '~/game/systems/ui'
 import { loadSoundSettings, saveSoundSettings, playSound, playMusic, syncMusic, stopMusic } from '~/components/game/sound'
 
+function detectTouch () {
+  try {
+    if (localStorage.getItem('rpgTouch') === '1') { return true }
+    return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || navigator.maxTouchPoints > 0
+  } catch (e) {
+    return false
+  }
+}
+
 export default {
   name: 'WorldHud',
-  components: { HudStatus, HudDialogue, HudDice, HudCombat, HudLoot, HudMenu, HudShop, HudBoard, HudDebug },
+  components: { HudStatus, HudDialogue, HudDice, HudCombat, HudLoot, HudMenu, HudShop, HudBoard, HudDebug, TouchControls },
   props: {
     controller: { type: Object, required: true },
     game: { type: Object, default: null },
@@ -109,7 +124,7 @@ export default {
     compact: { type: Boolean, default: false }
   },
   data () {
-    return { ui, sound: loadSoundSettings() }
+    return { ui, sound: loadSoundSettings(), touchEnabled: detectTouch() }
   },
   computed: {
     blocked () {

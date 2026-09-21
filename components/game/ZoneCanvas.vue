@@ -1,5 +1,5 @@
 <template>
-  <div class="game-canvas-wrap" :class="{ 'is-shaking': shaking }" :style="wrapStyle">
+  <div class="game-canvas-wrap" :class="{ 'is-shaking': shaking, 'is-full': fullscreen }" :style="wrapStyle">
     <div ref="mount" class="game-mount" />
     <div class="game-vignette" />
     <WorldHud
@@ -9,6 +9,7 @@
       :class-id="hudClassId"
       :compact="height < 400"
       @shake="shake"
+      @fullscreen="toggleFull"
     />
   </div>
 </template>
@@ -19,6 +20,7 @@ import Phaser from 'phaser'
 import WorldNetwork from '~/game/net/WorldNetwork'
 import WorldController from '~/game/systems/worldController'
 import WorldHud from '~/components/game/WorldHud.vue'
+import { loadGameState } from '~/game/systems/gameState'
 
 function waitForFont () {
   if (typeof document === 'undefined' || !document.fonts || !document.fonts.load) { return Promise.resolve() }
@@ -41,7 +43,7 @@ export default {
     filter: { type: String, default: '' }
   },
   data () {
-    return { ready: false, shaking: false }
+    return { ready: false, shaking: false, fullscreen: false }
   },
   computed: {
     hudClassId () {
@@ -61,6 +63,8 @@ export default {
     if (this.destroyed) { return }
     let user = null
     try { user = JSON.parse(localStorage.getItem('userData')) } catch (e) {}
+    await loadGameState(user && user._id)
+    if (this.destroyed) { return }
     const classId = this.hudClassId
 
     this.network = new WorldNetwork(this.$socket, this.roomId, this.zone, user || { username: 'Guest' }, classId)
@@ -109,6 +113,13 @@ export default {
     }
   },
   methods: {
+    toggleFull () {
+      this.fullscreen = !this.fullscreen
+      const el = this.$el
+      try {
+        if (this.fullscreen && el.requestFullscreen) { el.requestFullscreen().catch(() => {}) } else if (!this.fullscreen && document.fullscreenElement) { document.exitFullscreen() }
+      } catch (e) {}
+    },
     shake () {
       this.shaking = true
       clearTimeout(this.shakeTimer)
@@ -127,6 +138,9 @@ export default {
   max-width: 100%;
 }
 .game-canvas-wrap.is-shaking { animation: screen-shake 0.3s ease; }
+.game-canvas-wrap.is-full { position: fixed; inset: 0; z-index: 3000; max-width: none; display: flex; align-items: center; justify-content: center; background: #000; }
+.game-canvas-wrap.is-full .game-mount { border: 0; border-radius: 0; }
+.game-canvas-wrap.is-full .game-mount >>> canvas { max-width: 100vw; max-height: 100vh; }
 @keyframes screen-shake {
   10% { transform: translate(-3px, 2px); }
   30% { transform: translate(3px, -2px); }

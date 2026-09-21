@@ -1,12 +1,14 @@
 import Vue from 'vue'
 import { describeItem, itemById } from '../data/items'
 import { emit, EV } from './worldEvents'
+import { fetchRemote, pushRemote, deleteRemote } from './saveSync'
 
 const SAVE_VERSION = 1
 const SAVE_PREFIX = 'raisaraRpgSave:'
 const MAX_LEVEL = 10
 const EXP_PER_LEVEL = 60
 const LOG_LIMIT = 80
+const REMOTE_DEBOUNCE_MS = 5000
 
 const freshState = () => ({
   version: SAVE_VERSION,
@@ -22,7 +24,8 @@ const freshState = () => ({
   npcStates: {},
   storyProgress: 'prologue',
   currentMap: 'village',
-  log: []
+  log: [],
+  rev: 0
 })
 
 export const state = Vue.observable(freshState())
@@ -30,6 +33,10 @@ export const state = Vue.observable(freshState())
 let storageKey = null
 let saveTimer = null
 let unloadBound = false
+let remoteEnabled = false
+let remoteTimer = null
+let remoteDirty = false
+let remotePushing = false
 
 export function levelFromExp (exp) {
   return Math.min(MAX_LEVEL, 1 + Math.floor(exp / EXP_PER_LEVEL))
@@ -41,9 +48,65 @@ export function expIntoLevel (exp) {
   return { current: exp - (level - 1) * EXP_PER_LEVEL, needed: EXP_PER_LEVEL }
 }
 
-function writeSave () {
+function writeLocal () {
   if (!storageKey) { return }
   try { localStorage.setItem(storageKey, JSON.stringify(state)) } catch (e) {}
+}
+
+function profileForServer () {
+  const { rev, level, ...profile } = state
+  return profile
+}
+
+function applyProfile (loaded) {
+  const base = freshState()
+  const merged = loaded && loaded.version === SAVE_VERSION ? { ...base, ...loaded, equipment: { ...base.equipment, ...(loaded.equipment || {}) } } : base
+  Object.keys(base).forEach((key) => { state[key] = merged[key] })
+  state.level = levelFromExp(state.exp)
+}
+
+function adoptRemote (result, reason) {
+  applyProfile(result.data)
+  state.rev = result.rev || 0
+  remoteDirty = false
+  writeLocal()
+  emit(EV.SAVE_RESTORED, { reason })
+}
+
+async function pushNow (options) {
+  clearTimeout(remoteTimer)
+  if (!remoteEnabled || !remoteDirty) { return }
+  if (remotePushing) {
+    remoteTimer = setTimeout(() => pushNow(options), REMOTE_DEBOUNCE_MS)
+    return
+  }
+  remotePushing = true
+  remoteDirty = false
+  const result = await pushRemote({ data: profileForServer(), baseRev: state.rev }, options)
+  remotePushing = false
+  if (!result) {
+    remoteDirty = true
+    return
+  }
+  if (result.accepted) {
+    state.rev = result.rev
+    writeLocal()
+    if (remoteDirty) { scheduleRemote() }
+    return
+  }
+  adoptRemote(result, result.reason)
+}
+
+function scheduleRemote () {
+  if (!remoteEnabled) { return }
+  remoteDirty = true
+  clearTimeout(remoteTimer)
+  remoteTimer = setTimeout(pushNow, REMOTE_DEBOUNCE_MS)
+}
+
+function writeSave () {
+  writeLocal()
+  scheduleRemote()
 }
 
 export function save () {
@@ -53,7 +116,8 @@ export function save () {
 
 export function flushSave () {
   clearTimeout(saveTimer)
-  writeSave()
+  writeLocal()
+  if (remoteEnabled && remoteDirty) { pushNow({ keepalive: true }) }
 }
 
 export function initState (userId) {
@@ -65,17 +129,34 @@ export function initState (userId) {
   }
   let loaded = null
   try { loaded = JSON.parse(localStorage.getItem(storageKey)) } catch (e) {}
-  const base = freshState()
-  const merged = loaded && loaded.version === SAVE_VERSION ? { ...base, ...loaded, equipment: { ...base.equipment, ...(loaded.equipment || {}) } } : base
-  Object.keys(base).forEach((key) => { state[key] = merged[key] })
-  state.level = levelFromExp(state.exp)
+  applyProfile(loaded)
+  return state
+}
+
+export async function loadGameState (userId) {
+  initState(userId)
+  remoteEnabled = !!userId
+  if (!remoteEnabled) { return state }
+  const remote = await fetchRemote()
+  if (!remote) { return state }
+  if (remote.rev !== state.rev) {
+    adoptRemote(remote, 'newer')
+    return state
+  }
+  if (JSON.stringify(profileForServer()) !== JSON.stringify(remote.data)) {
+    remoteDirty = true
+    await pushNow()
+  }
   return state
 }
 
 export function resetState () {
   const base = freshState()
   Object.keys(base).forEach((key) => { state[key] = base[key] })
-  flushSave()
+  remoteDirty = false
+  clearTimeout(remoteTimer)
+  writeLocal()
+  if (remoteEnabled) { deleteRemote() }
 }
 
 export function getFlag (name) {
