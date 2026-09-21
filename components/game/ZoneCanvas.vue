@@ -21,6 +21,7 @@ import WorldNetwork from '~/game/net/WorldNetwork'
 import WorldController from '~/game/systems/worldController'
 import WorldHud from '~/components/game/WorldHud.vue'
 import { loadGameState } from '~/game/systems/gameState'
+import { detectTouch } from '~/components/game/touch'
 
 function waitForFont () {
   if (typeof document === 'undefined' || !document.fonts || !document.fonts.load) { return Promise.resolve() }
@@ -95,6 +96,7 @@ export default {
     })
     this.controller.start()
     this.ready = true
+    if (detectTouch() && window.innerHeight < 700) { this.fullscreen = true }
   },
   beforeDestroy () {
     this.destroyed = true

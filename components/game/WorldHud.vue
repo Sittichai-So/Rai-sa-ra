@@ -102,17 +102,9 @@ import HudShop from '~/components/game/HudShop.vue'
 import HudBoard from '~/components/game/HudBoard.vue'
 import HudDebug from '~/components/game/HudDebug.vue'
 import TouchControls from '~/components/game/TouchControls.vue'
+import { detectTouch } from '~/components/game/touch'
 import { ui, isBlocking, openPanel, closePanel } from '~/game/systems/ui'
 import { loadSoundSettings, saveSoundSettings, playSound, playMusic, syncMusic, stopMusic } from '~/components/game/sound'
-
-function detectTouch () {
-  try {
-    if (localStorage.getItem('rpgTouch') === '1') { return true }
-    return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || navigator.maxTouchPoints > 0
-  } catch (e) {
-    return false
-  }
-}
 
 export default {
   name: 'WorldHud',
