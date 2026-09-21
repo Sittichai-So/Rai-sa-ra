@@ -165,6 +165,9 @@ export default {
     API_GAME_LEADERBOARD: currentEnv.api + '/game/leaderboard',
     API_GAME_MY_STATS: currentEnv.api + '/game/my-stats',
 
+    API_RPG_LEADERBOARD: currentEnv.api + '/rpg/leaderboard',
+    API_RPG_MY_STATS: currentEnv.api + '/rpg/my-stats',
+
     API_COINS_WALLET: currentEnv.api + '/coins/wallet',
     API_COINS_PACKAGES: currentEnv.api + '/coins/packages',
     API_COINS_TOPUP: currentEnv.api + '/coins/topup',
@@ -191,6 +194,15 @@ export default {
     transpile: [
       'vee-validate/dist/rules',
       'date-fns'
-    ]
+    ],
+    extend (config) {
+      config.module.rules.push({
+        test: /\.(mp3|ogg|wav)$/,
+        loader: 'file-loader',
+        options: {
+          name: '[path][name].[ext]'
+        }
+      })
+    }
   }
 }

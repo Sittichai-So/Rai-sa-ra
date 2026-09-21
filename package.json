@@ -25,6 +25,7 @@
     "emoji-mart-vue": "^2.6.6",
     "notiflix": "^3.2.8",
     "nuxt": "^2.15.7",
+    "phaser": "^3.90.0",
     "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.23.0",
     "vee-validate": "^3.4.14",
