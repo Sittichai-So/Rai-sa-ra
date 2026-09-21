@@ -167,6 +167,7 @@ export default {
 
     API_RPG_LEADERBOARD: currentEnv.api + '/rpg/leaderboard',
     API_RPG_MY_STATS: currentEnv.api + '/rpg/my-stats',
+    API_RPG_SAVE: currentEnv.api + '/rpg/save',
 
     API_COINS_WALLET: currentEnv.api + '/coins/wallet',
     API_COINS_PACKAGES: currentEnv.api + '/coins/packages',
