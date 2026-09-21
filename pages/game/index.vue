@@ -12,6 +12,9 @@
         <h1>ZOMBIE STRIKE</h1>
         <p>เอาตัวรอดให้นานที่สุด — เล่นกับเพื่อนทุกคน</p>
       </div>
+      <nuxt-link to="/rpg" class="other-game-link">
+        <i class="fas fa-dice-d20" /> <span>ตำนานนักผจญภัย</span>
+      </nuxt-link>
       <div class="player-chip">
         <img v-if="avatarUrl && !avatarBroken" :src="avatarUrl" class="chip-avatar" @error="avatarBroken = true">
         <div v-else class="chip-avatar-placeholder">
@@ -380,6 +383,21 @@ export default {
   margin: 0;
 }
 
+.other-game-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(232, 179, 74, 0.3);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #e8b34a;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.other-game-link:hover { background: rgba(232, 179, 74, 0.1); }
+
 .player-chip {
   display: flex;
   align-items: center;
@@ -701,5 +719,7 @@ section h2 {
   .controls-grid { grid-template-columns: 1fr; }
   .title-block h1 { font-size: 20px; }
   .my-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .player-chip span { display: none; }
+  .other-game-link span { display: none; }
 }
 </style>

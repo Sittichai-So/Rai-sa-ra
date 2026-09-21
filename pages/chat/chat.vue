@@ -189,6 +189,14 @@
               </div>
               <i class="fas fa-chevron-right game-btn-arrow" />
             </nuxt-link>
+            <nuxt-link to="/rpg" class="game-sidebar-btn rpg-variant">
+              <span class="game-btn-icon">🐉</span>
+              <div class="game-btn-text">
+                <span class="game-btn-title">ตำนานนักผจญภัย</span>
+                <span class="game-btn-sub">Co-op Dice Adventure</span>
+              </div>
+              <i class="fas fa-chevron-right game-btn-arrow" />
+            </nuxt-link>
           </div>
         </div>
       </div>
@@ -4199,6 +4207,12 @@ select.cr-input option {
 .game-btn-title { font-size: var(--fs-small); font-weight: var(--fw-bold); color: var(--text-cream); }
 .game-btn-sub { font-size: var(--fs-eyebrow); color: rgba(55, 200, 113, 0.75); text-transform: uppercase; letter-spacing: 0.04em; }
 .game-btn-arrow { color: rgba(55, 200, 113, 0.5); font-size: 11px; }
+
+.game-sidebar-btn.rpg-variant { background: rgba(232, 179, 74, 0.06); border-color: rgba(232, 179, 74, 0.18); }
+.game-sidebar-btn.rpg-variant:hover { background: rgba(232, 179, 74, 0.14); border-color: rgba(232, 179, 74, 0.4); }
+.game-sidebar-btn.rpg-variant .game-btn-icon { background: rgba(232, 179, 74, 0.12); }
+.game-sidebar-btn.rpg-variant .game-btn-sub { color: rgba(232, 179, 74, 0.8); }
+.game-sidebar-btn.rpg-variant .game-btn-arrow { color: rgba(232, 179, 74, 0.6); }
 
 .friend-actions { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
