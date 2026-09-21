@@ -1,0 +1,75 @@
+export const QUESTS = {
+  whispering_forest: {
+    id: 'whispering_forest',
+    title: 'เสียงกระซิบแห่งป่า',
+    giver: 'elder',
+    chapter: 1,
+    description: 'ชาวบ้านรายงานว่ามีเสียงประหลาดดังออกมาจากป่าทางเหนือทุกค่ำคืน ผู้เฒ่าประจำหมู่บ้านต้องการให้คุณไปตรวจสอบ',
+    location: 'ป่าต้องคำสาป (ทางเหนือของหมู่บ้าน)',
+    objectives: [
+      { id: 'travel', text: 'เดินทางไปยังป่าทางเหนือ', hint: 'เดินตามทางดินขึ้นเหนือจนสุดหมู่บ้าน แล้วกด E ที่ประตูออกผจญภัย', on: { type: 'PLAYER_ENTER_AREA', area: 'forest' }, satisfiedBy: { flag: 'visited:forest' } },
+      { id: 'footprints', text: 'ตรวจสอบรอยเท้าปริศนา', hint: 'มองหารอยเท้าบนพื้นดินใกล้ทางเข้าป่า แล้วกด E เพื่อตรวจสอบ', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'forest_footprints' } },
+      { id: 'source', text: 'ค้นหาต้นตอของเสียงกระซิบ', hint: 'เสียงกระซิบดังมาจากทางตะวันออกเฉียงเหนือ มองหาต้นไม้ใหญ่กลวง', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'whisper_source' } },
+      { id: 'confront', text: 'เผชิญหน้ากับสิ่งมีชีวิตในป่า', hint: 'สิ่งที่ซ่อนอยู่น่าจะอยู่ลึกเข้าไปทางมุมตะวันออกเฉียงเหนือ เตรียมตัวให้พร้อมก่อนเข้าไป', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'shadow_wolf' } },
+      { id: 'return', text: 'กลับไปรายงานผู้เฒ่าในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับผู้เฒ่า', final: true }
+    ],
+    rewards: {
+      gold: 60,
+      exp: 80,
+      items: [{ id: 'potion_large', qty: 1 }],
+      flags: ['forestCleared', 'forestBossDefeated'],
+      story: 'chapter2'
+    },
+    onAcceptFlags: ['elderQuestStarted', 'forestUnlocked']
+  },
+  silent_valley: {
+    id: 'silent_valley',
+    title: 'เสียงเงียบแห่งหุบเขา',
+    giver: 'elder',
+    chapter: 2,
+    requires: { quest: 'whispering_forest', status: 'QUEST_COMPLETED' },
+    description: 'หลังป่าสงบลง ผู้เฒ่าได้รับข่าวว่าหุบเขาร้างทางตะวันออกเงียบผิดปกติ นักเดินทางที่ผ่านไปไม่มีใครกลับมาเล่าเรื่องอะไรเลย',
+    location: 'หุบเขาร้าง',
+    objectives: [
+      { id: 'travel', text: 'เดินทางไปยังหุบเขาร้าง', hint: 'เปิดแผนที่โลกแล้วเลือกหุบเขาร้าง', on: { type: 'PLAYER_ENTER_AREA', area: 'valley' }, satisfiedBy: { flag: 'visited:valley' } },
+      { id: 'rockslide', text: 'ผ่านหินถล่มกลางทางไปให้ได้', hint: 'เดินไปกลางหุบเขา หินอาจถล่มลงมา', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'rockslide' } },
+      { id: 'ladder', text: 'ลงไปตรวจสอบบันไดเชือกทางเหนือของหุบเขา', hint: 'มองหาบันไดเชือกที่ผาทางด้านขวาบน แล้วกด E', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'rickety_ladder' } },
+      { id: 'return', text: 'กลับไปรายงานผู้เฒ่าในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับผู้เฒ่า', final: true }
+    ],
+    rewards: {
+      gold: 90,
+      exp: 100,
+      items: [{ id: 'potion_large', qty: 2 }],
+      flags: ['valleyCleared', 'dragonGateKnown'],
+      story: 'chapter3'
+    },
+    onAcceptFlags: ['valleyQuestStarted']
+  },
+  goblin_menace: {
+    id: 'goblin_menace',
+    title: 'ก็อบลินหน้าประตูหมู่บ้าน',
+    giver: 'board',
+    chapter: 1,
+    description: 'ก็อบลินสอดแนมตัวหนึ่งแอบซุ่มอยู่ริมทางเหนือของหมู่บ้าน คอยขโมยผักและข่มขู่คนเดินผ่าน',
+    location: 'ทางเดินริมประตูเหนือของหมู่บ้าน',
+    objectives: [
+      { id: 'defeat', text: 'กำจัดก็อบลินสอดแนมที่ซุ่มอยู่ริมทางเหนือ', hint: 'มันซุ่มอยู่บนทางดินใกล้ประตูเหนือ กด E เพื่อเข้าโจมตี', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'goblin_scout' } }
+    ],
+    rewards: { gold: 25, exp: 30, items: [{ id: 'bandage', qty: 2 }], flags: ['goblinMenaceSolved'] }
+  },
+  lost_pup: {
+    id: 'lost_pup',
+    title: 'ลูกหมาป่าหลงทาง',
+    giver: 'board',
+    chapter: 1,
+    description: 'ชาวบ้านได้ยินเสียงร้องคราง "แงว..." ริมทางกลางหมู่บ้าน ดูเหมือนลูกหมาป่าหลงฝูงมา ใครช่วยพามันกลับไปที',
+    location: 'ริมทางกลางหมู่บ้าน',
+    objectives: [
+      { id: 'help', text: 'ช่วยพาลูกหมาป่ากลับไปหาฝูง', hint: 'ลูกหมาป่าอยู่ริมทางกลางหมู่บ้าน กด E เพื่อเข้าไปดู', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'lost_pup', choiceId: 'help' } }
+    ],
+    failOn: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'lost_pup', choiceId: 'ignore' },
+    rewards: { gold: 15, exp: 25, items: [{ id: 'potion_small', qty: 1 }], flags: ['pupReturned'] }
+  }
+}
+
+export const BOARD_QUEST_IDS = ['goblin_menace', 'lost_pup']

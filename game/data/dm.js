@@ -1,0 +1,130 @@
+export const DM_SCRIPTS = [
+  {
+    id: 'prologue',
+    on: { type: 'PLAYER_ENTER_AREA', area: 'village' },
+    if: { notFlag: 'prologueSeen' },
+    delay: 700,
+    pages: [
+      { text: 'ตะวันเริ่มลับขอบฟ้า คุณก้าวเข้าสู่หมู่บ้านลมเย็นหลังการเดินทางอันยาวนาน กลิ่นควันไฟจากปล่องบ้านลอยอวลอยู่ในอากาศ' },
+      { text: 'แต่ชาวบ้านที่ยืนอยู่ริมทางกลับมองไปทางเหนือ ด้วยสีหน้าที่ไม่ค่อยสบายใจนัก' },
+      { text: 'บางที... ผู้เฒ่าประจำหมู่บ้านที่ยืนอยู่ข้างอนุสาวรีย์เก่าอาจรู้ว่าเกิดอะไรขึ้น' }
+    ],
+    choices: [{ label: 'เริ่มต้นการผจญภัย', do: [{ setFlag: 'prologueSeen' }, { narrate: 'ใช้ปุ่มลูกศรหรือ W A S D เดิน และกด E เมื่ออยู่ใกล้ผู้คนหรือสิ่งของเพื่อโต้ตอบ' }] }]
+  },
+  {
+    id: 'village_return',
+    on: { type: 'PLAYER_RETURN_TO_VILLAGE', fresh: false },
+    if: { any: [{ quest: 'whispering_forest', ready: true }, { quest: 'silent_valley', ready: true }] },
+    delay: 700,
+    pages: [
+      { text: 'คุณเดินกลับเข้าหมู่บ้านลมเย็นทั้งที่ร่างกายยังระบมจากการเดินทาง ชาวบ้านที่เห็นคุณเริ่มกระซิบกระซาบกันด้วยสายตาที่ต่างจากเมื่อก่อน' },
+      { text: 'ผู้เฒ่ากำลังยืนรออยู่ที่อนุสาวรีย์เก่า ดูเหมือนเขาจะรู้แล้วว่าคุณกลับมาพร้อมข่าวสำคัญ' }
+    ],
+    choices: []
+  },
+  {
+    id: 'village_return_plain',
+    on: { type: 'PLAYER_RETURN_TO_VILLAGE', fresh: false },
+    if: { not: { any: [{ quest: 'whispering_forest', ready: true }, { quest: 'silent_valley', ready: true }] } },
+    mode: 'banner',
+    text: 'คุณกลับมาถึงหมู่บ้านลมเย็น ควันไฟจากปล่องบ้านยังลอยอ้อยอิ่งเหมือนเดิม'
+  },
+  {
+    id: 'welcome_back',
+    on: { type: 'PLAYER_ENTER_GAME', area: 'village' },
+    if: { all: [{ flag: 'prologueSeen' }, { not: { any: [{ quest: 'whispering_forest', ready: true }, { quest: 'silent_valley', ready: true }] } }] },
+    delay: 700,
+    recap: true,
+    pages: [
+      { text: 'ลมเย็นพัดผ่านหมู่บ้านลมเย็นอีกครั้ง ควันไฟจากปล่องบ้านลอยอ้อยอิ่งอยู่เหนือหลังคา เรื่องราวของคุณยังดำเนินต่อไป' }
+    ],
+    choices: []
+  },
+  {
+    id: 'welcome_back_ready',
+    on: { type: 'PLAYER_ENTER_GAME', area: 'village' },
+    if: { all: [{ flag: 'prologueSeen' }, { any: [{ quest: 'whispering_forest', ready: true }, { quest: 'silent_valley', ready: true }] }] },
+    delay: 700,
+    pages: [
+      { text: 'คุณกลับมาถึงหมู่บ้านลมเย็นอีกครั้ง ชาวบ้านเริ่มกระซิบกระซาบกันด้วยสายตาที่ต่างจากเมื่อก่อน' },
+      { text: 'ผู้เฒ่ากำลังยืนรออยู่ที่อนุสาวรีย์เก่า ดูเหมือนเขารู้แล้วว่าคุณมีข่าวสำคัญ' }
+    ],
+    choices: []
+  },
+  {
+    id: 'village_gate',
+    on: { type: 'PLAYER_INTERACT_ENCOUNTER', id: 'village_gate' },
+    if: { quest: 'whispering_forest', status: ['QUEST_NOT_STARTED', 'QUEST_FAILED'] },
+    pages: [
+      { text: 'ประตูไม้เก่าคร่ำครึของหมู่บ้านเปิดแง้มอยู่ ลมเย็นจากป่าทางเหนือพัดกลิ่นดินชื้นเข้ามา' },
+      { text: 'ยังไม่มีใครมอบภารกิจให้คุณ... ผู้เฒ่าที่อนุสาวรีย์อาจมีเรื่องที่ควรรู้ก่อนออกไป' }
+    ],
+    choices: [
+      { label: 'ออกไปสำรวจป่าเลย', do: [{ travel: 'forest' }] },
+      { label: 'กลับไปคุยกับผู้เฒ่าก่อน', do: [] }
+    ]
+  },
+  {
+    id: 'village_gate_quest',
+    on: { type: 'PLAYER_INTERACT_ENCOUNTER', id: 'village_gate' },
+    if: { quest: 'whispering_forest', active: true },
+    pages: [
+      { text: 'ตรงหน้าคือประตูออกจากหมู่บ้าน เลยไปเป็นทางดินที่ทอดเข้าสู่ป่าทางเหนือ ท้องฟ้าเหนือยอดไม้เริ่มมืดครึ้ม' }
+    ],
+    choices: [
+      { label: 'ออกเดินทางเข้าป่า', do: [{ travel: 'forest' }] },
+      { label: 'ยังไม่พร้อม', do: [] }
+    ]
+  },
+  {
+    id: 'village_gate_after',
+    on: { type: 'PLAYER_INTERACT_ENCOUNTER', id: 'village_gate' },
+    if: { quest: 'whispering_forest', status: 'QUEST_COMPLETED' },
+    pages: [{ text: 'ประตูเหนือของหมู่บ้านเงียบสงบกว่าเดิมมาก ทางดินที่เคยน่ากลัวตอนนี้ดูเหมือนเส้นทางธรรมดาอีกเส้น' }],
+    choices: [
+      { label: 'เดินทางกลับเข้าป่า', do: [{ travel: 'forest' }] },
+      { label: 'ยังไม่ไป', do: [] }
+    ]
+  },
+  {
+    id: 'forest_enter_quest',
+    on: { type: 'PLAYER_ENTER_AREA', area: 'forest' },
+    if: { all: [{ quest: 'whispering_forest', active: true }, { notFlag: 'forestIntroSeen' }] },
+    delay: 900,
+    pages: [
+      { text: 'ฝนเริ่มตกพรำๆ ขณะที่คุณก้าวเข้าสู่ชายป่าทางเหนือ กลิ่นดินเปียกปนกับกลิ่นใบไม้เน่าลอยมาตามลม' },
+      { text: 'ทันใดนั้น เสียงบางอย่างดังมาจากพุ่มไม้เบื้องหน้า ก่อนจะเงียบลงกะทันหัน...' }
+    ],
+    choices: [
+      { label: 'เดินเข้าไปดูที่พุ่มไม้', do: [{ setFlag: 'forestIntroSeen' }, { narrate: 'คุณย่องเข้าไปใกล้ แต่พบเพียงกระต่ายป่าตัวหนึ่งวิ่งหนีออกไป ทว่าพื้นดินตรงนั้นมีรอยบางอย่างกดลึกอยู่' }] },
+      { label: 'เดินอ้อมไปทางอื่น', do: [{ setFlag: 'forestIntroSeen' }, { narrate: 'คุณเลือกเดินอ้อมพุ่มไม้ไป เสียงลมพัดผ่านต้นไม้เบาๆ แต่ความรู้สึกว่ามีอะไรจ้องมองอยู่ยังไม่หายไป' }] },
+      { label: 'ตรวจสอบร่องรอยบนพื้น', do: [{ setFlag: 'forestIntroSeen' }, { serverInteract: 'footprints' }] }
+    ]
+  },
+  {
+    id: 'forest_enter_plain',
+    on: { type: 'PLAYER_ENTER_AREA', area: 'forest' },
+    if: { not: { all: [{ quest: 'whispering_forest', active: true }, { notFlag: 'forestIntroSeen' }] } },
+    mode: 'banner',
+    delay: 900,
+    text: 'ป่าต้องคำสาปกลืนคุณเข้าไปในเงามืดของตัวเอง เสียงใบไม้เสียดสีกันดังราวกับกระซิบ'
+  },
+  {
+    id: 'valley_enter',
+    on: { type: 'PLAYER_ENTER_AREA', area: 'valley' },
+    mode: 'banner',
+    delay: 900,
+    text: 'หุบเขาร้างเงียบสนิทจนได้ยินเสียงลมหายใจของตัวเอง หินผาทั้งสองฝั่งตั้งตระหง่านราวกับคอยจับจ้องทุกย่างก้าว'
+  },
+  {
+    id: 'dungeon_enter',
+    once: true,
+    on: { type: 'PLAYER_ENTER_DUNGEON' },
+    delay: 900,
+    pages: [
+      { text: 'ประตูหินหนักอึ้งปิดลงข้างหลังคุณ อากาศเย็นชื้นกลิ่นสนิมและควันไฟเก่าลอยมาจากทางลึกเข้าไป' },
+      { text: 'ไม่มีใครกลับออกมาจากที่นี่โดยไม่ได้รับบาดแผล... เตรียมใจให้พร้อมก่อนก้าวต่อไป' }
+    ],
+    choices: [{ label: 'ก้าวเข้าไป', do: [] }]
+  }
+]

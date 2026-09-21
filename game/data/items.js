@@ -1,0 +1,23 @@
+export const ITEMS = {
+  potion_small: { id: 'potion_small', name: 'ยาฟื้นพลังเล็ก', type: 'consumable', heal: 12, price: 25, sell: 10, icon: 'potion_red', desc: 'ฟื้นพลังชีวิต 12 แต้ม' },
+  potion_large: { id: 'potion_large', name: 'ยาฟื้นพลังใหญ่', type: 'consumable', heal: 26, price: 55, sell: 22, icon: 'potion_blue', desc: 'ฟื้นพลังชีวิต 26 แต้ม' },
+  bandage: { id: 'bandage', name: 'ผ้าพันแผล', type: 'consumable', heal: 6, price: 10, sell: 4, icon: 'medipack', desc: 'ฟื้นพลังชีวิต 6 แต้ม' },
+  sword_iron: { id: 'sword_iron', name: 'ดาบเหล็ก', type: 'weapon', slot: 'weapon', atk: 1, price: 60, sell: 25, icon: 'sword', desc: 'โจมตีแม่นขึ้นและแรงขึ้น +1' },
+  leather_armor: { id: 'leather_armor', name: 'เกราะหนัง', type: 'armor', slot: 'armor', ac: 1, price: 60, sell: 25, icon: 'armor', desc: 'ค่าป้องกัน (AC) +1' }
+}
+
+export const SHOP_STOCK = ['potion_small', 'potion_large', 'bandage', 'sword_iron', 'leather_armor']
+
+export function itemById (id) {
+  return ITEMS[id] || null
+}
+
+export function itemByName (name) {
+  return Object.values(ITEMS).find(i => i.name === name) || null
+}
+
+export function describeItem (idOrName) {
+  const known = itemById(idOrName) || itemByName(idOrName)
+  if (known) { return known }
+  return { id: 'trophy:' + idOrName, name: idOrName, type: 'trophy', sell: 6, icon: 'skull', desc: 'ของที่เก็บได้จากการผจญภัย ขายให้พ่อค้าได้' }
+}
