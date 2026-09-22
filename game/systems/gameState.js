@@ -5,8 +5,9 @@ import { fetchRemote, pushRemote, deleteRemote } from './saveSync'
 
 const SAVE_VERSION = 1
 const SAVE_PREFIX = 'raisaraRpgSave:'
-const MAX_LEVEL = 10
-const EXP_PER_LEVEL = 60
+const MAX_LEVEL = 20
+const LEGACY_MAX_LEVEL = 10
+const LEGACY_EXP_PER_LEVEL = 60
 const LOG_LIMIT = 80
 const REMOTE_DEBOUNCE_MS = 5000
 
@@ -38,14 +39,30 @@ let remoteTimer = null
 let remoteDirty = false
 let remotePushing = false
 
+function expToNext (level) {
+  return 60 + (level - 1) * 40
+}
+
+function expForLevel (level) {
+  let total = 0
+  for (let l = 1; l < level; l++) { total += expToNext(l) }
+  return total
+}
+
 export function levelFromExp (exp) {
-  return Math.min(MAX_LEVEL, 1 + Math.floor(exp / EXP_PER_LEVEL))
+  let level = 1
+  while (level < MAX_LEVEL && exp >= expForLevel(level + 1)) { level++ }
+  return level
 }
 
 export function expIntoLevel (exp) {
   const level = levelFromExp(exp)
   if (level >= MAX_LEVEL) { return { current: 1, needed: 1 } }
-  return { current: exp - (level - 1) * EXP_PER_LEVEL, needed: EXP_PER_LEVEL }
+  return { current: exp - expForLevel(level), needed: expToNext(level) }
+}
+
+function legacyLevelFromExp (exp) {
+  return Math.min(LEGACY_MAX_LEVEL, 1 + Math.floor(exp / LEGACY_EXP_PER_LEVEL))
 }
 
 function writeLocal () {
@@ -62,6 +79,8 @@ function applyProfile (loaded) {
   const base = freshState()
   const merged = loaded && loaded.version === SAVE_VERSION ? { ...base, ...loaded, equipment: { ...base.equipment, ...(loaded.equipment || {}) } } : base
   Object.keys(base).forEach((key) => { state[key] = merged[key] })
+  const legacyLevel = legacyLevelFromExp(state.exp)
+  if (legacyLevel > levelFromExp(state.exp)) { state.exp = expForLevel(legacyLevel) }
   state.level = levelFromExp(state.exp)
 }
 

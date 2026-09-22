@@ -46,7 +46,8 @@
                     {{ sellDesc(item) }}
                   </div>
                 </div>
-                <button type="button" class="wh-btn small" @click="controller.sell(item.id)">
+                <span v-if="isQuestItem(item)" class="wh-quest-tag">ของสำคัญ ขายไม่ได้</span>
+                <button v-else type="button" class="wh-btn small" @click="controller.sell(item.id)">
                   ขาย {{ sellPrice(item) }} <img :src="coin" class="wh-icon tiny" alt="">
                 </button>
               </li>
@@ -63,6 +64,7 @@ import { ui, closePanel } from '~/game/systems/ui'
 import { state, countItem } from '~/game/systems/gameState'
 import { SHOP_STOCK, itemById, describeItem } from '~/game/data/items'
 import { itemIcon, COIN_ICON } from '~/components/game/icons'
+import { check } from '~/game/systems/conditions'
 
 export default {
   name: 'HudShop',
@@ -74,7 +76,7 @@ export default {
   },
   computed: {
     stock () {
-      return SHOP_STOCK.map(id => itemById(id))
+      return SHOP_STOCK.map(id => itemById(id)).filter(item => item && check(item.unlockedBy))
     },
     coin () {
       return COIN_ICON
@@ -104,6 +106,9 @@ export default {
     },
     sellDesc (item) {
       return this.baseItem(item).desc
+    },
+    isQuestItem (item) {
+      return !!this.baseItem(item).questItem
     },
     onKey (event) {
       if (event.repeat) { return }

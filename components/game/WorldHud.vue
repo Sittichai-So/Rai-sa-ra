@@ -459,6 +459,7 @@ export default {
 .wh-item-name { font-size: 13.5px; font-weight: 500; }
 .wh-item-name small { color: #a89b86; margin-left: 4px; }
 .wh-item-desc { font-size: 12px; color: #a89b86; line-height: 1.4; }
+.wh-quest-tag { flex-shrink: 0; font-size: 11px; color: #e8b34a; white-space: nowrap; }
 .wh-equipped { margin-left: 8px; padding: 0 6px; font-size: 11px; color: #6fdba0; background: #14261e; }
 .wh-check { display: block; margin-bottom: 8px; font-size: 12.5px; color: #a89b86; cursor: pointer; }
 .wh-log-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }

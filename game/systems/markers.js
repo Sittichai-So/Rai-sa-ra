@@ -47,6 +47,7 @@ export default class MarkerSet {
     entry.main = this.scene.add.sprite(def.x, def.y, def.sprite).setOrigin(origin[0], origin[1]).setDepth(def.y).setScale(def.scale || CREATURE_SCALE)
     if (def.anim) { entry.main.play(def.anim) }
     if (def.tint) { entry.main.setTint(def.tint) }
+    if (def.alpha !== undefined) { entry.main.setAlpha(def.alpha) }
     entry.sprites.push(entry.main)
     const tween = this.scene.tweens.add({ targets: entry.main, y: def.y - 2, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
     entry.stopTween = () => tween.stop()

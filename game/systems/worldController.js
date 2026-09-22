@@ -562,6 +562,7 @@ export default class WorldController {
     const entry = state.inventory.find(i => i.id === invId)
     if (!entry) { return false }
     const item = describeItem(invId.startsWith('trophy:') ? invId.slice(7) : invId)
+    if (item.questItem) { return false }
     const price = item.sell || 0
     if (entry.qty === 1 && item.slot && state.equipment[item.slot] === invId) {
       unequip(item.slot)
