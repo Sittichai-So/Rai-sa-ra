@@ -76,6 +76,8 @@ export default class ZoneScene extends Phaser.Scene {
     this._sendAccum = 0
     this.wasMoving = false
     this.facing = 'down'
+    this.waypoint = null
+    this.waypointArrow = null
 
     this.objects = new WorldObjects(this)
     const world = this.buildWorld()
@@ -286,7 +288,45 @@ export default class ZoneScene extends Phaser.Scene {
       if (Math.hypot(this.player.x - def.x, this.player.y - def.y) > DISCOVER_RADIUS) { return }
       this.discovered.add(def.id)
       this.game.events.emit('discover', { id: def.id, text: def.discover })
+      if (this.waypoint && this.waypoint.id === def.id) { this.clearWaypoint() }
     })
+  }
+
+  setWaypoint (id) {
+    const entry = this.markers.entries.get(id)
+    if (!entry || entry.done) { return }
+    this.waypoint = { id, x: entry.def.x, y: entry.def.y }
+    if (!this.waypointArrow) {
+      this.waypointArrow = this.add.graphics().setDepth(999999)
+      this.waypointArrow.fillStyle(0xE8B34A, 1)
+      this.waypointArrow.lineStyle(1, 0x1B1425, 1)
+      this.waypointArrow.beginPath()
+      this.waypointArrow.moveTo(0, -8)
+      this.waypointArrow.lineTo(6, 4)
+      this.waypointArrow.lineTo(-6, 4)
+      this.waypointArrow.closePath()
+      this.waypointArrow.fillPath()
+      this.waypointArrow.strokePath()
+      this.waypointTween = this.tweens.add({ targets: this.waypointArrow, scale: 1.25, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
+    }
+    this.waypointArrow.setVisible(true)
+    this.markers.pulseAttention(id)
+  }
+
+  clearWaypoint () {
+    this.waypoint = null
+    if (this.waypointArrow) { this.waypointArrow.setVisible(false) }
+  }
+
+  updateWaypoint () {
+    if (!this.waypoint || !this.waypointArrow) { return }
+    if (Math.hypot(this.player.x - this.waypoint.x, this.player.y - this.waypoint.y) < 40) {
+      this.clearWaypoint()
+      return
+    }
+    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, this.waypoint.x, this.waypoint.y)
+    this.waypointArrow.setPosition(this.player.x, this.player.y - 28)
+    this.waypointArrow.setRotation(angle + Math.PI / 2)
   }
 
   update (time, delta) {
@@ -333,6 +373,7 @@ export default class ZoneScene extends Phaser.Scene {
 
     this.interaction.update(this.player.x, this.player.y)
     this.checkDiscoveries()
+    this.updateWaypoint()
 
     this._sendAccum += delta
     if (this.network && this._sendAccum >= MOVE_SEND_INTERVAL_MS) {

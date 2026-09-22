@@ -66,6 +66,7 @@ export default class MarkerSet {
   complete (id) {
     const entry = this.entries.get(id)
     if (!entry || entry.done) { return }
+    if (this.scene.waypoint && this.scene.waypoint.id === id) { this.scene.clearWaypoint() }
     entry.done = true
     const { def, main } = entry
     if (entry.stopTween) { entry.stopTween() }
@@ -87,5 +88,13 @@ export default class MarkerSet {
   isDone (id) {
     const entry = this.entries.get(id)
     return !!entry && entry.done
+  }
+
+  pulseAttention (id) {
+    const entry = this.entries.get(id)
+    if (!entry || entry.done) { return }
+    const target = entry.main
+    const baseScale = target.scaleX || 1
+    this.scene.tweens.add({ targets: target, scaleX: baseScale * 1.5, scaleY: baseScale * 1.5, duration: 220, yoyo: true, repeat: 3, ease: 'Sine.easeInOut' })
   }
 }
