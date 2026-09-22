@@ -37,7 +37,7 @@ import {
   flushQueue
 } from './ui'
 
-const ROUTES = { village: '/rpg', forest: '/rpg/forest', valley: '/rpg/valley', dungeon: '/rpg/dungeon', map: '/rpg/map' }
+const ROUTES = { village: '/rpg', forest: '/rpg/forest', valley: '/rpg/valley', dungeon: '/rpg/dungeon', cave: '/rpg/cave', map: '/rpg/map' }
 let leftByTravel = false
 const MIN_ROLL_MS = 900
 
