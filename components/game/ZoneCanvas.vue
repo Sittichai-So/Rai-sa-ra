@@ -1,6 +1,7 @@
 <template>
   <div class="game-canvas-wrap" :class="{ 'is-shaking': shaking, 'is-full': fullscreen }" :style="wrapStyle">
     <div ref="mount" class="game-mount" />
+    <div v-if="showDayNight" class="game-daynight" :style="dayNightStyle" />
     <div class="game-vignette" />
     <WorldHud
       v-if="ready"
@@ -22,6 +23,7 @@ import WorldController from '~/game/systems/worldController'
 import WorldHud from '~/components/game/WorldHud.vue'
 import { loadGameState } from '~/game/systems/gameState'
 import { detectTouch } from '~/components/game/touch'
+import { dayNightState } from '~/game/systems/dayNight'
 
 function waitForFont () {
   if (typeof document === 'undefined' || !document.fonts || !document.fonts.load) { return Promise.resolve() }
@@ -44,7 +46,7 @@ export default {
     filter: { type: String, default: '' }
   },
   data () {
-    return { ready: false, shaking: false, fullscreen: false }
+    return { ready: false, shaking: false, fullscreen: false, dayNight: dayNightState() }
   },
   computed: {
     hudClassId () {
@@ -52,6 +54,15 @@ export default {
     },
     wrapStyle () {
       return this.filter ? { '--zone-filter': this.filter } : {}
+    },
+    showDayNight () {
+      return this.zone !== 'dungeon' && this.zone !== 'cave'
+    },
+    dayNightStyle () {
+      const { nightAlpha, goldenAlpha } = this.dayNight
+      return {
+        background: `radial-gradient(ellipse at center, rgba(255,150,60,${goldenAlpha}) 0%, rgba(255,150,60,${goldenAlpha * 0.4}) 40%, transparent 70%), rgba(15,15,50,${nightAlpha})`
+      }
     }
   },
   created () {
@@ -97,10 +108,12 @@ export default {
     this.controller.start()
     this.ready = true
     if (detectTouch() && window.innerHeight < 700) { this.fullscreen = true }
+    this.dayNightTimer = setInterval(() => { this.dayNight = dayNightState() }, 4000)
   },
   beforeDestroy () {
     this.destroyed = true
     this.ready = false
+    clearInterval(this.dayNightTimer)
     if (this.controller) {
       this.controller.destroy()
       this.controller = null
@@ -171,6 +184,14 @@ export default {
   border-radius: 12px;
   box-shadow: inset 0 0 70px 18px rgba(0, 0, 0, 0.55);
   background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 7, 15, 0.35) 100%);
+}
+.game-daynight {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 12px;
+  mix-blend-mode: multiply;
 }
 @media (prefers-reduced-motion: reduce) {
   .game-canvas-wrap.is-shaking { animation: none; }
