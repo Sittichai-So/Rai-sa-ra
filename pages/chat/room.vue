@@ -47,9 +47,9 @@
               <i class="fas fa-clock-rotate-left" />
             </button>
             <button
-              v-if="isAdmin"
+              v-if="isAdmin || isRoomOwner"
               class="icon-btn admin-btn"
-              title="จัดการห้อง (แอดมิน)"
+              title="จัดการห้อง"
               @click="showManageModal = true"
             >
               <i class="fas fa-screwdriver-wrench" />
