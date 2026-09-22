@@ -3,6 +3,9 @@
     <HudStatus :class-id="classId" @shake="$emit('shake')" @open="openMenu" />
 
     <div class="wh-toolbar">
+      <button type="button" class="wh-icon-btn wh-icon-exit" title="ออกจากเกม" @click="confirmExit">
+        <i class="fas fa-door-open" />
+      </button>
       <button type="button" class="wh-icon-btn" title="ภารกิจ (Q)" @click="openMenu('quests')">
         <i class="fas fa-scroll" />
       </button>
@@ -143,6 +146,19 @@ export default {
     stopMusic()
   },
   methods: {
+    async confirmExit () {
+      const result = await this.$swal({
+        title: 'ออกจากเกม?',
+        text: 'ระบบบันทึกความคืบหน้าของคุณไว้ให้แล้ว',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ออกจากเกม',
+        cancelButtonText: 'เล่นต่อ',
+        confirmButtonColor: '#e8b34a',
+        cancelButtonColor: '#3b2d4b'
+      })
+      if (result.isConfirmed) { this.controller.exitToHub() }
+    },
     openMenu (tab) {
       if (ui.dialogue || ui.dice || ui.combat || ui.loot) { return }
       if (ui.panel === 'menu' && ui.panelTab === tab) {
@@ -265,11 +281,11 @@ export default {
   inset: 0;
   z-index: 40;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow-y: auto;
   padding: 12px;
   background: rgba(8, 5, 12, 0.72);
 }
+.wh-overlay > .wh-panel { margin: auto; max-height: 100%; overflow-y: auto; }
 
 .wh-status-wrap { position: absolute; left: 10px; top: 10px; z-index: 12; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; pointer-events: none; }
 .wh-status { display: flex; gap: 8px; align-items: center; padding: 8px 12px 8px 10px; min-width: 176px; }
@@ -304,6 +320,7 @@ export default {
 .wh-toolbar { position: absolute; right: 10px; top: 10px; z-index: 12; display: flex; gap: 6px; align-items: center; }
 .wh-icon-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #e8b34a; background: #1b1425; border: 0; cursor: pointer; box-shadow: 0 0 0 2px #0a0710, inset 0 0 0 1px #7a5a26; }
 .wh-icon-btn:hover { background: #33264a; }
+.wh-icon-exit { color: #ff8f8f; }
 .wh-volume { width: 54px; height: 4px; accent-color: #e8b34a; cursor: pointer; }
 
 .wh-banner { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 20; width: calc(100% - 24px); max-width: 560px; display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; background: rgba(27, 20, 37, 0.95); box-shadow: 0 0 0 2px #0a0710, inset 0 0 0 1px #7a5a26; pointer-events: none; }
