@@ -98,7 +98,7 @@ export const DM_SCRIPTS = [
     choices: [
       { label: 'เดินเข้าไปดูที่พุ่มไม้', do: [{ setFlag: 'forestIntroSeen' }, { narrate: 'คุณย่องเข้าไปใกล้ แต่พบเพียงกระต่ายป่าตัวหนึ่งวิ่งหนีออกไป ทว่าพื้นดินตรงนั้นมีรอยบางอย่างกดลึกอยู่' }] },
       { label: 'เดินอ้อมไปทางอื่น', do: [{ setFlag: 'forestIntroSeen' }, { narrate: 'คุณเลือกเดินอ้อมพุ่มไม้ไป เสียงลมพัดผ่านต้นไม้เบาๆ แต่ความรู้สึกว่ามีอะไรจ้องมองอยู่ยังไม่หายไป' }] },
-      { label: 'ตรวจสอบร่องรอยบนพื้น', do: [{ setFlag: 'forestIntroSeen' }, { serverInteract: 'footprints' }] }
+      { label: 'มองหาร่องรอยบนพื้น', do: [{ setFlag: 'forestIntroSeen' }, { highlightMarker: 'footprints' }, { narrate: 'คุณสังเกตเห็นรอยบางอย่างกดลึกอยู่บนพื้นไม่ไกลนัก ลองเดินตามไปดูสิ' }] }
     ]
   },
   {

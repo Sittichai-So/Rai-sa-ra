@@ -91,7 +91,7 @@ export default class WorldController {
     this.exposeDebugHandle()
     bindQuestEvents()
     bindDm()
-    setDmHooks({ serverInteract: id => this.serverInteract(id), travel: to => this.travel(to) })
+    setDmHooks({ serverInteract: id => this.serverInteract(id), travel: to => this.travel(to), highlightMarker: id => this.highlightMarker(id) })
     setDialogueHooks({ innRest: cost => this.innRest(cost), travel: to => this.travel(to) })
 
     const ge = this.game.events
@@ -198,6 +198,10 @@ export default class WorldController {
 
   serverInteract (id) {
     this.network.interact(id)
+  }
+
+  highlightMarker (id) {
+    if (this.scene && this.scene.setWaypoint) { this.scene.setWaypoint(id) }
   }
 
   onEncounterInteract ({ id, type }) {

@@ -5,7 +5,7 @@ import { startQuest, trackedQuest, nextObjective } from './quests'
 import { on } from './worldEvents'
 import { openDialogue, showBanner, pushToast, ui } from './ui'
 
-const hooks = { serverInteract: null, travel: null }
+const hooks = { serverInteract: null, travel: null, highlightMarker: null }
 let unbind = null
 let timers = []
 
@@ -25,6 +25,7 @@ function runActions (actions) {
     if (action.narrate) { showBanner(action.narrate, 'dm') }
     if (action.startQuest && startQuest(action.startQuest)) { pushToast('รับภารกิจใหม่', 'quest') }
     if (action.serverInteract && hooks.serverInteract) { hooks.serverInteract(action.serverInteract) }
+    if (action.highlightMarker && hooks.highlightMarker) { hooks.highlightMarker(action.highlightMarker) }
     if (action.travel && hooks.travel) { hooks.travel(action.travel) }
     if (action.toast) { pushToast(action.toast) }
   })
