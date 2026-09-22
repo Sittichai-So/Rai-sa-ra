@@ -41,7 +41,7 @@
 <script>
 import ForestCanvas from '~/components/game/ForestCanvas.vue'
 import PartyCodeBar from '~/components/game/PartyCodeBar.vue'
-import { RPG_CLASSES } from '~/utils/rpgClasses'
+import { RPG_CLASSES, rpgClassById } from '~/utils/rpgClasses'
 import { resolvePartyCode } from '~/utils/rpgParty'
 
 export default {
@@ -52,7 +52,7 @@ export default {
     let user = null
     try { user = JSON.parse(localStorage.getItem('userData')) } catch (e) {}
     return {
-      classId: null,
+      classId: rpgClassById(this.$route.query.classId) ? this.$route.query.classId : null,
       user
     }
   },

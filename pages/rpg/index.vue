@@ -50,7 +50,7 @@
 <script>
 import GameCanvas from '~/components/game/GameCanvas.vue'
 import PartyCodeBar from '~/components/game/PartyCodeBar.vue'
-import { RPG_CLASSES } from '~/utils/rpgClasses'
+import { RPG_CLASSES, rpgClassById } from '~/utils/rpgClasses'
 import { resolvePartyCode } from '~/utils/rpgParty'
 import { LEGACY_BOARD_ENABLED } from '~/utils/rpgFeatures'
 
@@ -62,7 +62,7 @@ export default {
     let user = null
     try { user = JSON.parse(localStorage.getItem('userData')) } catch (e) {}
     return {
-      classId: null,
+      classId: rpgClassById(this.$route.query.classId) ? this.$route.query.classId : null,
       user,
       legacyBoardEnabled: LEGACY_BOARD_ENABLED
     }

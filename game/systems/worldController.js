@@ -173,13 +173,27 @@ export default class WorldController {
     if (fresh) { emit(EV.ENTER_GAME, { area: this.zone }) }
   }
 
+  exitToHub () {
+    if (this.zone === 'village') {
+      this.game.events.emit('sfx', 'click')
+      flushSave()
+      this.routerPush({ path: '/chat/chat' })
+      return
+    }
+    this.travel('map')
+  }
+
   travel (to) {
     const path = ROUTES[to]
     if (!path) { return }
     this.game.events.emit('sfx', 'click')
     flushSave()
     leftByTravel = to !== 'map'
-    this.routerPush({ path, query: this.partyCode ? { party: this.partyCode } : {} })
+    const classId = this.game.registry.get('classId')
+    const query = {}
+    if (this.partyCode) { query.party = this.partyCode }
+    if (classId && to !== 'map') { query.classId = classId }
+    this.routerPush({ path, query })
   }
 
   serverInteract (id) {
