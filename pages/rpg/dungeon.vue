@@ -14,7 +14,7 @@
       <p class="hint">
         ใช้ปุ่มลูกศร หรือ W A S D เพื่อเดิน · E โต้ตอบ · Q ภารกิจ · I ถุงของ · L บันทึก DM
       </p>
-      <DungeonCanvas :key="roomId" :room-id="roomId" />
+      <DungeonCanvas :key="roomId" :room-id="roomId" :class-id="classId" />
     </main>
   </div>
 </template>
@@ -23,6 +23,7 @@
 import DungeonCanvas from '~/components/game/DungeonCanvas.vue'
 import PartyCodeBar from '~/components/game/PartyCodeBar.vue'
 import { resolvePartyCode } from '~/utils/rpgParty'
+import { rpgClassById } from '~/utils/rpgClasses'
 
 export default {
   name: 'RpgDungeon',
@@ -31,7 +32,7 @@ export default {
   data () {
     let user = null
     try { user = JSON.parse(localStorage.getItem('userData')) } catch (e) {}
-    return { user }
+    return { user, classId: rpgClassById(this.$route.query.classId) ? this.$route.query.classId : 'warrior' }
   },
   computed: {
     roomId () {

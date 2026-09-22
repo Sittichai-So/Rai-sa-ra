@@ -57,6 +57,28 @@ export const QUESTS = {
     ],
     rewards: { gold: 25, exp: 30, items: [{ id: 'bandage', qty: 2 }], flags: ['goblinMenaceSolved'] }
   },
+  dragon_gate: {
+    id: 'dragon_gate',
+    title: 'ผู้พิทักษ์ประตูมังกร',
+    giver: 'elder',
+    chapter: 3,
+    requires: { quest: 'silent_valley', status: 'QUEST_COMPLETED' },
+    description: 'ลึกเข้าไปในภูเขาไฟทางตะวันออกมีประตูหินโบราณที่เชื่อกันว่านำไปสู่รังของมังกรเฒ่าไฟกาฬ แต่ก่อนจะเข้าใกล้ตัวมังกรได้ ต้องผ่านโทรลล์เขี้ยวเหล็กที่เฝ้าสะพานแรกให้ได้ก่อน',
+    location: 'ประตูสู่รังมังกร',
+    objectives: [
+      { id: 'travel', text: 'เดินทางไปยังประตูสู่รังมังกร', hint: 'เปิดแผนที่โลกแล้วเลือกประตูสู่รังมังกร', on: { type: 'PLAYER_ENTER_AREA', area: 'dungeon' }, satisfiedBy: { flag: 'visited:dungeon' } },
+      { id: 'guardian', text: 'ฝ่าผู้พิทักษ์ที่ขวางทางอยู่', hint: 'เดินลึกเข้าไปจนสุดทางเดิน จะเจอโทรลล์เขี้ยวเหล็กขวางสะพานอยู่', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'troll_bridge', success: true } },
+      { id: 'return', text: 'กลับไปรายงานผู้เฒ่าในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับผู้เฒ่า', final: true }
+    ],
+    rewards: {
+      gold: 120,
+      exp: 140,
+      items: [{ id: 'potion_large', qty: 2 }, { id: 'sword_steel', qty: 1 }],
+      flags: ['dragonGateCleared'],
+      story: 'chapterFinale'
+    },
+    onAcceptFlags: ['dragonGateStarted']
+  },
   lost_pup: {
     id: 'lost_pup',
     title: 'ลูกหมาป่าหลงทาง',

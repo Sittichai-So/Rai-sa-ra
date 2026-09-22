@@ -27,15 +27,30 @@
           <span class="region-name">ป่าต้องคำสาป</span>
         </nuxt-link>
 
-        <nuxt-link to="/rpg/valley" class="region region-valley">
+        <nuxt-link v-if="!valleyLocked" to="/rpg/valley" class="region region-valley">
           <img src="~/assets/images/rpg-world/map/mountain.png" alt="">
           <span class="region-name">หุบเขาร้าง</span>
         </nuxt-link>
+        <div v-else class="region region-valley locked">
+          <img src="~/assets/images/rpg-world/map/mountain.png" alt="">
+          <span class="region-name">หุบเขาร้าง</span>
+          <span class="region-lock"><i class="fas fa-lock" /> จบภารกิจป่าก่อน</span>
+        </div>
 
-        <nuxt-link to="/rpg/dungeon" class="region region-dragon">
+        <nuxt-link to="/rpg/cave" class="region region-cave">
+          <img src="~/assets/images/rpg-world/map/mountain.png" class="cave-icon" alt="">
+          <span class="region-name">ถ้ำเก่า</span>
+        </nuxt-link>
+
+        <nuxt-link v-if="!dungeonLocked" to="/rpg/dungeon" class="region region-dragon">
           <img src="~/assets/images/rpg-world/map/volcano.png" alt="">
           <span class="region-name">ประตูสู่รังมังกร</span>
         </nuxt-link>
+        <div v-else class="region region-dragon locked">
+          <img src="~/assets/images/rpg-world/map/volcano.png" alt="">
+          <span class="region-name">ประตูสู่รังมังกร</span>
+          <span class="region-lock"><i class="fas fa-lock" /> จบภารกิจหุบเขาก่อน</span>
+        </div>
       </div>
 
       <div class="map-legend">
@@ -47,9 +62,29 @@
 </template>
 
 <script>
+import { loadGameState } from '~/game/systems/gameState'
+import { statusOf } from '~/game/systems/quests'
+
 export default {
   name: 'RpgWorldMap',
-  middleware: 'middlewareAuth'
+  middleware: 'middlewareAuth',
+  data () {
+    return { ready: false }
+  },
+  computed: {
+    valleyLocked () {
+      return !this.ready || statusOf('whispering_forest') !== 'QUEST_COMPLETED'
+    },
+    dungeonLocked () {
+      return !this.ready || statusOf('silent_valley') !== 'QUEST_COMPLETED'
+    }
+  },
+  async mounted () {
+    let user = null
+    try { user = JSON.parse(localStorage.getItem('userData')) } catch (e) {}
+    await loadGameState(user && user._id)
+    this.ready = true
+  }
 }
 </script>
 
@@ -189,7 +224,9 @@ export default {
 .region-village { top: 300px; left: 90px; }
 .region-forest { top: 190px; left: 220px; }
 .region-valley { top: 260px; left: 380px; }
+.region-cave { top: 350px; left: 250px; }
 .region-dragon { top: 130px; left: 480px; }
+.cave-icon { filter: grayscale(70%) brightness(0.65); }
 
 .map-legend {
   display: flex;
@@ -207,6 +244,7 @@ export default {
   .region-village { top: 250px; left: 40px; }
   .region-forest { top: 160px; left: 140px; }
   .region-valley { top: 220px; left: 250px; }
+  .region-cave { top: 290px; left: 160px; }
   .region-dragon { top: 100px; left: 310px; }
 }
 .lb-link {

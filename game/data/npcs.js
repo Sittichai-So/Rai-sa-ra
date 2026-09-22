@@ -16,10 +16,13 @@ export const NPCS = {
     name: ELDER,
     sprite: 'elder',
     rules: [
+      { when: { quest: 'dragon_gate', ready: true }, start: 'report_dragon' },
       { when: { quest: 'silent_valley', ready: true }, start: 'report_valley' },
       { when: { quest: 'whispering_forest', ready: true }, start: 'report_forest' },
+      { when: { quest: 'dragon_gate', active: true }, start: 'dragon_waiting' },
       { when: { quest: 'silent_valley', active: true }, start: 'valley_waiting' },
       { when: { quest: 'whispering_forest', active: true }, start: 'forest_waiting' },
+      { when: { quest: 'dragon_gate', status: 'QUEST_COMPLETED' }, start: 'story_end' },
       { when: { quest: 'silent_valley', status: 'QUEST_COMPLETED' }, start: 'all_done' },
       { when: { quest: 'whispering_forest', status: 'QUEST_COMPLETED' }, start: 'after_forest' },
       { when: { quest: 'whispering_forest', status: 'QUEST_FAILED' }, start: 'declined' },
@@ -148,8 +151,49 @@ export const NPCS = {
       },
       all_done: {
         pages: [
-          { text: 'หมู่บ้านของเราสงบสุขขึ้นมากเพราะเจ้า... ทว่าควันไฟจากภูเขาลูกนั้นยังไม่จางหายไปเสียที' },
-          { text: 'ถ้าเจ้ากล้าพอ ประตูสู่รังมังกรรอเจ้าอยู่ที่แผนที่โลก แต่ขอให้เตรียมตัวให้ดี' }
+          { text: 'หมู่บ้านของเราสงบสุขขึ้นมากเพราะเจ้า... ทว่าควันไฟจากภูเขาไฟทางตะวันออกยังไม่จางหายไปเสียที' },
+          { text: 'มีประตูหินโบราณอยู่ลึกเข้าไปในนั้น ตำนานเล่าว่าเป็นทางเข้าสู่รังของมังกรเฒ่าไฟกาฬ แต่ก่อนจะถึงตัวมังกรได้ ต้องผ่านโทรลล์เขี้ยวเหล็กที่เฝ้าสะพานแรกให้ได้ก่อน' },
+          { text: 'เจ้าจะไปสำรวจดูไหม? ข้าไม่รู้ว่าจะเจออะไรมากกว่านั้น แต่ถ้าใครจะไปได้ก็คงมีแต่เจ้าคนเดียว' }
+        ],
+        choices: [
+          { label: 'รับภารกิจ', do: [{ startQuest: 'dragon_gate' }], next: 'accepted_dragon' },
+          { label: 'ขอคิดดูก่อน', do: [] }
+        ]
+      },
+      accepted_dragon: {
+        pages: [
+          { text: 'ขอบใจ... เปิดแผนที่โลกแล้วเลือกประตูสู่รังมังกรได้เลย ระวังโทรลล์ที่เฝ้าสะพานให้ดี' },
+          { mode: 'dm', text: 'ภารกิจ “ผู้พิทักษ์ประตูมังกร” ถูกบันทึกลงสมุดของคุณแล้ว' }
+        ],
+        choices: []
+      },
+      dragon_waiting: {
+        pages: ctx => [
+          { text: 'ประตูสู่รังมังกรไม่ใช่ที่ที่ใครอยากเข้าใกล้... ขอให้เทพเจ้าคุ้มครองเจ้า' },
+          { text: ctx.hint('dragon_gate') }
+        ],
+        choices: []
+      },
+      report_dragon: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่าเห็นรอยไหม้เกรียมบนชุดคุณแล้วสูดลมหายใจแรง ก่อนจะยิ้มออกมาอย่างโล่งใจ' },
+          { text: 'เจ้ารอดกลับมาจริงๆ! เล่าให้ข้าฟังหน่อยว่าเจ้าเจออะไรที่ประตูนั้น' }
+        ],
+        choices: [{ label: 'เล่าเรื่องที่พบและรายงานภารกิจ', do: [{ completeQuest: 'dragon_gate' }], next: 'reward_dragon' }]
+      },
+      reward_dragon: {
+        pages: [
+          { text: 'โทรลล์เขี้ยวเหล็กงั้นเหรอ... เจ้าฝ่ามันไปได้จริงๆ นับว่ากล้าหาญกว่าที่ข้าคาดไว้มาก' },
+          { text: 'ส่วนมังกรเฒ่าไฟกาฬที่ลึกเข้าไปกว่านั้น... คงต้องเป็นเรื่องราวของอีกวันหนึ่ง เมื่อเจ้าพร้อมกว่านี้' },
+          { text: 'ตอนนี้ขอให้เจ้ารับรางวัลนี้ไปก่อน แล้วพักผ่อนให้เต็มที่เถอะ เจ้าสมควรได้รับมัน' }
+        ],
+        choices: [{ label: 'ขอบคุณ', next: 'story_end' }]
+      },
+      story_end: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่ามองไปทางภูเขาไฟที่ยังคุกรุ่นอยู่ไกลลิบ สีหน้าผสมกันระหว่างความโล่งใจและความกังวล' },
+          { text: 'เรื่องราวของหมู่บ้านลมเย็นสงบลงได้ก็เพราะเจ้า... นี่คือจุดที่ตำนานของเราบันทึกไว้ได้เท่านี้ในตอนนี้' },
+          { text: 'แต่ข้ามั่นใจว่าจะมีบทต่อไปให้เล่าอีกแน่ๆ กลับมาเยี่ยมข้าบ่อยๆ นะ' }
         ],
         choices: []
       }
