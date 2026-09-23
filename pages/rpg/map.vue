@@ -44,12 +44,22 @@
 
         <nuxt-link v-if="!dungeonLocked" to="/rpg/dungeon" class="region region-dragon">
           <img src="~/assets/images/rpg-world/map/volcano.png" alt="">
-          <span class="region-name">ประตูสู่รังมังกร</span>
+          <span class="region-name">ประตูมังกร</span>
         </nuxt-link>
         <div v-else class="region region-dragon locked">
           <img src="~/assets/images/rpg-world/map/volcano.png" alt="">
-          <span class="region-name">ประตูสู่รังมังกร</span>
+          <span class="region-name">ประตูมังกร</span>
           <span class="region-lock"><i class="fas fa-lock" /> จบภารกิจหุบเขาก่อน</span>
+        </div>
+
+        <nuxt-link v-if="!dragonLairLocked" to="/rpg/dragon-lair" class="region region-lair">
+          <img src="~/assets/images/rpg-world/map/volcano.png" class="lair-icon" alt="">
+          <span class="region-name">ถ้ำมังกร</span>
+        </nuxt-link>
+        <div v-else class="region region-lair locked">
+          <img src="~/assets/images/rpg-world/map/volcano.png" class="lair-icon" alt="">
+          <span class="region-name">ถ้ำมังกร</span>
+          <span class="region-lock"><i class="fas fa-lock" /> ผ่านประตูมังกรก่อน</span>
         </div>
       </div>
 
@@ -77,6 +87,9 @@ export default {
     },
     dungeonLocked () {
       return !this.ready || statusOf('silent_valley') !== 'QUEST_COMPLETED'
+    },
+    dragonLairLocked () {
+      return !this.ready || statusOf('dragon_gate') !== 'QUEST_COMPLETED'
     }
   },
   async mounted () {
@@ -226,7 +239,9 @@ export default {
 .region-valley { top: 260px; left: 380px; }
 .region-cave { top: 350px; left: 250px; }
 .region-dragon { top: 130px; left: 480px; }
+.region-lair { top: 55px; left: 560px; }
 .cave-icon { filter: grayscale(70%) brightness(0.65); }
+.lair-icon { filter: hue-rotate(-20deg) saturate(1.3) brightness(0.9); }
 
 .map-legend {
   display: flex;
@@ -246,6 +261,7 @@ export default {
   .region-valley { top: 220px; left: 250px; }
   .region-cave { top: 290px; left: 160px; }
   .region-dragon { top: 100px; left: 310px; }
+  .region-lair { top: 40px; left: 260px; }
 }
 .lb-link {
   margin-left: auto;

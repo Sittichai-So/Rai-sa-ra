@@ -16,12 +16,15 @@ export const NPCS = {
     name: ELDER,
     sprite: 'elder',
     rules: [
+      { when: { quest: 'ch4', ready: true }, start: 'report_ch4' },
       { when: { quest: 'dragon_gate', ready: true }, start: 'report_dragon' },
       { when: { quest: 'silent_valley', ready: true }, start: 'report_valley' },
       { when: { quest: 'whispering_forest', ready: true }, start: 'report_forest' },
+      { when: { quest: 'ch4', active: true }, start: 'ch4_waiting' },
       { when: { quest: 'dragon_gate', active: true }, start: 'dragon_waiting' },
       { when: { quest: 'silent_valley', active: true }, start: 'valley_waiting' },
       { when: { quest: 'whispering_forest', active: true }, start: 'forest_waiting' },
+      { when: { quest: 'ch4', status: 'QUEST_COMPLETED' }, start: 'ch4_end' },
       { when: { quest: 'dragon_gate', status: 'QUEST_COMPLETED' }, start: 'story_end' },
       { when: { quest: 'silent_valley', status: 'QUEST_COMPLETED' }, start: 'all_done' },
       { when: { quest: 'whispering_forest', status: 'QUEST_COMPLETED' }, start: 'after_forest' },
@@ -199,6 +202,38 @@ export const NPCS = {
           { text: 'ขอให้เทพเจ้าคุ้มครองเจ้า นักผจญภัย' }
         ],
         choices: []
+      },
+      ch4_waiting: {
+        pages: ctx => [
+          { text: 'ถ้ำมังกรไม่ใช่ที่ที่มนุษย์ธรรมดาจะเข้าไปได้... ขอให้เจ้าปลอดภัย' },
+          { text: ctx.hint('ch4') }
+        ],
+        choices: []
+      },
+      report_ch4: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่าเห็นรอยไหม้และกลิ่นกำมะถันติดตัวคุณ เขาเดินเข้ามาหาอย่างรีบร้อนผิดปกติ' },
+          { text: 'เจ้ากลับมาจากถ้ำมังกรแล้ว! เล่าให้ข้าฟังหน่อยว่าเป็นอย่างไรบ้าง' }
+        ],
+        choices: [{ label: 'เล่าเรื่องที่พบและรายงานภารกิจ', do: [{ completeQuest: 'ch4' }], next: 'reward_ch4' }]
+      },
+      reward_ch4: {
+        pages: ctx => [{ text: ctx.pick('elder_ch4_reward') }],
+        choices: [
+          { label: 'มังกรพูดถึงท่าน', when: { notFlag: 'trust_dragon' }, next: 'ch4_confront' },
+          { label: 'ขอบคุณ', next: 'ch4_end' }
+        ]
+      },
+      ch4_confront: {
+        pages: [{ text: 'มังกรเจ้าเล่ห์นัก มันจะพูดทุกอย่างเพื่อเอาชีวิตรอด' }],
+        choices: [{ label: '...', next: 'ch4_end' }]
+      },
+      ch4_end: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่ามองออกไปนอกหน้าต่าง สีหน้าเรียบเฉยราวกับไม่มีอะไรเกิดขึ้น' },
+          { text: 'พักผ่อนให้เต็มที่นะ นักผจญภัย เจ้าทำดีที่สุดแล้วสำหรับตอนนี้' }
+        ],
+        choices: []
       }
     }
   },
@@ -278,6 +313,10 @@ export const NPCS = {
 }
 
 export const NPC_LINES = {
+  elder_ch4_reward: [
+    { when: { flag: 'trust_dragon' }, text: 'ดี... แต่ทำไมข้ายังรู้สึกถึงลมหายใจของมันอยู่นะ ช่างเถิด พักผ่อนเสีย' },
+    { text: 'เจ้ากลับมาอย่างปลอดภัยก็ดีแล้ว พักผ่อนให้เต็มที่นะ' }
+  ],
   innkeeper_rumor: [
     { when: { quest: 'whispering_forest', status: 'QUEST_COMPLETED' }, text: 'เดี๋ยวนี้ลูกค้าเริ่มกลับมานั่งดื่มดึกได้แล้ว ขอบใจเจ้านะที่จัดการเรื่องในป่า วันนี้ป้าเลี้ยงซุปหนึ่งชาม!' },
     { when: { quest: 'whispering_forest', active: true }, text: 'ได้ยินว่าเจ้ารับงานของผู้เฒ่าใช่ไหม? ป้าเป็นห่วงนะ พักที่นี่ก่อนออกเดินทางก็ยังดี ฟื้นแรงเต็มที่เลย' },

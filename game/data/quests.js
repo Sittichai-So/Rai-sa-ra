@@ -75,9 +75,34 @@ export const QUESTS = {
       exp: 140,
       items: [{ id: 'potion_large', qty: 2 }, { id: 'sword_steel', qty: 1 }],
       flags: ['dragonGateCleared'],
-      story: 'chapterFinale'
+      story: 'chapter4'
     },
     onAcceptFlags: ['dragonGateStarted']
+  },
+  ch4: {
+    id: 'ch4',
+    title: 'สิ่งที่มังกรรู้',
+    giver: 'elder',
+    chapter: 4,
+    requires: { quest: 'dragon_gate', status: 'QUEST_COMPLETED' },
+    description: 'ประตูสู่รังมังกรเปิดออกแล้ว ผู้เฒ่าขอให้คุณลงไปจัดการกับมังกรเฒ่าไฟกาฬที่กำลังตื่นขึ้นลึกลงไปในภูเขา',
+    location: 'ถ้ำมังกร',
+    objectives: [
+      { id: 'travel', text: 'เดินทางไปยังถ้ำมังกร', hint: 'เปิดแผนที่โลกแล้วเลือกถ้ำมังกร', on: { type: 'PLAYER_ENTER_AREA', area: 'dragon_lair' }, satisfiedBy: { flag: 'visited:dragon_lair' } },
+      { id: 'lava', text: 'ผ่านทางเดินลาวาให้ได้', hint: 'เดินลึกเข้าไปในถ้ำ จะเจอทางแคบที่มีลาวาไหลขวางอยู่', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'lava_crossing', success: true } },
+      { id: 'bones', text: 'ตรวจสอบกองกระดูกนักผจญภัย', hint: 'มองหากองกระดูกใกล้ปากถ้ำ แล้วกด E เพื่อตรวจสอบ', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'adventurer_bones' } },
+      { id: 'confront', text: 'เผชิญหน้ามังกรเฒ่าไฟกาฬ', hint: 'เดินเข้าไปให้สุดถ้ำ จะเจอมังกรนอนขดตัวอยู่บนกองสมบัติ', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'dragon_ancient' } },
+      { id: 'listen', text: 'ฟังเรื่องราวของมังกร', hint: 'หลังต่อสู้ มังกรจะเล่าความจริงบางอย่างให้ฟัง', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'dragon_ancient' } },
+      { id: 'return', text: 'กลับไปรายงานผู้เฒ่าในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับผู้เฒ่า', final: true }
+    ],
+    rewards: {
+      gold: 150,
+      exp: 200,
+      items: [],
+      flags: ['ch4Cleared'],
+      story: 'chapter5'
+    },
+    onAcceptFlags: ['ch4Started']
   },
   lost_pup: {
     id: 'lost_pup',

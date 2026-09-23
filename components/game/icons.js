@@ -14,6 +14,7 @@ import enemyFeralWolf from '~/assets/images/rpg-world/ninja/portraits/enemy_fera
 import enemyCaveImp from '~/assets/images/rpg-world/ninja/portraits/enemy_cave_imp.png'
 import enemyOrcRaider from '~/assets/images/rpg-world/ninja/portraits/enemy_orc_raider.png'
 import enemySkeletonGuard from '~/assets/images/rpg-world/ninja/portraits/enemy_skeleton_guard.png'
+import enemyDragonAncient from '~/assets/images/rpg-world/dungeon/dragon_ancient.png'
 import potionLife from '~/assets/images/rpg-world/ninja/items/potion_life.png'
 import potionWater from '~/assets/images/rpg-world/ninja/items/potion_water.png'
 import medipack from '~/assets/images/rpg-world/ninja/items/medipack.png'
@@ -65,7 +66,8 @@ const ENEMY_FACES = {
   feral_wolf: enemyFeralWolf,
   cave_imp: enemyCaveImp,
   orc_raider: enemyOrcRaider,
-  skeleton_guard: enemySkeletonGuard
+  skeleton_guard: enemySkeletonGuard,
+  dragon_ancient: enemyDragonAncient
 }
 
 export function portraitFor (key) {

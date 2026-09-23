@@ -1,6 +1,6 @@
 import { DM_SCRIPTS } from '../data/dm'
 import { check } from './conditions'
-import { getFlag, setFlag } from './gameState'
+import { getFlag, setFlag, addItem } from './gameState'
 import { startQuest, trackedQuest, nextObjective } from './quests'
 import { on } from './worldEvents'
 import { openDialogue, showBanner, pushToast, ui } from './ui'
@@ -23,6 +23,7 @@ function runActions (actions) {
   ;(actions || []).forEach((action) => {
     if (action.setFlag) { setFlag(action.setFlag) }
     if (action.narrate) { showBanner(action.narrate, 'dm') }
+    if (action.giveItem) { addItem(action.giveItem.id, action.giveItem.qty || 1) }
     if (action.startQuest && startQuest(action.startQuest)) { pushToast('รับภารกิจใหม่', 'quest') }
     if (action.serverInteract && hooks.serverInteract) { hooks.serverInteract(action.serverInteract) }
     if (action.highlightMarker && hooks.highlightMarker) { hooks.highlightMarker(action.highlightMarker) }
