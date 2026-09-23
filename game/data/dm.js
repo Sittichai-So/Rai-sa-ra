@@ -167,5 +167,44 @@ export const DM_SCRIPTS = [
         ]
       }
     ]
+  },
+  {
+    id: 'century_journal_read',
+    once: true,
+    on: { type: 'PLAYER_ITEM_GAINED', id: 'century_journal' },
+    delay: 600,
+    pages: [
+      { text: 'วันที่หนึ่งร้อยสิบสอง ของสงคราม เราผนึกมรกาฬได้แล้ว แต่ไม่อาจสังหารเขา เขาผูกชีวิตไว้กับแก่นกระดูกของตนเอง' },
+      { text: 'ผู้พิทักษ์ทั้งสามยอมสละอิสรภาพเป็นผนึก ตราบใดที่ยังมีชีวิต มรกาฬจะเป็นเพียงชายชราไร้พลัง' },
+      { text: 'หากวันหนึ่งมีชายชราผู้ใจดีปรากฏในหมู่บ้านลมเย็น ขอให้ลูกหลานจงระวัง' },
+      { text: 'ใบหน้าในภาพวาดหน้าสุดท้าย... คือผู้เฒ่า' }
+    ],
+    choices: []
+  },
+  {
+    id: 'ritual_guardian_choice',
+    once: true,
+    on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'ritual_guardian' },
+    delay: 700,
+    pages: [
+      { text: 'ปีศาจร่างใหญ่ล้มลงกับพื้น วงพิธีตรงกลางยังคงเรืองแสงสีม่วงอยู่ พร้อมด้วยเศษซากพิธีกรรมกระจัดกระจาย' }
+    ],
+    choices: [
+      {
+        label: 'ทำลายวงพิธี',
+        do: [
+          { setFlag: 'ritual_destroyed' },
+          { narrate: 'แสงม่วงแตกกระจาย ไกลออกไปในหมู่บ้าน ใครบางคนร้องเสียงหลง' }
+        ]
+      },
+      {
+        label: 'เก็บหลักฐาน',
+        do: [
+          { giveItem: { id: 'ritual_evidence', qty: 1 } },
+          { setFlag: 'evidence_taken' },
+          { narrate: 'คุณเก็บเศษหลักฐานจากวงพิธีใส่กระเป๋าไว้' }
+        ]
+      }
+    ]
   }
 ]

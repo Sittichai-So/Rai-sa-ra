@@ -5,6 +5,8 @@ import {
   EXIT_PROPS,
   LOCAL_INTERACTABLES,
   ENCOUNTER_MARKERS,
+  RITUAL_ENCOUNTER_MARKERS,
+  RITUAL_AMBUSH_MARKERS,
   TILE_SIZE,
   MAP_COLS,
   MAP_ROWS
@@ -44,5 +46,16 @@ export default class ValleyScene extends ZoneScene {
 
   worldReady () {
     LOCAL_INTERACTABLES.forEach(item => this.addLocalInteractable(item))
+  }
+
+  applyZoneVariant (variant) {
+    if (variant === 'ritual' || variant === 'ritual_ambush') {
+      this.markers.build(RITUAL_ENCOUNTER_MARKERS)
+      this.markerDefList = this.markerDefList.concat(RITUAL_ENCOUNTER_MARKERS)
+    }
+    if (variant === 'ritual_ambush') {
+      this.markers.build(RITUAL_AMBUSH_MARKERS)
+      this.markerDefList = this.markerDefList.concat(RITUAL_AMBUSH_MARKERS)
+    }
   }
 }

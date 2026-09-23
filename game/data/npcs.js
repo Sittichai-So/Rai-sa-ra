@@ -16,14 +16,18 @@ export const NPCS = {
     name: ELDER,
     sprite: 'elder',
     rules: [
+      { when: { all: [{ flag: 'asked_elder' }, { notFlag: 'elderAskedReplySeen' }] }, start: 'asked_elder_reply' },
+      { when: { quest: 'ch6', ready: true }, start: 'report_ch6' },
       { when: { quest: 'ch4', ready: true }, start: 'report_ch4' },
       { when: { quest: 'dragon_gate', ready: true }, start: 'report_dragon' },
       { when: { quest: 'silent_valley', ready: true }, start: 'report_valley' },
       { when: { quest: 'whispering_forest', ready: true }, start: 'report_forest' },
+      { when: { quest: 'ch6', active: true }, start: 'ch6_waiting' },
       { when: { quest: 'ch4', active: true }, start: 'ch4_waiting' },
       { when: { quest: 'dragon_gate', active: true }, start: 'dragon_waiting' },
       { when: { quest: 'silent_valley', active: true }, start: 'valley_waiting' },
       { when: { quest: 'whispering_forest', active: true }, start: 'forest_waiting' },
+      { when: { quest: 'ch6', status: 'QUEST_COMPLETED' }, start: 'ch6_end' },
       { when: { quest: 'ch4', status: 'QUEST_COMPLETED' }, start: 'ch4_end' },
       { when: { quest: 'dragon_gate', status: 'QUEST_COMPLETED' }, start: 'story_end' },
       { when: { quest: 'silent_valley', status: 'QUEST_COMPLETED' }, start: 'all_done' },
@@ -234,6 +238,42 @@ export const NPCS = {
           { text: 'พักผ่อนให้เต็มที่นะ นักผจญภัย เจ้าทำดีที่สุดแล้วสำหรับตอนนี้' }
         ],
         choices: []
+      },
+      asked_elder_reply: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่าหยุดชะงักไปครู่หนึ่งเมื่อได้ยินคำถามของคุณ ก่อนจะยิ้มอย่างสงบผิดปกติ' },
+          { text: 'บันทึกเก่าเขียนโดยคนที่กลัวสิ่งที่ตนไม่เข้าใจ เจ้าจะเชื่อกระดาษเปื่อยๆ หรือคนที่ดูแลหมู่บ้านนี้มาตลอด' }
+        ],
+        choices: [{ label: '...', do: [{ setFlag: 'elderAskedReplySeen' }] }]
+      },
+      ch6_waiting: {
+        pages: ctx => [
+          { text: 'หุบเขานั้นซ่อนความลับมากกว่าที่เราคิดไว้เสียอีก... ระวังตัวให้ดี' },
+          { text: ctx.hint('ch6') }
+        ],
+        choices: []
+      },
+      report_ch6: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่าเห็นรอยขีดข่วนแปลกๆ บนตัวคุณ กลิ่นหมอกม่วงยังติดเสื้อผ้าอยู่บางๆ' },
+          { text: 'เจ้ากลับมาจากหุบเขาแล้ว... เกิดอะไรขึ้นที่นั่น เล่าให้ข้าฟังหน่อย' }
+        ],
+        choices: [{ label: 'เล่าเรื่องที่พบและรายงานภารกิจ', do: [{ completeQuest: 'ch6' }], next: 'reward_ch6' }]
+      },
+      reward_ch6: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่าฟังเรื่องราวของวงพิธีอย่างเงียบๆ นิ้วมือที่จับไม้เท้าสั่นเบาๆ ราวกับพยายามข่มความรู้สึกบางอย่างไว้' },
+          { text: 'วงพิธีดูดชีวิต... ข้าไม่เคยได้ยินเรื่องแบบนี้มาก่อนเลย' },
+          { text: 'เจ้าทำได้ดีมาก นักผจญภัย นี่คือรางวัลที่สัญญาไว้' }
+        ],
+        choices: [{ label: 'รับทราบ', next: 'ch6_end' }]
+      },
+      ch6_end: {
+        pages: [
+          { mode: 'dm', text: 'ผู้เฒ่ามองออกไปไกลลิบทางหุบเขา สีหน้าเคร่งเครียดกว่าที่เคยเห็นมา' },
+          { text: 'พักผ่อนให้เต็มที่นะ... ข้ารู้สึกว่าเรื่องนี้ยังไม่จบง่ายๆ' }
+        ],
+        choices: []
       }
     }
   },
@@ -287,13 +327,64 @@ export const NPCS = {
     id: 'healer',
     name: HEALER,
     sprite: 'healer',
-    rules: [{ start: 'greet' }],
+    rules: [
+      { when: { quest: 'ch5', ready: true }, start: 'ch5_choice' },
+      { when: { quest: 'ch5', active: true }, start: 'ch5_waiting' },
+      { when: { quest: 'ch5', status: 'QUEST_COMPLETED' }, start: 'ch5_done' },
+      { when: { quest: 'ch4', status: 'QUEST_COMPLETED' }, start: 'ch5_offer' },
+      { start: 'greet' }
+    ],
     nodes: {
       greet: {
         pages: ctx => [
           { mode: 'dm', text: 'หมอสมุนไพรในหน้ากากปากนกกำลังบดใบไม้อยู่ในครก กลิ่นฉุนของยาสมุนไพรลอยฟุ้งไปทั่ว' },
           { text: ctx.pick('healer_talk') }
         ],
+        choices: []
+      },
+      ch5_offer: {
+        pages: [
+          { mode: 'dm', text: 'หมอสมุนไพรวางครกบดยาลง แล้วมองคุณอย่างจริงจังกว่าปกติมาก' },
+          { text: 'เจ้ากลับมาจากถ้ำมังกร แต่สีหน้าไม่ใช่คนที่เพิ่งชนะ เจ้าได้ยินอะไรมาใช่ไหม' },
+          { text: 'ย่าของข้าเคยเล่าเรื่องพ่อมดที่ถูกขังไว้ใต้ภูเขา และบันทึกเล่มหนึ่งที่ถูกซ่อนไว้ในถ้ำเก่า' },
+          { text: 'ข้าแก่เกินจะไปเอง แต่เจ้าไม่' }
+        ],
+        choices: [
+          { label: 'รับภารกิจ', do: [{ startQuest: 'ch5' }], next: 'ch5_accepted' },
+          { label: 'ยังไม่พร้อม', do: [] }
+        ]
+      },
+      ch5_accepted: {
+        pages: [
+          { text: 'ไปที่ถ้ำเก่า มองหาผนังที่ดูผิดปกติ ระวังตัวด้วยนะ' },
+          { mode: 'dm', text: 'ภารกิจ "บันทึกที่ถูกซ่อน" ถูกบันทึกลงสมุดของคุณแล้ว' }
+        ],
+        choices: []
+      },
+      ch5_waiting: {
+        pages: ctx => [{ text: ctx.hint('ch5') }],
+        choices: []
+      },
+      ch5_choice: {
+        pages: [
+          { mode: 'dm', text: 'หมอสมุนไพรอ่านบันทึกที่คุณนำมาอย่างตั้งใจ มือที่ถือกระดาษเริ่มสั่นเบาๆ' },
+          { text: 'นี่มัน... ถ้าเป็นเรื่องจริง เราต้องตัดสินใจว่าจะทำอย่างไรต่อ' }
+        ],
+        choices: [
+          { label: 'ไปถามผู้เฒ่าตรงๆ', do: [{ setFlag: 'asked_elder' }, { completeQuest: 'ch5' }, { startQuest: 'ch6' }], next: 'ch5_asked' },
+          { label: 'เก็บเงียบไว้ก่อน', do: [{ completeQuest: 'ch5' }, { startQuest: 'ch6' }], next: 'ch5_quiet' }
+        ]
+      },
+      ch5_asked: {
+        pages: [{ text: 'เจ้าจะไปถามจริงๆ หรือ... ก็ได้ แต่ระวังตัวให้มาก' }],
+        choices: []
+      },
+      ch5_quiet: {
+        pages: [{ text: 'ฉลาดมาก ถ้าเขาคือมรกาฬจริง เราต้องมีหลักฐานมากกว่านี้ ไปดูหุบเขาเถิด' }],
+        choices: []
+      },
+      ch5_done: {
+        pages: ctx => [{ text: ctx.pick('healer_talk') }],
         choices: []
       }
     }
@@ -328,6 +419,7 @@ export const NPC_LINES = {
     { text: 'ข้าเดินทางผ่านป่าทางเหนือเมื่อเดือนก่อนยังปลอดภัยดีอยู่เลย แต่ตอนนี้คนบอกว่ามีอะไรบางอย่างอาศัยอยู่ลึกเข้าไป' }
   ],
   healer_talk: [
+    { when: { quest: 'ch6', status: 'QUEST_COMPLETED' }, text: 'นี่มันเกินกว่าที่ข้ากลัวไว้ คืนนี้อย่าเพิ่งนอนหลับสนิทนัก' },
     { when: { quest: 'whispering_forest', status: 'QUEST_COMPLETED' }, text: 'แปลกนะ ช่วงนี้ผู้เฒ่าดูหนุ่มขึ้น ผมที่เคยขาวโพลนเริ่มมีสีดำแซม ข้าจ่ายยาให้เขามาสามสิบปี ไม่เคยเห็นเป็นแบบนี้' },
     { when: { flag: 'whisperSourceFound' }, text: 'ขนสีเทาเข้มติดโพรงต้นไม้งั้นเหรอ? ถ้าเป็นขนของหมาป่าเงาจริงๆ ระวังพิษจากเขี้ยวมันไว้ให้ดี ข้าแนะนำให้พกผ้าพันแผลไปหลายผืนเลย' },
     { when: { flag: 'footprintsIdentified' }, text: 'รอยเท้าสามแฉกที่เจ้าเล่ามา ข้าเคยเห็นในตำรา... มันอาจเป็นหมาป่าที่โดนพลังมืดแทรกซึม อย่าประมาทเชียว' },

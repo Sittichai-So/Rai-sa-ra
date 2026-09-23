@@ -104,6 +104,51 @@ export const QUESTS = {
     },
     onAcceptFlags: ['ch4Started']
   },
+  ch5: {
+    id: 'ch5',
+    title: 'บันทึกที่ถูกซ่อน',
+    giver: 'healer',
+    chapter: 5,
+    requires: { quest: 'ch4', status: 'QUEST_COMPLETED' },
+    description: 'หมอสมุนไพรที่สงสัยผู้เฒ่ามานาน ชี้ทางให้คุณไปค้นหาบันทึกเก่าที่ซ่อนอยู่ในถ้ำเก่า',
+    location: 'ถ้ำเก่า',
+    objectives: [
+      { id: 'wall', text: 'ค้นหาห้องลับในถ้ำเก่า', hint: 'มองหาผนังที่ดูผิดปกติในถ้ำเก่า แล้วกด E เพื่อตรวจสอบ', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'cave_odd_wall' } },
+      { id: 'journal', text: 'อ่านบันทึกร้อยปี', hint: 'เปิดกระเป๋าไอเทมแล้วดูบันทึกร้อยปีที่เก็บมาได้', on: { type: 'PLAYER_ITEM_GAINED', id: 'century_journal' } },
+      { id: 'return', text: 'กลับไปหาหมอสมุนไพรในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับหมอสมุนไพร', final: true }
+    ],
+    rewards: {
+      gold: 90,
+      exp: 160,
+      items: [],
+      flags: ['ch5Cleared'],
+      story: 'chapter6'
+    },
+    onAcceptFlags: ['ch5Started']
+  },
+  ch6: {
+    id: 'ch6',
+    title: 'สิ่งที่หายไปจากหุบเขา',
+    giver: 'elder',
+    chapter: 6,
+    requires: { quest: 'ch5', status: 'QUEST_COMPLETED' },
+    description: 'หุบเขาร้างเงียบผิดปกติยิ่งกว่าเดิม มีบางอย่างกำลังดูดพลังชีวิตอยู่ที่นั่น',
+    location: 'หุบเขาร้าง',
+    objectives: [
+      { id: 'clue', text: 'ตามหาทิศทางของวงพิธี', hint: 'มองหาซากสัตว์แปลกๆ ในหุบเขา แล้วกด E เพื่อตรวจสอบ', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'drained_corpse' } },
+      { id: 'mist', text: 'ฝ่าหมอกม่วงให้ได้', hint: 'เดินลึกเข้าไปในหุบเขา จะเจอหมอกม่วงขวางทาง', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'purple_mist' } },
+      { id: 'guardian', text: 'ปราบผู้เฝ้าวงพิธี', hint: 'เดินลึกเข้าไปจนสุด จะเจอปีศาจร่างใหญ่เฝ้าวงพิธีอยู่', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'ritual_guardian' } },
+      { id: 'return', text: 'กลับไปรายงานผู้เฒ่าในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับผู้เฒ่า', final: true }
+    ],
+    rewards: {
+      gold: 180,
+      exp: 240,
+      items: [],
+      flags: ['ch6Cleared'],
+      story: 'chapter7'
+    },
+    onAcceptFlags: ['ch6Started']
+  },
   lost_pup: {
     id: 'lost_pup',
     title: 'ลูกหมาป่าหลงทาง',

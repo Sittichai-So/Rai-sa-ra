@@ -55,3 +55,13 @@ export const ENCOUNTER_MARKERS = [
   { id: 'trap_1', ...tileCenter(14, 12), kind: 'trap', label: 'แผ่นหินกับดัก', shadow: false },
   { id: 'rest_1', ...tileCenter(18, 13), kind: 'campfire', label: 'กองไฟ', verb: 'พักผ่อน', discover: 'ซากกองไฟเก่าใต้ผาหินที่พอกำบังลมได้' }
 ]
+
+export const RITUAL_ENCOUNTER_MARKERS = [
+  { id: 'drained_corpse', ...tileCenter(9, 4), kind: 'clue', sprite: 'footprints', label: 'ซากสัตว์ไร้เลือด', verb: 'ตรวจสอบ', discover: 'ซากกวางตัวหนึ่งนอนอยู่ข้างทาง ผิวหนังแห้งกรังราวกับถูกดูดพลังชีวิตออกจนหมด' },
+  { id: 'purple_mist', ...tileCenter(13, 9), kind: 'trap', label: 'หมอกม่วง', shadow: false },
+  { id: 'ritual_guardian', ...tileCenter(17, 11), kind: 'creature', sprite: 'creature_skeleton', tint: 0x9B5FE0, origin: [0.5, 0.85], label: 'ผู้เฝ้าวงพิธี', discover: 'ปีศาจร่างใหญ่ลุกขึ้นจากวงพิธีที่เรืองแสงสีม่วง ดวงตาคู่นั้นจ้องมองมาที่คุณอย่างดุร้าย' }
+]
+
+export const RITUAL_AMBUSH_MARKERS = [
+  { id: 'goblin_hire_ambush', ...tileCenter(5, 4), kind: 'creature', sprite: 'creature_goblin', origin: [0.5, 0.85], label: 'ก็อบลินรับจ้าง', discover: 'ก็อบลินรับจ้างสองตัวโผล่ออกมาจากพุ่มไม้ ผู้เฒ่าคงส่งพวกมันมาแน่ๆ' }
+]

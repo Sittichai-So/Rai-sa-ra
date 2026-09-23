@@ -71,6 +71,7 @@ export const TRAP_MARKER = tileCenter(9, 3)
 export const IMP_MARKER = tileCenter(3, 7)
 export const SKELETON_MARKER = tileCenter(9, 7)
 export const REST_MARKER = tileCenter(6, 2)
+export const ODD_WALL_MARKER = tileCenter(6, 7)
 
 export const LOCAL_INTERACTABLES = [
   { id: 'cave_exit', x: 104, y: 152, radius: 22, verb: 'เดินออกไป', label: 'ทางออก', kind: 'exit', priority: 1, data: { to: 'village' } }
@@ -81,5 +82,6 @@ export const ENCOUNTER_MARKERS = [
   { id: 'skeleton_1', ...SKELETON_MARKER, kind: 'creature', sprite: 'creature_skeleton', origin: [0.5, 0.85], label: 'โครงกระดูกเฝ้ายาม', discover: 'เสียงกระดูกกระทบกันดังกริ๊กๆ มีบางอย่างยืนนิ่งอยู่ในเงามืด' },
   { id: 'treasure_1', ...TREASURE_MARKER, kind: 'chest', label: 'หีบไม้เก่า', verb: 'ตรวจสอบ', discover: 'ในซอกมุมถ้ำมีหีบเก่าๆ ใบหนึ่งวางอยู่ ขอบเหล็กสะท้อนแสงคบไฟ' },
   { id: 'trap_1', ...TRAP_MARKER, kind: 'trap', label: 'แผ่นหินกับดัก', shadow: false },
-  { id: 'rest_1', ...REST_MARKER, kind: 'campfire', label: 'กองไฟ', verb: 'พักผ่อน', discover: 'มุมถ้ำมีกองไฟเล็กๆ ที่ยังพอใช้พักหลบหนาวได้' }
+  { id: 'rest_1', ...REST_MARKER, kind: 'campfire', label: 'กองไฟ', verb: 'พักผ่อน', discover: 'มุมถ้ำมีกองไฟเล็กๆ ที่ยังพอใช้พักหลบหนาวได้' },
+  { id: 'cave_odd_wall', ...ODD_WALL_MARKER, kind: 'clue', sprite: 'skull', label: 'ผนังที่ผิดปกติ', verb: 'ตรวจสอบ', discover: 'ผนังหินตรงมุมนี้มีรอยแยกที่ดูไม่เป็นธรรมชาติ ราวกับเคยมีคนสร้างมันขึ้นมาปิดบังอะไรบางอย่าง' }
 ]
