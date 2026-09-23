@@ -16,6 +16,7 @@ export const NPCS = {
     name: ELDER,
     sprite: 'elder',
     rules: [
+      { when: { any: [{ quest: 'ch7', active: true }, { quest: 'ch7', status: 'QUEST_COMPLETED' }] }, start: 'ch7_vanished' },
       { when: { all: [{ flag: 'asked_elder' }, { notFlag: 'elderAskedReplySeen' }] }, start: 'asked_elder_reply' },
       { when: { quest: 'ch6', ready: true }, start: 'report_ch6' },
       { when: { quest: 'ch4', ready: true }, start: 'report_ch4' },
@@ -266,12 +267,18 @@ export const NPCS = {
           { text: 'วงพิธีดูดชีวิต... ข้าไม่เคยได้ยินเรื่องแบบนี้มาก่อนเลย' },
           { text: 'เจ้าทำได้ดีมาก นักผจญภัย นี่คือรางวัลที่สัญญาไว้' }
         ],
-        choices: [{ label: 'รับทราบ', next: 'ch6_end' }]
+        choices: [{ label: 'รับทราบ', do: [{ startQuest: 'ch7' }], next: 'ch6_end' }]
       },
       ch6_end: {
         pages: [
           { mode: 'dm', text: 'ผู้เฒ่ามองออกไปไกลลิบทางหุบเขา สีหน้าเคร่งเครียดกว่าที่เคยเห็นมา' },
           { text: 'พักผ่อนให้เต็มที่นะ... ข้ารู้สึกว่าเรื่องนี้ยังไม่จบง่ายๆ' }
+        ],
+        choices: []
+      },
+      ch7_vanished: {
+        pages: [
+          { mode: 'dm', text: 'ไม่มีใครอยู่ตรงนั้นอีกแล้ว มีเพียงหมอกจางๆ ที่ลอยวนอยู่รอบอนุสาวรีย์' }
         ],
         choices: []
       }
@@ -281,7 +288,11 @@ export const NPCS = {
     id: 'innkeeper',
     name: INNKEEPER,
     sprite: 'innkeeper',
-    rules: [{ start: 'greet' }],
+    rules: [
+      { when: { quest: 'ch8', active: true }, start: 'camp_talk' },
+      { when: { quest: 'ch8', status: 'QUEST_COMPLETED' }, start: 'camp_talk_after' },
+      { start: 'greet' }
+    ],
     nodes: {
       greet: {
         pages: [
@@ -297,6 +308,14 @@ export const NPCS = {
       rumors: {
         pages: ctx => [{ text: ctx.pick('innkeeper_rumor') }],
         choices: [{ label: 'กลับไปที่เคาน์เตอร์', next: 'greet' }]
+      },
+      camp_talk: {
+        pages: [{ text: 'เรามีแต่คนแก่กับเด็ก สู้กองทัพกระดูกไม่ไหวหรอก... ข้ารู้อยู่แล้วว่าตาแก่นั่นไม่น่าไว้ใจ! ไม่เคยจ่ายค่าเหล้าสักครั้ง!' }],
+        choices: []
+      },
+      camp_talk_after: {
+        pages: [{ text: 'ป้ามาลีเปิดโรงเตี๊ยมชั่วคราวขึ้นกลางค่าย ติดป้ายว่า "นักผจญภัยดื่มฟรี (แค่คนเดียวนะ)"' }],
+        choices: []
       }
     }
   },
@@ -304,8 +323,21 @@ export const NPCS = {
     id: 'merchant',
     name: MERCHANT,
     sprite: 'merchant',
-    rules: [{ start: 'greet' }],
+    rules: [
+      { when: { flag: 'ally_merchant' }, start: 'camp_shop' },
+      { start: 'greet' }
+    ],
     nodes: {
+      camp_shop: {
+        pages: [
+          { mode: 'dm', text: 'นายเกล็ดตั้งแผงขายของกลางค่ายผู้ลี้ภัย ยิ้มกว้างเหมือนเดิมราวกับไม่เคยหนีตายมาก่อน' },
+          { text: 'ลูกค้าคนโปรดของข้า! มีของดีๆ เก็บไว้รอเจ้าอยู่ ราคาพิเศษ... ก็ไม่ถูกหรอกนะ แต่พิเศษ' }
+        ],
+        choices: [
+          { label: 'ดูสินค้า / ขายของ', do: [{ openShop: true }] },
+          { label: 'ไม่เป็นไร', do: [] }
+        ]
+      },
       greet: {
         pages: [
           { mode: 'dm', text: 'พ่อค้าตัวสีเขียวยิ้มกว้างจนเห็นฟัน มือทั้งสองข้างกางแผงผ้าคลุมที่เต็มไปด้วยขวดยาและอาวุธ' },
@@ -328,6 +360,8 @@ export const NPCS = {
     name: HEALER,
     sprite: 'healer',
     rules: [
+      { when: { quest: 'ch8', active: true }, start: 'camp_talk' },
+      { when: { quest: 'ch8', status: 'QUEST_COMPLETED' }, start: 'camp_talk_after' },
       { when: { quest: 'ch5', ready: true }, start: 'ch5_choice' },
       { when: { quest: 'ch5', active: true }, start: 'ch5_waiting' },
       { when: { quest: 'ch5', status: 'QUEST_COMPLETED' }, start: 'ch5_done' },
@@ -386,6 +420,14 @@ export const NPCS = {
       ch5_done: {
         pages: ctx => [{ text: ctx.pick('healer_talk') }],
         choices: []
+      },
+      camp_talk: {
+        pages: [{ text: 'แต่ในป่านี้ยังมีคนที่เกลียดมรกาฬพอๆ กับเรา แม้จะไม่ใช่คนดีนักก็ตาม' }],
+        choices: []
+      },
+      camp_talk_after: {
+        pages: [{ text: 'หมอสมุนไพรเขียนบันทึกเล่มใหม่ เพื่อให้ลูกหลานไม่ต้องถูกหลอกอีก' }],
+        choices: []
       }
     }
   },
@@ -393,10 +435,46 @@ export const NPCS = {
     id: 'villager',
     name: VILLAGER,
     sprite: 'villager',
-    rules: [{ start: 'greet' }],
+    rules: [
+      { when: { quest: 'ch7', ready: true }, start: 'report_ch7' },
+      { when: { quest: 'ch8', active: true }, start: 'camp_hub' },
+      { when: { quest: 'ch8', status: 'QUEST_COMPLETED' }, start: 'camp_departed' },
+      { start: 'greet' }
+    ],
     nodes: {
       greet: {
         pages: ctx => [{ text: ctx.pick('villager_talk') }],
+        choices: []
+      },
+      report_ch7: {
+        pages: [
+          { mode: 'dm', text: 'ชาวบ้านหัวฟักทองที่รอดมาได้เห็นคุณเดินเข้ามาในป่า รีบวิ่งเข้ามาหาด้วยสีหน้าโล่งอก' },
+          { text: 'เจ้ารอดมาได้จริงๆ! พวกเราหนีกันมาได้บางส่วน ตั้งค่ายอยู่ตรงนี้แหละ' }
+        ],
+        choices: [{ label: 'เล่าเรื่องที่เกิดขึ้นและตั้งค่ายพัก', do: [{ completeQuest: 'ch7' }, { startQuest: 'ch8' }], next: 'camp_intro' }]
+      },
+      camp_intro: {
+        pages: [
+          { mode: 'dm', text: 'คืนนั้นกองไฟในค่ายลุกโชนกว่าที่เคย ผู้รอดชีวิตนั่งล้อมวงกันอย่างเงียบเชียบ' },
+          { text: 'พวกเรามีแต่คนแก่กับเด็ก สู้กองทัพกระดูกไม่ไหวหรอก... แต่ในป่านี้ยังมีคนที่เกลียดมรกาฬพอๆ กับเรา แม้จะไม่ใช่คนดีนักก็ตาม' },
+          { text: 'ลองไปคุยกับพวกเขาดูสิ ข้าว่าเจ้าคงพอจะโน้มน้าวใครสักคนได้' }
+        ],
+        choices: [{ label: 'ข้าจะลองไปคุยกับพวกเขาเอง', next: 'camp_hub' }]
+      },
+      camp_hub: {
+        pages: ctx => [{ text: ctx.pick('camp_hub_talk') }],
+        choices: [
+          { label: 'พร้อมออกเดินทางแล้ว', when: { any: [{ flag: 'ally_bandit' }, { flag: 'ally_orc' }, { flag: 'ally_merchant' }] }, do: [{ completeQuest: 'ch8' }], next: 'camp_departed_intro' }
+        ]
+      },
+      camp_departed_intro: {
+        pages: [
+          { mode: 'dm', text: 'คืนนั้นกองไฟในค่ายลุกโชนกว่าที่เคย ไกลออกไป แผ่นดินสั่นสะเทือน มรกาฬกำลังเดินทัพไปยังภูเขา' }
+        ],
+        choices: []
+      },
+      camp_departed: {
+        pages: [{ text: 'ทุกคนพร้อมแล้ว เหลือเพียงเจ้าที่ต้องนำทาง ไปเถิด เวลาไม่คอยใคร' }],
         choices: []
       }
     }
@@ -404,6 +482,12 @@ export const NPCS = {
 }
 
 export const NPC_LINES = {
+  camp_hub_talk: [
+    { when: { flag: 'ally_merchant' }, text: 'นายเกล็ดตั้งแผงขายของอยู่มุมค่ายแล้วนะ เริ่มโก่งราคาตั้งแต่วันแรกเลย' },
+    { when: { flag: 'ally_orc' }, text: 'ครากนั่งลับขวานอยู่มุมค่าย ไม่ค่อยพูดกับใคร แต่ดูจะรอเจ้าอยู่' },
+    { when: { flag: 'ally_bandit' }, text: 'เสือดำกับลูกน้องตั้งแคมป์แยกอยู่ห่างๆ แต่ก็ยังช่วยเฝ้ายามให้เราอยู่' },
+    { text: 'ป่านี้ยังมีคนที่พร้อมช่วยเราอยู่ ลองไปหาดูสิ' }
+  ],
   elder_ch4_reward: [
     { when: { flag: 'trust_dragon' }, text: 'ดี... แต่ทำไมข้ายังรู้สึกถึงลมหายใจของมันอยู่นะ ช่างเถิด พักผ่อนเสีย' },
     { text: 'เจ้ากลับมาอย่างปลอดภัยก็ดีแล้ว พักผ่อนให้เต็มที่นะ' }

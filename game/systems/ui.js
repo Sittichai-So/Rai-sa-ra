@@ -14,6 +14,7 @@ export const ui = Vue.observable({
   toasts: [],
   debug: false,
   zone: 'village',
+  zoneVariant: 'normal',
   dialogueAt: 0,
   lastRoll: null,
   victory: null,

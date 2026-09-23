@@ -110,5 +110,19 @@ export const ENCOUNTER_MARKERS = [
   { id: 'lost_pup', x: 184, y: 168, kind: 'creature', sprite: 'creature_pup', anim: 'creature_pup-run', label: 'ลูกหมาป่าหลงทาง', verb: 'เข้าไปดู', discover: 'เสียงร้องคราง “แงว...แงว...” แผ่วเบาดังมาจากข้างทาง' },
   { id: 'treasure_1', x: 280, y: 120, kind: 'chest', label: 'หีบไม้เก่า', verb: 'ตรวจสอบ', discover: 'ใต้เงาไม้ คุณสังเกตเห็นบางอย่างสะท้อนแสงวูบวาบ...' },
   { id: 'trap_1', x: 152, y: 120, kind: 'trap', label: 'แผ่นหินกับดัก', shadow: false },
-  { id: 'rest_1', x: 248, y: 248, kind: 'campfire', label: 'กองไฟ', verb: 'พักผ่อน', discover: 'กองไฟเล็กๆ ที่ยังมีถ่านแดงคุอยู่ ดูเหมือนมีใครเคยพักที่นี่' }
+  { id: 'rest_1', x: 248, y: 248, kind: 'campfire', label: 'กองไฟ', verb: 'พักผ่อน', discover: 'กองไฟเล็กๆ ที่ยังมีถ่านแดงคุอยู่ ดูเหมือนมีใครเคยพักที่นี่' },
+  { id: 'monument_reveal', x: 56, y: 232, kind: 'clue', sprite: 'monument', pulse: false, shadow: false, label: 'อนุสาวรีย์เก่า', verb: 'ตรวจสอบ' }
+]
+
+export const SIEGE_ENCOUNTER_MARKERS = [
+  { id: 'house_fire_mali', x: 312, y: 196, kind: 'clue', sprite: 'torch', label: 'โรงเตี๊ยมไฟไหม้', verb: 'ช่วยเหลือ' },
+  { id: 'house_fire_herbalist', x: 222, y: 142, kind: 'clue', sprite: 'torch', label: 'กระท่อมไฟไหม้', verb: 'ช่วยเหลือ' },
+  { id: 'skeleton_risen_1', x: 150, y: 100, kind: 'creature', sprite: 'creature_skeleton', tint: 0x9FE89F, origin: [0.5, 0.85], label: 'โครงกระดูกคืนชีพ', discover: 'พื้นดินแตกออก โครงกระดูกที่เพิ่งคืนชีพลุกขึ้นยืน แสงสีเขียวเรืองอยู่ในเบ้าตาว่างเปล่า' },
+  { id: 'skeleton_risen_2', x: 280, y: 150, kind: 'creature', sprite: 'creature_skeleton', tint: 0x9FE89F, origin: [0.5, 0.85], label: 'โครงกระดูกคืนชีพ', discover: 'พื้นดินแตกออก โครงกระดูกที่เพิ่งคืนชีพลุกขึ้นยืน แสงสีเขียวเรืองอยู่ในเบ้าตาว่างเปล่า' },
+  { id: 'bone_commander', x: 216, y: 44, kind: 'creature', sprite: 'creature_skeleton', tint: 0x555555, scale: 2, origin: [0.5, 0.85], label: 'แม่ทัพกระดูก', discover: 'ร่างโครงกระดูกขนาดใหญ่สวมชุดเกราะแม่ทัพเก่าแก่ยืนขวางประตูหมู่บ้านไว้ ดาบใหญ่ในมือลุกเป็นไฟสีม่วง' }
+]
+
+export const RUINED_ENCOUNTER_MARKERS = [
+  { id: 'skeleton_risen_1', x: 150, y: 100, kind: 'creature', sprite: 'creature_skeleton', tint: 0x9FE89F, origin: [0.5, 0.85], label: 'โครงกระดูกคืนชีพ', discover: 'โครงกระดูกยืนเฝ้าอยู่ท่ามกลางหมู่บ้านร้าง' },
+  { id: 'skeleton_risen_2', x: 280, y: 150, kind: 'creature', sprite: 'creature_skeleton', tint: 0x9FE89F, origin: [0.5, 0.85], label: 'โครงกระดูกคืนชีพ', discover: 'โครงกระดูกยืนเฝ้าอยู่ท่ามกลางหมู่บ้านร้าง' }
 ]

@@ -13,6 +13,7 @@ import tileCliff from '~/assets/images/rpg-world/forest/tile_cliff.png'
 import mushroomCluster from '~/assets/images/rpg-world/forest/mushroom_cluster.png'
 import mushroomSingle from '~/assets/images/rpg-world/forest/mushroom_single.png'
 import signpost from '~/assets/images/rpg-world/village-openrtp/signpost.png'
+import tent from '~/assets/images/rpg-world/village-openrtp/tent.png'
 
 const FOREST_IMAGES = {
   'wild-tileset': wildTileset,
@@ -26,7 +27,8 @@ const FOREST_IMAGES = {
   tile_cliff: tileCliff,
   mushroom_cluster: mushroomCluster,
   mushroom_single: mushroomSingle,
-  signpost
+  signpost,
+  tent
 }
 
 export default class ForestPreloadScene extends Phaser.Scene {

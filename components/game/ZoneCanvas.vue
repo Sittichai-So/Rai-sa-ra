@@ -24,6 +24,9 @@ import WorldHud from '~/components/game/WorldHud.vue'
 import { loadGameState } from '~/game/systems/gameState'
 import { detectTouch } from '~/components/game/touch'
 import { dayNightState } from '~/game/systems/dayNight'
+import { ui } from '~/game/systems/ui'
+
+const FORCED_NIGHT_VARIANTS = ['siege']
 
 function waitForFont () {
   if (typeof document === 'undefined' || !document.fonts || !document.fonts.load) { return Promise.resolve() }
@@ -59,7 +62,9 @@ export default {
       return !['dungeon', 'cave', 'dragon_lair'].includes(this.zone)
     },
     dayNightStyle () {
-      const { nightAlpha, goldenAlpha } = this.dayNight
+      const forced = FORCED_NIGHT_VARIANTS.includes(ui.zoneVariant)
+      const nightAlpha = forced ? 0.5 : this.dayNight.nightAlpha
+      const goldenAlpha = forced ? 0 : this.dayNight.goldenAlpha
       return {
         background: `radial-gradient(ellipse at center, rgba(255,150,60,${goldenAlpha}) 0%, rgba(255,150,60,${goldenAlpha * 0.4}) 40%, transparent 70%), rgba(15,15,50,${nightAlpha})`
       }

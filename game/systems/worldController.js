@@ -157,9 +157,10 @@ export default class WorldController {
     this.vm.$watch(() => isBlocking(), (blocked) => { scene.setLock('ui', blocked) }, { immediate: true })
   }
 
-  onJoined ({ self, encounters, random }) {
+  onJoined ({ self, encounters, random, zoneVariant }) {
     ui.random = random
     ui.encounters = encounters
+    ui.zoneVariant = zoneVariant || 'normal'
     if (self) { setHp(self.hp, self.maxHp) }
     const previousMap = state.currentMap
     setFlag('visited:' + this.zone)

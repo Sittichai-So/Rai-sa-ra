@@ -6,10 +6,16 @@ import {
   EXIT_PROPS,
   LOCAL_INTERACTABLES,
   ENCOUNTER_MARKERS,
+  CAMP_DECORATIONS,
+  CAMP_ENCOUNTER_MARKERS,
+  CAMP_NPC_PLACEMENTS,
+  CAMP_NPC_PLACEMENTS_MALI,
+  CAMP_NPC_PLACEMENTS_HERBALIST,
   TILE_SIZE,
   MAP_COLS,
   MAP_ROWS
 } from '../maps/forestMap'
+import { getFlag } from '../systems/gameState'
 import ZoneScene from './ZoneScene'
 
 export default class ForestScene extends ZoneScene {
@@ -47,5 +53,15 @@ export default class ForestScene extends ZoneScene {
 
   worldReady () {
     LOCAL_INTERACTABLES.forEach(item => this.addLocalInteractable(item))
+  }
+
+  applyZoneVariant (variant) {
+    if (variant !== 'camp') { return }
+    this.objects.placeAll(CAMP_DECORATIONS)
+    this.markers.build(CAMP_ENCOUNTER_MARKERS)
+    this.markerDefList = this.markerDefList.concat(CAMP_ENCOUNTER_MARKERS)
+    CAMP_NPC_PLACEMENTS.forEach(npc => this.addNpc(npc))
+    if (getFlag('saved_mali')) { CAMP_NPC_PLACEMENTS_MALI.forEach(npc => this.addNpc(npc)) }
+    if (getFlag('saved_herbalist')) { CAMP_NPC_PLACEMENTS_HERBALIST.forEach(npc => this.addNpc(npc)) }
   }
 }

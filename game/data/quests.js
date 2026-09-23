@@ -149,6 +149,48 @@ export const QUESTS = {
     },
     onAcceptFlags: ['ch6Started']
   },
+  ch7: {
+    id: 'ch7',
+    title: 'หน้ากากหลุด',
+    giver: 'elder',
+    chapter: 7,
+    requires: { quest: 'ch6', status: 'QUEST_COMPLETED' },
+    description: 'ผู้เฒ่าเปิดเผยตัวตนที่แท้จริงว่าคือมรกาฬ ปลุกกองทัพโครงกระดูกทั่วหมู่บ้าน คุณต้องช่วยคนที่ทำได้แล้วหนีออกไป',
+    location: 'หมู่บ้านลมเย็น',
+    objectives: [
+      { id: 'monument', text: 'ไปที่อนุสาวรีย์เก่ากลางหมู่บ้าน', hint: 'อนุสาวรีย์อยู่ทางทิศตะวันตกของหมู่บ้าน', on: { type: 'PLAYER_INTERACT_ENCOUNTER', id: 'monument_reveal' } },
+      { id: 'commander', text: 'ปราบแม่ทัพกระดูกที่ประตูหมู่บ้าน', hint: 'แม่ทัพกระดูกขวางทางออกที่ประตูเหนืออยู่', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'bone_commander' } },
+      { id: 'return', text: 'หนีเข้าป่าไปรวมกับผู้รอดชีวิต', hint: 'เดินทางไปป่าทางเหนือแล้วคุยกับชาวบ้านหัวฟักทอง', final: true }
+    ],
+    rewards: {
+      gold: 200,
+      exp: 320,
+      items: [],
+      flags: ['ch7Cleared'],
+      story: 'chapter8'
+    },
+    onAcceptFlags: ['ch7Started']
+  },
+  ch8: {
+    id: 'ch8',
+    title: 'ผู้ถูกเนรเทศ',
+    giver: 'villager',
+    chapter: 8,
+    requires: { quest: 'ch7', status: 'QUEST_COMPLETED' },
+    description: 'ผู้รอดชีวิตตั้งค่ายในป่า คุณต้องรวบรวมพันธมิตรอย่างน้อยหนึ่งฝ่ายก่อนมรกาฬจะไปถึงมังกร',
+    location: 'ค่ายผู้ลี้ภัยในป่า',
+    objectives: [
+      { id: 'return', text: 'ชวนพันธมิตรอย่างน้อยหนึ่งฝ่าย แล้วกลับไปที่กองไฟ', hint: 'สำรวจป่าดูว่ามีใครที่จะร่วมมือกับคุณได้บ้าง แล้วกลับมาบอกที่กองไฟ', final: true }
+    ],
+    rewards: {
+      gold: 150,
+      exp: 260,
+      items: [],
+      flags: ['ch8Cleared'],
+      story: 'chapter9'
+    },
+    onAcceptFlags: ['ch8Started']
+  },
   lost_pup: {
     id: 'lost_pup',
     title: 'ลูกหมาป่าหลงทาง',

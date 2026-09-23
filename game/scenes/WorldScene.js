@@ -6,12 +6,16 @@ import {
   NPC_PLACEMENTS,
   LOCAL_INTERACTABLES,
   ENCOUNTER_MARKERS,
+  SIEGE_ENCOUNTER_MARKERS,
+  RUINED_ENCOUNTER_MARKERS,
   spawnPoint,
   TILE_SIZE,
   MAP_COLS,
   MAP_ROWS
 } from '../maps/villageMap'
 import ZoneScene from './ZoneScene'
+
+const HIDDEN_NPCS_ON_CRISIS = ['npc:elder', 'npc:innkeeper', 'npc:merchant', 'npc:healer', 'npc:villager']
 
 export default class WorldScene extends ZoneScene {
   constructor () {
@@ -49,5 +53,65 @@ export default class WorldScene extends ZoneScene {
   worldReady () {
     NPC_PLACEMENTS.forEach(npc => this.addNpc(npc))
     LOCAL_INTERACTABLES.forEach(item => this.addLocalInteractable(item))
+  }
+
+  applyZoneVariant (variant) {
+    if (variant === 'siege' || variant === 'ruined') {
+      HIDDEN_NPCS_ON_CRISIS.forEach((id) => {
+        const npc = this.npcs.get(id)
+        if (npc) { npc.sprite.setVisible(false); npc.text.setVisible(false) }
+        this.interaction.unregister(id)
+      })
+    }
+    if (variant === 'siege') {
+      this.markers.build(SIEGE_ENCOUNTER_MARKERS)
+      this.markerDefList = this.markerDefList.concat(SIEGE_ENCOUNTER_MARKERS)
+      this.startFireParticles()
+    }
+    if (variant === 'ruined') {
+      this.markers.build(RUINED_ENCOUNTER_MARKERS)
+      this.markerDefList = this.markerDefList.concat(RUINED_ENCOUNTER_MARKERS)
+      this.addMonumentGlow()
+    }
+  }
+
+  startFireParticles () {
+    if (!this.textures.exists('ember-particle')) {
+      const g = this.make.graphics({ x: 0, y: 0, add: false })
+      g.fillStyle(0xFFAA33, 1)
+      g.fillCircle(3, 3, 3)
+      g.generateTexture('ember-particle', 6, 6)
+      g.destroy()
+    }
+    const spots = [{ x: 56, y: 104 }, { x: 312, y: 88 }, { x: 280, y: 200 }]
+    spots.forEach((spot) => {
+      this.add.particles(spot.x, spot.y, 'ember-particle', {
+        x: { min: -8, max: 8 },
+        y: { min: -4, max: 4 },
+        lifespan: 900,
+        speedY: { min: -40, max: -70 },
+        speedX: { min: -10, max: 10 },
+        scale: { start: 1, end: 0 },
+        alpha: { start: 1, end: 0 },
+        tint: [0xFFAA33, 0xFF5522],
+        frequency: 120,
+        quantity: 1
+      }).setDepth(9500)
+    })
+  }
+
+  addMonumentGlow () {
+    if (!this.textures.exists('purple-glow')) {
+      const glow = this.textures.createCanvas('purple-glow', 48, 48)
+      const ctx = glow.getContext()
+      const gradient = ctx.createRadialGradient(24, 24, 2, 24, 24, 24)
+      gradient.addColorStop(0, 'rgba(160, 80, 255, 0.9)')
+      gradient.addColorStop(1, 'rgba(160, 80, 255, 0)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, 48, 48)
+      glow.refresh()
+    }
+    const glowSprite = this.add.image(56, 224, 'purple-glow').setBlendMode('ADD').setAlpha(0.4).setDepth(9000)
+    this.tweens.add({ targets: glowSprite, alpha: 0.65, scale: 1.15, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
   }
 }

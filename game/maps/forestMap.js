@@ -68,3 +68,28 @@ export const ENCOUNTER_MARKERS = [
   { id: 'shadow_wolf', x: 296, y: 56, kind: 'creature', sprite: 'creature_wolf', anim: 'creature_wolf-run', tint: 0x8E6BD1, scale: 1.5, label: 'หมาป่าเงา', discover: 'ดวงตาสีเขียวเรืองแสงคู่หนึ่งจ้องมองมาจากเงามืดของโพรงไม้... เสียงคำรามต่ำๆ ก้องอยู่ในลำคอของมัน' },
   { id: 'rest_1', ...tileCenter(17, 13), kind: 'campfire', label: 'กองไฟ', verb: 'พักผ่อน', discover: 'ร่องรอยกองไฟเก่าที่ยังพอใช้ก่อไฟพักได้อยู่' }
 ]
+
+export const CAMP_DECORATIONS = [
+  { sprite: 'campfire', tile: [8, 7] },
+  { sprite: 'tent', tile: [7, 6] },
+  { sprite: 'tent', tile: [10, 6] },
+  { sprite: 'tent', tile: [9, 8] }
+]
+
+export const CAMP_ENCOUNTER_MARKERS = [
+  { id: 'bandit_hideout', ...tileCenter(6, 6), kind: 'clue', sprite: 'log', label: 'ที่ซ่อนของเสือดำ', verb: 'สำรวจ', discover: 'กลิ่นควันไฟจางๆ ลอยมาตามลม ที่ซ่อนของเสือดำและลูกน้องอยู่ไม่ไกลจากตรงนี้' },
+  { id: 'orc_fort', x: 280, y: 104, kind: 'creature', sprite: 'creature_troll', tint: 0x668833, scale: 1.3, origin: [0.5, 0.85], label: 'ป้อมของคราก', discover: 'ครากยืนเฝ้าป้อมไม้หยาบๆ ริมป่า เห็นคุณเดินเข้ามาก็ยกขวานขึ้นถืออย่างพร้อมรบ' },
+  { id: 'merchant_hideout', x: 168, y: 60, kind: 'clue', sprite: 'boulder', label: 'โกดังลึกลับ', verb: 'สำรวจ', discover: 'โครงกระดูกเฝ้ายามสองตัวเดินตรวจตราอยู่หน้าโกดังเก่าหลังหนึ่ง' }
+]
+
+export const CAMP_NPC_PLACEMENTS = [
+  { id: 'npc:villager', npcId: 'villager', x: 136, y: 96, texture: 'npc_villager', facing: 'down', name: 'ชาวบ้านหัวฟักทอง', label: 'ชาวบ้านหัวฟักทอง', verb: 'พูดคุยกับ' }
+]
+
+export const CAMP_NPC_PLACEMENTS_MALI = [
+  { id: 'npc:innkeeper', npcId: 'innkeeper', x: 152, y: 104, texture: 'npc_innkeeper', facing: 'left', name: 'ป้ามาลี', label: 'ป้ามาลี', verb: 'พูดคุยกับ' }
+]
+
+export const CAMP_NPC_PLACEMENTS_HERBALIST = [
+  { id: 'npc:healer', npcId: 'healer', x: 168, y: 112, texture: 'npc_healer', facing: 'down', name: 'หมอสมุนไพร', label: 'หมอสมุนไพร', verb: 'พูดคุยกับ' }
+]
