@@ -80,6 +80,9 @@
           <button type="button" class="wh-btn act" :disabled="busy" @click="controller.combatAction('run')">
             <span class="wh-key">4</span> หนี
           </button>
+          <button v-if="canUseScale" type="button" class="wh-btn act wh-scale" :disabled="busy" @click="controller.combatAction('scale')">
+            <span class="wh-key">5</span> ใช้เกล็ดมังกร
+          </button>
         </div>
       </div>
     </div>
@@ -91,7 +94,7 @@ import { ui } from '~/game/systems/ui'
 import { countItem } from '~/game/systems/gameState'
 import { enemyPortrait } from '~/components/game/icons'
 
-const POTION_ORDER = ['potion_small', 'bandage', 'potion_large']
+const POTION_ORDER = ['potion_small', 'bandage', 'potion_large', 'elixir_vigor']
 
 export default {
   name: 'HudCombat',
@@ -122,6 +125,9 @@ export default {
     },
     potionCount () {
       return POTION_ORDER.reduce((sum, id) => sum + countItem(id), 0)
+    },
+    canUseScale () {
+      return !!this.c.enemy.armored && countItem('dragon_scale') > 0
     },
     endText () {
       if (this.c.result === 'victory') { return 'ชัยชนะ!' }
@@ -157,6 +163,7 @@ export default {
       if (event.key === '2' && this.c.skill && this.c.skill.cooldown === 0) { this.controller.combatAction('skill') }
       if (event.key === '3' && this.potionId) { this.controller.combatAction('item', this.potionId) }
       if (event.key === '4') { this.controller.combatAction('run') }
+      if (event.key === '5' && this.canUseScale) { this.controller.combatAction('scale') }
     }
   }
 }

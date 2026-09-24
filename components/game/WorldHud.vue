@@ -407,7 +407,8 @@ export default {
 .wh-log-line .dmg { color: #ff8f8f; font-weight: 700; }
 .wh-log-line .heal { color: #6fdba0; font-weight: 700; }
 .wh-combat-player { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 12px; color: #b9ad98; }
-.wh-actions { display: flex; gap: 6px; }
+.wh-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.wh-btn.wh-scale { border-color: rgba(255, 140, 60, 0.7); color: #ffb070; box-shadow: 0 0 10px rgba(255, 120, 40, 0.35); }
 
 .wh-loot-box { width: min(360px, 100%); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .wh-loot-head { display: flex; gap: 12px; align-items: center; }

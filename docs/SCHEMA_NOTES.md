@@ -134,7 +134,7 @@ export const ENCOUNTERS = {
 }
 export const RANDOM_ENCOUNTERS = { zoneName: { minDistance, cooldownMs, safe: [{x,y,r}], table: {enemy,treasure,trap,npc,story,nothing}, enemies: [...], npcEvents: [...], storyEvents: [...] } }
 ```
-- **`ENCOUNTERS` คีย์ด้วย `zone` string เดี่ยวเท่านั้น ไม่มีแนวคิด "variant" อยู่เลยในปัจจุบัน** — นี่คือช่องว่างใหญ่ที่สุดสำหรับ section 6.4 ของ master plan (ต้องออกแบบใหม่ ดูหัวข้อ 9)
+- **(อัปเดต Phase 1-7)** `ENCOUNTERS` รองรับ variant แล้ว: คีย์ `'<zone>:<variant>'` (เช่น `'village:siege'`) ถูกใช้แทนชุดของโซนนั้นทั้งชุด (แทนที่ ไม่ได้รวม) ถ้าไม่มีคีย์ variant จะใช้ชุด `<zone>` ปกติ — ดูหัวข้อ 13
 - `isBoss: true` (บนตัว encounter ไม่ใช่ตัวศัตรู) = ชนะแล้วยิง `worldVictory` + บันทึกลง leaderboard (`persistRpgRuns`) — ใช้ได้ทั้ง `type:'enemy'` และ `type:'dialogue'`
 - พิกัด x/y ต้อง**ตรงกันเป๊ะ**กับพิกัดฝั่ง client (`game/maps/<zone>Map.js`'s `ENCOUNTER_MARKERS`) — ไม่มีการแชร์ไฟล์ระหว่าง repo ต้อง sync มือทุกครั้ง (สาเหตุบั๊กที่เคยเกิดหลายรอบ ดู `docs/rpg-roadmap.md`)
 
@@ -161,7 +161,9 @@ const ZONES = ['village', 'forest', 'valley', 'dungeon']  // ใช้เช็�
 **🐛 พบบั๊กจริงระหว่างสำรวจ (ไม่เกี่ยวกับบท 4-10 โดยตรง แต่กระทบทันที)**: โซน `cave` ที่เพิ่งสร้างเสร็จก่อนหน้านี้ **ไม่ได้ถูกเพิ่มเข้าสองรายการนี้** ผลคือ (1) ถ้าผู้เล่น save ขณะอยู่ในถ้ำเก่า แล้วโหลดใหม่ `currentMap` จะถูกรีเซ็ตกลับเป็น `'village'` เงียบๆ (2) หีบ/กับดักที่เก็บในถ้ำเก่าจะไม่ถูกจำว่าเก็บแล้วข้ามเซสชัน (ไม่ error แค่เงียบๆ ไม่ persist) — **ต้องเพิ่ม `'cave'`, `'dragon_lair'`, `'mork_tower'` เข้าทั้งสอง array นี้ตอน Phase 1** (แก้ง่าย แค่เพิ่ม string แต่ถ้าลืมจะดีบั๊กยากเพราะไม่มี error/warning ใดๆ)
 
 **Sanitizer อื่นที่ควรรู้**: `worldFlags` จำกัด 500 key, `inventory` จำกัด 60 ชิ้น, `quests` จำกัด 40 เควส (แต่ละเควสจำกัด 20 objective) — ตัวเลขพวกนี้เพียงพอสำหรับบท 4-10 แต่ถ้าเควสต์รวมเกิน 40 หรือ flag รวมเกิน 500 (มีความเป็นไปได้เมื่อรวม flag ทั้งหมดในหัวข้อ 8 ของ master plan + ของเดิม) ต้องขยับค่าพวกนี้ด้วย — **ตอนนี้ flag ใหม่ตามตาราง master plan มีประมาณ 14 ตัว รวมของเดิมไม่น่าเกิน 30 ตัว ยังไม่ชนขีดจำกัด**
-**Anti-cheat การเติบโต (`withinGrowth`)**: จำกัดทองคำ/EXP ที่เพิ่มได้ต่อครั้งตามเวลาที่ผ่านไป (กันโกงยิง save ถี่ๆ) ไม่กระทบเนื้อหาปกติ แต่ถ้า reward เควสตอนจบเกมให้ทองคำ/EXP ก้อนใหญ่มากในทีเดียว (เช่นจบบท 10 ให้ EXP เยอะมาก) ให้เช็คว่าตัวเลขไม่ชน `GOLD_BURST=400`/`EXP_BURST=300` ต่อการ save หนึ่งครั้ง (ระบบ debounce ผลัก save ทุก 5 วิอยู่แล้วปกติไม่ชน แต่ reward ก้อนใหญ่ตอนจบบทควรระวัง)
+**(อัปเดต)** allowlist ตอนนี้คือ `village, forest, valley, dungeon, cave, dragon_lair, tower` — เพิ่มโซนใหม่ต้องเพิ่มที่นี่ด้วยทุกครั้ง (ถ้ำมังกรเคยหลุดไปจนต้องแก้ย้อนหลัง)
+
+**Anti-cheat การเติบโต (`clampGrowth`, อัปเดต Phase 6)**: เดิม `withinGrowth` **ปฏิเสธทั้งเซฟ** ถ้า EXP เพิ่มเกิน 300 ต่อการเซฟ แล้ว client ดึงเซฟเก่ามาทับ → รางวัลบท 7/9 ทำให้สถานะเควสต์ย้อนกลับ ตอนนี้เปลี่ยนเป็น**ตัดเฉพาะ EXP/ทองส่วนเกิน**แต่บันทึกข้อมูลอื่นทั้งหมด (`GOLD_BURST`/`EXP_BURST = 1500` + 3 ทอง/2 EXP ต่อวินาที) ถ้าถูกตัด server ส่ง `adjusted: { exp, gold }` กลับมาและ client (`gameState.js` `pushNow`) ใช้ค่านั้นแทน
 
 ## 10. ขั้นตอนสร้างโซนใหม่ (ยืนยันจริงจากการสร้างโซน `cave` ในเซสชันก่อนหน้า)
 
@@ -204,6 +206,28 @@ Master plan อยากได้ 2 โซนใหม่ (ถ้ำมังก
 5. **6.6 ป้องกันมังกร**: เสนอให้ทำเป็นเควสเชน event ต่อเนื่อง 3 event (ของเดิมมีอยู่แล้ว) แทนการสร้างระบบ "wave" ใหม่ทั้งระบบ ตามเหตุผลในหัวข้อ 11
 6. **`loot[].item` ใน Combat.js เป็นข้อความ ไม่ใช่ item id จริง** — เกล็ดมังกร/ไอเทมเนื้อเรื่องอื่นที่ต้องใช้ต่อ (equip ได้/ใช้เป็นเงื่อนไข) ต้องแจกผ่านทาง quest reward หรือ NPC dialogue's `giveItem` เท่านั้น ห้ามแจกผ่าน enemy `loot` field
 7. **ไม่มี mechanism "ขายไม่ได้/ทิ้งไม่ได้"** สำหรับไอเทมเนื้อเรื่องในโค้ดปัจจุบัน — ต้องเพิ่ม field ใหม่ (เสนอ `questItem: true`) และแก้จุดขาย/ทิ้ง 1-2 จุด
+
+## 13. กลไกที่เพิ่มระหว่าง Phase 1-7 (ใช้ซ้ำได้ ไม่ผูกกับบทใดบทหนึ่ง)
+
+**Zone variant** — `ZONE_VARIANTS[zone] = [{ id, when: (flags, quests) => bool }]` ใน `WorldZones.js` เลือกกฎแรกที่ตรง (เรียงลำดับสำคัญ) คำนวณครั้งเดียวตอน `worldJoin` จากเซฟที่บันทึกแล้ว ส่งเป็น `zoneVariant` → ฝั่ง client override `applyZoneVariant(variant)` ใน Scene ของโซนเพื่อซ่อน NPC/เพิ่ม marker/particle และ `ui.zoneVariant` (ใช้บังคับกลางคืนใน `ZoneCanvas.vue`) ชุดที่มีตอนนี้: `valley:ritual|ritual_ambush`, `village:siege|ruined|restored`, `forest:camp`, `dragon_lair:defense|aftermath`, `tower:fallen`
+- variant เปลี่ยนเมื่อเข้าโซนใหม่เท่านั้น (ไม่เปลี่ยนสดขณะอยู่ในโซน)
+
+**Field ของ encounter (`WorldZones.js`)**
+- `after: '<encounterId>'` — ยังไม่ทำงานจนกว่า encounter นั้นจะจบ (ใช้ทำลำดับระลอก บท 9 และบอสหลังคำพูดบท 10)
+- `requiresFlag: '<flag>'` — ทำงานเฉพาะเมื่อมี flag (อัศวินกระดูกที่โผล่เมื่อทำตู้หนังสือพลาด)
+- `mods: [{ flag, hp, atk, dropPhases, noSummon, halveLifesteal, reinforcement, text }]` — ปรับศัตรูตาม flag ตอนเริ่มสู้ (ระบบพันธมิตร 6.5) ข้อความ `text` ขึ้นเป็น `dmIntro`
+- `dragonAssist: { every, dice, intro }` — มังกรพ่นไฟใส่ศัตรูทุก N รอบ (server คิดดาเมจ, client สั่นจอผ่าน `fx: 'dragonfire'`)
+- `repeatable: true` — ไม่ถูกจำว่าเคลียร์แล้ว (อนุสาวรีย์ที่ต้องใช้หลายบท)
+
+**Field ของ event (`Events.js`)**
+- choice `when: { flag }` — ซ่อนตัวเลือกถ้าไม่มี flag (กรองที่ server)
+- check `flagBonus: { flag: n }` — บวก modifier ถ้ามี flag (หลักฐานวงพิธีลด DC บท 8)
+- `allyReroll: true` — ทอยแพ้ครั้งแรกพันธมิตรแต่ละฝ่ายช่วยให้ทอยใหม่ได้ 1 ครั้ง (flag `rerollUsed_<ally>`)
+- outcome `keepAvailable: true` — แพ้แล้วยังลองใหม่ได้ (ทุก event ที่เควสต์บังคับ `success: true` ต้องมี ไม่งั้น softlock)
+
+**ศัตรู (`Combat.js`)**: `phases[]` (atHpPercent, name, portrait, atk, dmg, armored, lifesteal (ตัวเลขสัดส่วนได้), summon, dmText), `endAtHpPercent`, `bigAttackEvery`/`bigDmg`, `deathBurst`, `summonBuff` เริ่มต้น — การกระทำพิเศษ `scale` (เกล็ดมังกร DC 15 ใช้สถิติสูงสุด ทำลาย `armored`)
+
+**server รู้ flag ระหว่างเซสชัน**: `player.worldFlags` โหลดตอน join และอัปเดตทันทีจาก `setFlags` ของ event — แต่ flag ที่ตั้งจาก DM/บทสนทนาฝั่ง client จะเห็นที่ server หลังเซฟและเข้าโซนใหม่เท่านั้น
 
 ---
 *เอกสารนี้เป็นผล Phase 0 ของ Master Plan บท 1-10 (อ่านโค้ดจริง ไม่แก้โค้ด) สร้างโดย Claude Sonnet 5 วันที่ 22 กันยายน 2026 — รอการยืนยันจากเจ้าของโปรเจกต์ตามข้อ 0.5 ก่อนเริ่ม Phase 1*

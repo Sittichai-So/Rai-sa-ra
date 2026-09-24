@@ -83,7 +83,7 @@ export function itemIcon (key) {
 }
 
 export function enemyPortrait (key, enemyId) {
-  return ENEMY_FACES[enemyId] || ENEMY_PORTRAITS[key] || skull
+  return ENEMY_FACES[enemyId] || ENEMY_PORTRAITS[key] || PORTRAITS[key] || skull
 }
 
 export const COIN_ICON = coin

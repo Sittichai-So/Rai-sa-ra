@@ -216,6 +216,30 @@ export const QUESTS = {
     },
     onAcceptFlags: ['ch9Started']
   },
+  ch10: {
+    id: 'ch10',
+    title: 'ราชันย์กระดูก',
+    giver: 'villager',
+    chapter: 10,
+    requires: { quest: 'ch9', status: 'QUEST_COMPLETED' },
+    description: 'มรกาฬซ่อนตัวอยู่ในหอคอยใต้อนุสาวรีย์เก่าของหมู่บ้าน ใช้กุญแจอนุสาวรีย์เปิดทาง แล้วยุติร้อยปีของมันเสีย',
+    location: 'หอคอยมรกาฬ',
+    objectives: [
+      { id: 'enter', text: 'เปิดทางเข้าใต้อนุสาวรีย์ด้วยกุญแจ', hint: 'กลับไปที่หมู่บ้านลมเย็น แล้วกด E ที่อนุสาวรีย์เก่าทางทิศตะวันตก', on: { type: 'PLAYER_ENTER_AREA', area: 'tower' } },
+      { id: 'floor1', text: 'ชั้น 1: ผ่านห้องใต้ดิน', hint: 'โครงกระดูกขวางบันไดวนอยู่ในห้องใต้ดิน', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'crypt_skeletons' } },
+      { id: 'floor2', text: 'ชั้น 2: ผ่านคลังวิญญาณ', hint: 'ตู้หนังสือต้องสาปตั้งขวางทางขึ้นชั้นบนสุด', on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'cursed_bookshelf' } },
+      { id: 'boss', text: 'ชั้น 3: ปราบมรกาฬ', hint: 'มรกาฬรออยู่บนบัลลังก์กระดูกชั้นบนสุด ถ้าเกราะกระดูกปกคลุมตัวมัน อย่าลืมเกล็ดมังกร', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'morkal' } },
+      { id: 'return', text: 'กลับสู่ค่ายในป่า', hint: 'กลับไปที่ค่ายผู้ลี้ภัยแล้วคุยกับชาวบ้านหัวฟักทอง', final: true }
+    ],
+    rewards: {
+      gold: 500,
+      exp: 600,
+      items: [],
+      flags: ['ch10Cleared', 'gameCleared'],
+      story: 'epilogue'
+    },
+    onAcceptFlags: ['ch10Started']
+  },
   lost_pup: {
     id: 'lost_pup',
     title: 'ลูกหมาป่าหลงทาง',

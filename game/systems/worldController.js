@@ -37,7 +37,7 @@ import {
   flushQueue
 } from './ui'
 
-const ROUTES = { village: '/rpg', forest: '/rpg/forest', valley: '/rpg/valley', dungeon: '/rpg/dungeon', cave: '/rpg/cave', dragon_lair: '/rpg/dragon-lair', map: '/rpg/map' }
+const ROUTES = { village: '/rpg', forest: '/rpg/forest', valley: '/rpg/valley', dungeon: '/rpg/dungeon', cave: '/rpg/cave', dragon_lair: '/rpg/dragon-lair', tower: '/rpg/tower', map: '/rpg/map' }
 let leftByTravel = false
 const MIN_ROLL_MS = 900
 
@@ -258,7 +258,7 @@ export default class WorldController {
     if (req.context === 'event') {
       narration = event && event.autoCheck ? event.text : 'คุณเลือก: ' + (this.pendingChoiceLabel || req.label)
     } else {
-      narration = req.kind === 'run' ? 'คุณตัดสินใจหันหลังหนีจากการต่อสู้' : 'คุณเตรียมโจมตีศัตรูตรงหน้า'
+      narration = req.kind === 'run' ? 'คุณตัดสินใจหันหลังหนีจากการต่อสู้' : req.kind === 'scale' ? 'คุณชูเกล็ดมังกรขึ้นเผชิญหน้าเกราะกระดูก' : 'คุณเตรียมโจมตีศัตรูตรงหน้า'
     }
     ui.dice = {
       context: req.context,
@@ -483,7 +483,7 @@ export default class WorldController {
   }
 
   playEntryFx (entry) {
-    if (entry.fx !== 'dragonfire') { return }
+    if (entry.fx !== 'dragonfire' && entry.fx !== 'phase') { return }
     this.game.events.emit('sfx', 'event')
     this.game.events.emit('screenShake')
   }

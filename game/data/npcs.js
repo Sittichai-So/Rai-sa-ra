@@ -436,6 +436,9 @@ export const NPCS = {
     name: VILLAGER,
     sprite: 'villager',
     rules: [
+      { when: { quest: 'ch10', ready: true }, start: 'report_ch10' },
+      { when: { quest: 'ch10', active: true }, start: 'ch10_waiting' },
+      { when: { quest: 'ch10', status: 'QUEST_COMPLETED' }, start: 'after_end' },
       { when: { quest: 'ch9', ready: true }, start: 'report_ch9' },
       { when: { quest: 'ch9', active: true }, start: 'ch9_waiting' },
       { when: { quest: 'ch9', status: 'QUEST_COMPLETED' }, start: 'ch9_done' },
@@ -498,12 +501,49 @@ export const NPCS = {
       ch9_done: {
         pages: [{ text: 'มรกาฬซ่อนตัวอยู่ใต้อนุสาวรีย์เก่าในหมู่บ้านของเรา เมื่อเจ้าพร้อม จงใช้กุญแจนั่นเปิดทางลงไปจบเรื่องทั้งหมดนี้เสีย' }],
         choices: []
+      },
+      ch10_waiting: {
+        pages: ctx => [
+          { text: 'ทั้งค่ายรอเจ้าอยู่ ขอให้เจ้ากลับมาพร้อมข่าวดีนะ' },
+          { text: ctx.hint('ch10') }
+        ],
+        choices: []
+      },
+      report_ch10: {
+        pages: [
+          { mode: 'dm', text: 'คุณเดินกลับเข้าค่ายท่ามกลางแสงรุ่งอรุณ ผู้คนทยอยลุกขึ้นมายืนมองโดยไม่มีใครพูดอะไร' },
+          { text: 'มัน... จบแล้วใช่ไหม มรกาฬไม่อยู่อีกแล้วจริงๆ ใช่ไหม' }
+        ],
+        choices: [{ label: 'จบแล้ว', do: [{ completeQuest: 'ch10' }], next: 'epilogue' }]
+      },
+      epilogue: {
+        pages: ctx => [ctx.pick('epilogue_core'), ...ctx.all('epilogue_extra')].map(text => ({ mode: 'dm', text })),
+        choices: [{ label: 'จบการผจญภัย', do: [{ narrate: 'ขอบคุณที่ร่วมผจญภัย โลกยังเปิดให้คุณเดินทางต่อได้ หมู่บ้านลมเย็นกำลังถูกสร้างขึ้นใหม่' }] }]
+      },
+      after_end: {
+        pages: [{ text: 'ตอนนี้ทุกคนเริ่มกลับไปสร้างหมู่บ้านใหม่แล้ว ชื่อของเจ้าจะถูกเล่าต่อไปอีกนาน นักผจญภัย' }],
+        choices: []
       }
     }
   }
 }
 
 export const NPC_LINES = {
+  epilogue_core: [
+    { when: { all: [{ flag: 'dragon_alive' }, { any: [{ all: [{ flag: 'ally_bandit' }, { flag: 'ally_orc' }] }, { all: [{ flag: 'ally_bandit' }, { flag: 'ally_merchant' }] }, { all: [{ flag: 'ally_orc' }, { flag: 'ally_merchant' }] }] }] }, text: 'หมู่บ้านลมเย็นถูกสร้างขึ้นใหม่ด้วยมือของชาวบ้าน โจร ออร์ค และพ่อค้า มังกรเฒ่ากลับไปหลับใหลใต้ภูเขา ไม่ใช่ในฐานะผนึก แต่ในฐานะเพื่อนบ้าน ชื่อของเจ้าถูกสลักไว้บนอนุสาวรีย์ใหม่' },
+    { when: { flag: 'dragon_alive' }, text: 'หมู่บ้านค่อยๆ ฟื้นตัว ช้าแต่มั่นคง บางคืนชาวบ้านยังเห็นเงามังกรบินผ่านดวงจันทร์ เหมือนกำลังเฝ้ามองพวกเขาอยู่' },
+    { when: { any: [{ all: [{ flag: 'ally_bandit' }, { flag: 'ally_orc' }] }, { all: [{ flag: 'ally_bandit' }, { flag: 'ally_merchant' }] }, { all: [{ flag: 'ally_orc' }, { flag: 'ally_merchant' }] }] }, text: 'เจ้าและพันธมิตรฝังร่างมังกรไว้ใต้ภูเขาที่มันเฝ้ามาพันปี หมู่บ้านถูกสร้างใหม่ แต่ภูเขาไม่มีผู้พิทักษ์อีกต่อไป และในความมืดลึกลงไป บางสิ่งยังคงรออยู่' },
+    { text: 'เจ้าชนะ แต่หมู่บ้านลมเย็นไม่เหมือนเดิมอีกแล้ว ผู้คนย้ายไปอยู่ที่อื่น เหลือเพียงอนุสาวรีย์ที่แตกร้าว และเรื่องเล่าของนักผจญภัยที่ถูกหลอกให้ปลดปล่อยปีศาจ และเป็นคนเดียวที่หยุดมันได้' }
+  ],
+  epilogue_extra: [
+    { when: { flag: 'saved_mali' }, text: 'ป้ามาลีเปิดโรงเตี๊ยมอีกครั้ง และติดป้ายว่า "นักผจญภัยดื่มฟรี (แค่คนเดียวนะ)"' },
+    { when: { notFlag: 'saved_mali' }, text: 'ป้ามาลีถูกพบในห้องขังใต้หอคอย อ่อนแรงแต่ยังมีชีวิต' },
+    { when: { flag: 'saved_herbalist' }, text: 'หมอสมุนไพรเขียนบันทึกเล่มใหม่ เพื่อให้ลูกหลานไม่ต้องถูกหลอกอีก' },
+    { when: { notFlag: 'saved_herbalist' }, text: 'หมอสมุนไพรถูกพบในห้องขังใต้หอคอย อ่อนแรงแต่ยังมีชีวิต' },
+    { when: { flag: 'ally_orc' }, text: 'ครากมาเยี่ยมหมู่บ้านทุกเดือน เพื่อท้าดวลเจ้าอีกครั้ง' },
+    { when: { flag: 'ally_bandit' }, text: 'เสือดำไม่ได้กลับตัวเป็นคนดีหรอก แต่เขาไม่ปล้นหมู่บ้านลมเย็นอีกเลย' },
+    { when: { flag: 'ally_merchant' }, text: 'นายเกล็ดขึ้นราคาทุกอย่างสองเท่า และเรียกมันว่า "ราคาวีรบุรุษ"' }
+  ],
   camp_ch9_report: [
     { when: { flag: 'dragon_alive' }, text: 'มังกรยังมีชีวิตอยู่! ผนึกสุดท้ายยังไม่แตก พวกเรายังมีหวัง' },
     { text: 'มังกร... จากไปแล้วหรือ ถ้าอย่างนั้นคืนนี้มรกาฬจะแข็งแกร่งที่สุด แต่เจ้ายังมีเกล็ดของมันอยู่ใช่ไหม' }

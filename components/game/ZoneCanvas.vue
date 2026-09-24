@@ -59,7 +59,7 @@ export default {
       return this.filter ? { '--zone-filter': this.filter } : {}
     },
     showDayNight () {
-      return !['dungeon', 'cave', 'dragon_lair'].includes(this.zone)
+      return !['dungeon', 'cave', 'dragon_lair', 'tower'].includes(this.zone)
     },
     dayNightStyle () {
       const forced = FORCED_NIGHT_VARIANTS.includes(ui.zoneVariant)

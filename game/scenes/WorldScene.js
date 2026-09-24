@@ -71,7 +71,13 @@ export default class WorldScene extends ZoneScene {
     if (variant === 'ruined') {
       this.markers.build(RUINED_ENCOUNTER_MARKERS)
       this.markerDefList = this.markerDefList.concat(RUINED_ENCOUNTER_MARKERS)
-      this.addMonumentGlow()
+      this.addMonumentGlow('rgba(160, 80, 255, 0.9)', 'rgba(160, 80, 255, 0)', 'purple-glow')
+    }
+    if (variant === 'restored') {
+      const elder = this.npcs.get('npc:elder')
+      if (elder) { elder.sprite.setVisible(false); elder.text.setVisible(false) }
+      this.interaction.unregister('npc:elder')
+      this.addMonumentGlow('rgba(255, 215, 120, 0.9)', 'rgba(255, 200, 90, 0)', 'gold-glow')
     }
   }
 
@@ -100,18 +106,18 @@ export default class WorldScene extends ZoneScene {
     })
   }
 
-  addMonumentGlow () {
-    if (!this.textures.exists('purple-glow')) {
-      const glow = this.textures.createCanvas('purple-glow', 48, 48)
+  addMonumentGlow (inner, outer, key) {
+    if (!this.textures.exists(key)) {
+      const glow = this.textures.createCanvas(key, 48, 48)
       const ctx = glow.getContext()
       const gradient = ctx.createRadialGradient(24, 24, 2, 24, 24, 24)
-      gradient.addColorStop(0, 'rgba(160, 80, 255, 0.9)')
-      gradient.addColorStop(1, 'rgba(160, 80, 255, 0)')
+      gradient.addColorStop(0, inner)
+      gradient.addColorStop(1, outer)
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, 48, 48)
       glow.refresh()
     }
-    const glowSprite = this.add.image(56, 224, 'purple-glow').setBlendMode('ADD').setAlpha(0.4).setDepth(9000)
+    const glowSprite = this.add.image(56, 224, key).setBlendMode('ADD').setAlpha(0.4).setDepth(9000)
     this.tweens.add({ targets: glowSprite, alpha: 0.65, scale: 1.15, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
   }
 }

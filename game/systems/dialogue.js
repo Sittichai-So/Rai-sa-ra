@@ -22,6 +22,9 @@ function contextFor () {
       const lines = NPC_LINES[key] || []
       const hit = lines.find(line => check(line.when))
       return hit ? hit.text : '...'
+    },
+    all (key) {
+      return (NPC_LINES[key] || []).filter(line => check(line.when)).map(line => line.text)
     }
   }
 }
