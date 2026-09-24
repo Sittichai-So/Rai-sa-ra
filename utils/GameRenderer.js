@@ -7,10 +7,19 @@ const ZOMBIE_STYLE = {
   runner: { color: '#cf4fb2', dark: '#993380', radius: 15 },
   tank: { color: '#4c7d5c', dark: '#335740', radius: 31 },
   spitter: { color: '#6b4fd0', dark: '#4a3597', radius: 18 },
+  bomber: { color: '#9be03c', dark: '#5f9420', radius: 18 },
   boss: { color: '#b52323', dark: '#7d1414', radius: 52 }
 }
 
 const BLOOD = ['#8a1f1f', '#a82727', '#6d1616']
+
+const BOSS_CHARGE_LEN = 290
+
+const BLAST_COLORS = {
+  bomber: ['#ffec70', '#ff9a20', '#ff4a10', '#9be03c'],
+  bomber_shot: ['#ffec70', '#ffb030', '#9be03c', '#d8ff90'],
+  slam: ['#c9a27a', '#8a6a4a', '#ff5030', '#e8d4b0']
+}
 
 function shade (hex, f) {
   const h = hex.replace('#', '')
@@ -38,6 +47,7 @@ export default class GameRenderer {
     this.particles = []
     this.floaters = []
     this.decals = []
+    this.rings = []
     this.shakeAmt = 0
     this.hero = null
     this.heroMeta = null
@@ -230,6 +240,16 @@ export default class GameRenderer {
     })
   }
 
+  explosion (x, y, radius = 100, kind = 'bomber') {
+    const colors = BLAST_COLORS[kind] || BLAST_COLORS.bomber
+    const big = radius > 110
+    this.burst(x, y, big ? 46 : 34, colors, { speed: radius * 2.4, size: 4, life: 0.55 })
+    this.burst(x, y, 14, ['#3a3a3a', '#555555', '#2a2a2a'], { speed: radius * 1.1, size: 7, life: 0.8, drag: 0.9 })
+    this.rings.push({ x, y, r: radius, life: 0, maxLife: 0.42, color: kind === 'slam' ? '232,212,176' : '255,180,60' })
+    this.decals.push({ x, y, r: radius * 0.42, a: 0.3, scorch: true })
+    if (this.decals.length > 240) { this.decals.splice(0, this.decals.length - 240) }
+  }
+
   floatText (x, y, text, color = '#00ff50') {
     this.floaters.push({ x, y, text, color, life: 0, maxLife: 0.9 })
   }
@@ -253,6 +273,9 @@ export default class GameRenderer {
       f.y -= 34 * dt
     }
     this.floaters = this.floaters.filter(f => f.life < f.maxLife)
+
+    for (const r of this.rings) { r.life += dt }
+    this.rings = this.rings.filter(r => r.life < r.maxLife)
 
     this.shakeAmt *= 0.86
     if (this.shakeAmt < 0.3) { this.shakeAmt = 0 }
@@ -291,9 +314,11 @@ export default class GameRenderer {
     this._drawDecals(ctx)
     this._drawPickups(ctx, pickups || [], now)
     this._drawBullets(ctx, bullets)
+    this._drawTelegraphs(ctx, zombies, now)
     this._drawProjectiles(ctx, projectiles || [])
     this._drawZombies(ctx, zombies, now)
     this._drawPlayers(ctx, players, myId, now, shootFx || {}, deathFx || {})
+    this._drawRings(ctx)
     this._drawParticles(ctx)
     this._drawFloaters(ctx)
 
@@ -308,8 +333,83 @@ export default class GameRenderer {
     for (const d of this.decals) {
       ctx.beginPath()
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(74,10,10,${d.a})`
+      ctx.fillStyle = d.scorch ? `rgba(12,10,8,${d.a})` : `rgba(74,10,10,${d.a})`
       ctx.fill()
+    }
+  }
+
+  _drawRings (ctx) {
+    for (const r of this.rings) {
+      const k = r.life / r.maxLife
+      ctx.beginPath()
+      ctx.arc(r.x, r.y, r.r * (0.35 + k * 0.75), 0, Math.PI * 2)
+      ctx.strokeStyle = `rgba(${r.color},${(1 - k) * 0.85})`
+      ctx.lineWidth = 10 * (1 - k) + 2
+      ctx.stroke()
+      if (k < 0.3) {
+        ctx.beginPath()
+        ctx.arc(r.x, r.y, r.r * 0.55 * (1 - k), 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,240,180,${(0.3 - k) * 1.6})`
+        ctx.fill()
+      }
+    }
+  }
+
+  _drawTelegraphs (ctx, zombies, now) {
+    for (const z of zombies) {
+      if (!z.state) { continue }
+      const k = z.stateProgress || 0
+      const blink = 0.55 + Math.sin(now / 45) * 0.45
+      if (z.state === 'armed') {
+        const r = z.blastRadius || 110
+        ctx.beginPath()
+        ctx.arc(z.x, z.y, r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,70,20,${0.08 + k * 0.14})`
+        ctx.fill()
+        ctx.strokeStyle = `rgba(255,90,30,${0.35 + blink * 0.4})`
+        ctx.lineWidth = 2
+        ctx.setLineDash([8, 6])
+        ctx.stroke()
+        ctx.setLineDash([])
+        ctx.beginPath()
+        ctx.arc(z.x, z.y, r * k, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,120,40,0.16)'
+        ctx.fill()
+      } else if (z.state === 'slam_wind') {
+        const r = z.slamRadius || 150
+        ctx.beginPath()
+        ctx.arc(z.x, z.y, r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,40,20,${0.06 + k * 0.12})`
+        ctx.fill()
+        ctx.strokeStyle = `rgba(255,60,30,${0.45 + blink * 0.4})`
+        ctx.lineWidth = 3
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(z.x, z.y, r * k, 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(255,200,80,0.8)'
+        ctx.lineWidth = 2
+        ctx.stroke()
+      } else if (z.state === 'charge_wind' || z.state === 'charging') {
+        const a = z.chargeAngle != null ? z.chargeAngle : z.angle
+        const zr = z.radius || 52
+        const w = zr * 1.7
+        const len = z.state === 'charge_wind' ? BOSS_CHARGE_LEN + zr : BOSS_CHARGE_LEN * (1 - k) + zr
+        ctx.save()
+        ctx.translate(z.x, z.y)
+        ctx.rotate(a)
+        ctx.fillStyle = z.state === 'charge_wind'
+          ? `rgba(255,40,20,${0.1 + k * 0.18})`
+          : 'rgba(255,90,40,0.18)'
+        ctx.fillRect(0, -w / 2, len, w)
+        ctx.strokeStyle = `rgba(255,60,30,${0.4 + blink * 0.45})`
+        ctx.lineWidth = 2
+        ctx.strokeRect(0, -w / 2, len, w)
+        if (z.state === 'charge_wind') {
+          ctx.fillStyle = 'rgba(255,200,80,0.35)'
+          ctx.fillRect(0, -w / 2, len * k, w)
+        }
+        ctx.restore()
+      }
     }
   }
 
@@ -368,10 +468,11 @@ export default class GameRenderer {
   _drawProjectiles (ctx, projectiles) {
     ctx.save()
     for (const p of projectiles) {
+      const c = p.boss ? '#ff4a6a' : '#9d6bff'
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.radius || 7, 0, Math.PI * 2)
-      ctx.fillStyle = '#9d6bff'
-      ctx.shadowColor = '#9d6bff'
+      ctx.fillStyle = c
+      ctx.shadowColor = c
       ctx.shadowBlur = 12
       ctx.fill()
     }
@@ -429,10 +530,26 @@ export default class GameRenderer {
       ctx.fill()
 
       if (z.type === 'boss') {
-        const pulse = 1 + Math.sin(now / 200) * 0.06
+        const pulse = 1 + Math.sin(now / (z.enraged ? 90 : 200)) * (z.enraged ? 0.1 : 0.06)
         ctx.beginPath()
-        ctx.arc(0, 0, rad * 1.3 * pulse, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,32,32,0.13)'
+        ctx.arc(0, 0, rad * (z.enraged ? 1.45 : 1.3) * pulse, 0, Math.PI * 2)
+        ctx.fillStyle = z.enraged ? 'rgba(255,110,20,0.26)' : 'rgba(255,32,32,0.13)'
+        ctx.fill()
+        if (z.state === 'charging') {
+          const a = z.chargeAngle != null ? z.chargeAngle : z.angle
+          for (let i = 1; i <= 3; i++) {
+            ctx.beginPath()
+            ctx.arc(-Math.cos(a) * rad * 0.7 * i, -Math.sin(a) * rad * 0.7 * i, rad * (1 - i * 0.18), 0, Math.PI * 2)
+            ctx.fillStyle = `rgba(255,60,30,${0.22 - i * 0.05})`
+            ctx.fill()
+          }
+        }
+      } else if (z.type === 'bomber') {
+        const armed = z.state === 'armed'
+        const pulse = 1 + Math.sin(now / (armed ? 50 : 240) + z.id) * (armed ? 0.16 : 0.07)
+        ctx.beginPath()
+        ctx.arc(0, 0, rad * 1.28 * pulse, 0, Math.PI * 2)
+        ctx.fillStyle = armed ? 'rgba(255,90,20,0.32)' : 'rgba(170,255,60,0.16)'
         ctx.fill()
       } else if (z.elite) {
         const pulse = 1 + Math.sin(now / 160 + z.id) * 0.09
@@ -442,8 +559,10 @@ export default class GameRenderer {
         ctx.fill()
       }
 
-      const base = flashing ? '#ffffff' : style.color
-      const dark = flashing ? '#dddddd' : style.dark
+      const fuseBlink = z.state === 'armed' && Math.sin(now / Math.max(25, 90 - (z.stateProgress || 0) * 65)) > 0
+      const rageTint = z.type === 'boss' && z.enraged && Math.sin(now / 120) > 0.2
+      const base = flashing || fuseBlink ? '#ffffff' : (rageTint ? '#e0401a' : style.color)
+      const dark = flashing || fuseBlink ? '#dddddd' : style.dark
       const u = Math.max(3, Math.round(rad / 3.6))
       const R = Math.ceil(rad / u)
       for (let gy = -R; gy <= R; gy++) {
@@ -463,11 +582,31 @@ export default class GameRenderer {
         ctx.strokeRect(-rad * 0.5, -rad * 0.5 + bob, rad, rad)
       }
 
+      if (z.type === 'bomber' && !flashing && !fuseBlink) {
+        ctx.fillStyle = '#e8ff9a'
+        const spots = [[-0.45, -0.3], [0.35, 0.4], [-0.15, 0.5], [0.5, -0.35]]
+        for (const [px, py] of spots) {
+          ctx.fillRect(Math.round(px * rad) - u / 2, Math.round(py * rad) + bob - u / 2, u, u)
+        }
+      }
+
+      if (z.type === 'boss' && !flashing) {
+        ctx.fillStyle = z.enraged ? '#ffcc40' : '#e8e0d0'
+        const hx = Math.cos(z.angle)
+        const hy = Math.sin(z.angle)
+        for (const side of [-1, 1]) {
+          const bx = Math.round(hx * rad * 0.15 - hy * side * rad * 0.62)
+          const by = Math.round(hy * rad * 0.15 + hx * side * rad * 0.62) + bob
+          ctx.fillRect(bx - u, by - u, u * 2, u * 2)
+          ctx.fillRect(Math.round(bx + hx * u * 1.5) - u / 2, Math.round(by + hy * u * 1.5) - u / 2, u, u)
+        }
+      }
+
       const ex = Math.round(Math.cos(z.angle) * rad * 0.4)
       const ey = Math.round(Math.sin(z.angle) * rad * 0.4) + bob
       const perpX = Math.round(-Math.sin(z.angle) * rad * 0.28)
       const perpY = Math.round(Math.cos(z.angle) * rad * 0.28)
-      ctx.fillStyle = flashing ? '#000' : (z.type === 'spitter' ? '#d8ccff' : '#ff2020')
+      ctx.fillStyle = flashing ? '#000' : (z.type === 'spitter' ? '#d8ccff' : z.type === 'bomber' ? '#fff27a' : (z.type === 'boss' && z.enraged ? '#ffe040' : '#ff2020'))
       ctx.fillRect(ex + perpX - u, ey + perpY - u, u * 1.4, u * 1.4)
       ctx.fillRect(ex - perpX - u, ey - perpY - u, u * 1.4, u * 1.4)
 
@@ -801,7 +940,7 @@ export default class GameRenderer {
         ctx.fillStyle = '#ffb028'
         ctx.fillRect(mmX + z.x * scX - 1.5, mmY + z.y * scY - 1.5, 3, 3)
       } else {
-        ctx.fillStyle = z.type === 'spitter' ? '#9d6bff' : '#ff4020'
+        ctx.fillStyle = z.type === 'spitter' ? '#9d6bff' : z.type === 'bomber' ? '#b6ff40' : '#ff4020'
         ctx.fillRect(mmX + z.x * scX - 1, mmY + z.y * scY - 1, 2, 2)
       }
     }

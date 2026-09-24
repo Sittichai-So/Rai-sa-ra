@@ -229,13 +229,17 @@
       >{{ u.label }}<b v-if="u.count > 1">×{{ u.count }}</b></span>
     </div>
 
-    <div v-if="bossZombie" class="boss-bar">
+    <div v-if="bossZombie" class="boss-bar" :class="{ enraged: bossZombie.enraged }">
       <div class="boss-bar-label">
-        <i class="fas fa-skull" /> BOSS
+        <i class="fas fa-skull" /> BOSS<span v-if="bossZombie.enraged" class="boss-rage"> คลั่ง!</span>
       </div>
       <div class="boss-bar-track">
         <div class="boss-bar-fill" :style="{ width: bossHpPct + '%' }" />
       </div>
+    </div>
+
+    <div class="version-corner">
+      v{{ gameVersion }}
     </div>
 
     <transition name="wave-fade">
@@ -325,6 +329,7 @@
 
 <script>
 import GameRenderer from '~/utils/GameRenderer'
+import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
 import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
 import heroMShoot from '~/assets/images/hero_m_shoot.png'
@@ -335,6 +340,14 @@ import heroMSlide from '~/assets/images/hero_m_slide.png'
 import heroFSlide from '~/assets/images/hero_f_slide.png'
 import heroSpriteMeta from '~/assets/images/hero_sprites.json'
 
+const BOSS_ABILITY_LABEL = {
+  charge: { text: 'พุ่งชน!', color: '#ff6040' },
+  slam: { text: 'กระทืบ!', color: '#ffcc40' },
+  spit: { text: 'พ่นกรด!', color: '#ff70b0' },
+  summon: { text: 'เรียกลูกน้อง!', color: '#c49bff' },
+  enrage: { text: 'คลั่ง!!', color: '#ff3000' }
+}
+
 const STICK_RADIUS = 46
 const STICK_DEADZONE = 0.18
 
@@ -344,6 +357,7 @@ export default {
   data () {
     return {
       roomId: this.$route.params.id,
+      gameVersion: ZOMBIE_GAME_VERSION,
       myId: null,
       players: [],
       zombies: [],
@@ -1034,14 +1048,35 @@ export default {
         }
       })
 
+      this.$socket.on('zombieBlast', ({ kind, x, y, radius }) => {
+        if (!this.renderer) { return }
+        this.renderer.explosion(x, y, radius, kind)
+        const me = this.myPlayer
+        const dist = me ? Math.hypot(me.x - x, me.y - y) : Infinity
+        const reach = (radius || 100) * 2.4
+        if (dist < reach) { this.renderer.shake((kind === 'slam' ? 11 : 9) * (1 - dist / reach) + 2) }
+      })
+
+      this.$socket.on('bossAbility', ({ ability, x, y }) => {
+        if (!this.renderer) { return }
+        const label = BOSS_ABILITY_LABEL[ability]
+        if (label) { this.renderer.floatText(x, y - 70, label.text, label.color) }
+        if (ability === 'enrage') {
+          this.renderer.burst(x, y, 40, ['#ff3000', '#ffcc40', '#ff6020'], { speed: 260, size: 4 })
+          this.renderer.shake(8)
+        } else if (ability === 'summon') {
+          this.renderer.burst(x, y, 24, ['#6b4fd0', '#9be03c', '#cf4fb2'], { speed: 200, size: 3 })
+        }
+      })
+
       this.$socket.on('zombieKilled', ({ playerId, score, kills, isCombo, zombieType, x, y, gained }) => {
         if (this.renderer && x != null) {
           const big = zombieType === 'boss' || zombieType === 'tank'
           this.renderer.bloodSplat(x, y, big)
-          this.renderer.floatText(x, y, '+' + (gained || 0), big ? '#ffcc40' : '#00ff50')
+          if (gained) { this.renderer.floatText(x, y, '+' + gained, big ? '#ffcc40' : '#00ff50') }
           if (zombieType === 'boss') { this.renderer.shake(10) }
         }
-        if (playerId === this.myId) {
+        if (playerId && playerId === this.myId) {
           const now = Date.now()
           if (isCombo || (now - this.lastKillTime < this.comboTimeWindow)) {
             this.combo = (this.combo || 0) + 1
@@ -1119,7 +1154,7 @@ export default {
         'gameJoined', 'gameError', 'gameState', 'waveCountdown', 'waveStart', 'playerHit',
         'playerDied', 'playerDowned', 'playerRevived', 'playerDash', 'zombieKilled', 'gameOver',
         'gameRestarted', 'waveReinforce', 'pickupCollected', 'upgradeOffer', 'upgradeApplied',
-        'lobbyUpdate', 'matchStarted'
+        'lobbyUpdate', 'matchStarted', 'zombieBlast', 'bossAbility'
       ]
       events.forEach(ev => this.$socket.off(ev))
       this.$socket.off('connect', this.onSocketReconnect)
@@ -1762,6 +1797,31 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   height: 100%;
   background: linear-gradient(90deg, #ff2020, #ff6040);
   transition: width 0.2s;
+}
+.boss-rage {
+  color: #ffcc40;
+  animation: boss-rage-blink 0.5s steps(2) infinite;
+}
+.boss-bar.enraged .boss-bar-track {
+  border-color: #ff8040;
+  box-shadow: 0 0 12px rgba(255, 80, 20, 0.6);
+}
+.boss-bar.enraged .boss-bar-fill {
+  background: linear-gradient(90deg, #ff6000, #ffcc40);
+}
+@keyframes boss-rage-blink {
+  50% { opacity: 0.35; }
+}
+.version-corner {
+  position: absolute;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 9;
+  pointer-events: none;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(0, 255, 80, 0.45);
 }
 
 .dead-overlay {

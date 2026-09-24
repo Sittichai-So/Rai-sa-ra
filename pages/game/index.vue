@@ -9,7 +9,7 @@
       </nuxt-link>
       <div class="title-block">
         <span class="title-tag">MULTIPLAYER</span>
-        <h1>ZOMBIE STRIKE</h1>
+        <h1>ZOMBIE STRIKE <span class="version-tag">v{{ gameVersion }}</span></h1>
         <p>เอาตัวรอดให้นานที่สุด — เล่นกับเพื่อนทุกคน</p>
       </div>
       <nuxt-link to="/rpg" class="other-game-link">
@@ -192,6 +192,8 @@
 </template>
 
 <script>
+import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
+
 export default {
   name: 'GameLobby',
   middleware: 'middlewareAuth',
@@ -211,7 +213,8 @@ export default {
       leaderboard: [],
       myStats: null,
       avatarBroken: false,
-      maxPlayers: 8
+      maxPlayers: 8,
+      gameVersion: ZOMBIE_GAME_VERSION
     }
   },
   computed: {
@@ -376,6 +379,19 @@ export default {
   color: #fff;
   text-shadow: 0 0 20px rgba(0,255,80,0.4);
   letter-spacing: 2px;
+}
+.version-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: #00ff50;
+  opacity: 0.75;
+  vertical-align: middle;
+  border: 1px solid rgba(0, 255, 80, 0.35);
+  border-radius: 4px;
+  padding: 1px 6px;
+  text-shadow: none;
 }
 .title-block p {
   font-size: 13px;
