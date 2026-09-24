@@ -109,6 +109,11 @@ async function pushNow (options) {
   }
   if (result.accepted) {
     state.rev = result.rev
+    if (result.adjusted) {
+      state.exp = result.adjusted.exp
+      state.gold = result.adjusted.gold
+      state.level = levelFromExp(state.exp)
+    }
     writeLocal()
     if (remoteDirty) { scheduleRemote() }
     return
