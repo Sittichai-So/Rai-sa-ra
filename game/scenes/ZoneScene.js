@@ -198,9 +198,9 @@ export default class ZoneScene extends Phaser.Scene {
 
   onWorldJoined ({ players, self, encounters, random, cleared, zoneVariant }) {
     (players || []).forEach(p => this.createOtherSprite(p))
-    ;(cleared || []).forEach(id => this.markers.complete(id))
     this.zoneVariant = zoneVariant || 'normal'
     this.applyZoneVariant(this.zoneVariant)
+    ;(cleared || []).forEach(id => this.markers.complete(id))
     this.registerServerInteractables(encounters || [])
     this.game.events.emit('joined', { self, encounters, random, zone: this.zone, zoneVariant: this.zoneVariant })
     if (self) { this.game.events.emit('hpUpdate', { hp: self.hp, maxHp: self.maxHp }) }

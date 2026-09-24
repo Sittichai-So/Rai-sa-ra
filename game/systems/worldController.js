@@ -462,6 +462,7 @@ export default class WorldController {
       c.log.push(entry)
       if (entry.actor === 'enemy' && entry.hit) { this.game.events.emit('sfx', 'damage') }
       if (entry.actor === 'player' && entry.hit && entry.damage) { this.game.events.emit('sfx', 'hit') }
+      this.playEntryFx(entry)
     })
     if (c.log.length > 30) { c.log.splice(0, c.log.length - 30) }
     if (payload.enemy) { c.enemy = payload.enemy }
@@ -481,10 +482,19 @@ export default class WorldController {
     this.finishCombat(payload)
   }
 
+  playEntryFx (entry) {
+    if (entry.fx !== 'dragonfire') { return }
+    this.game.events.emit('sfx', 'event')
+    this.game.events.emit('screenShake')
+  }
+
   finishCombat (payload) {
     const c = ui.combat
     if (!c) { return }
-    payload.entries.forEach(entry => c.log.push(entry))
+    payload.entries.forEach((entry) => {
+      c.log.push(entry)
+      this.playEntryFx(entry)
+    })
     if (payload.result !== 'defeat') { setHp(payload.hp, payload.maxHp) }
     c.phase = 'ended'
     c.result = payload.result

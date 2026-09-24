@@ -268,5 +268,92 @@ export const DM_SCRIPTS = [
       { text: 'ครากยกหมัดขึ้นทุบอกตัวเองแล้วยิ้มกว้าง "เจ้า แข็ง คราก ไป"' }
     ],
     choices: [{ label: 'ยินดีต้อนรับ', do: [{ setFlag: 'ally_orc' }] }]
+  },
+  {
+    id: 'ch9_merchant_gift',
+    once: true,
+    on: { type: 'QUEST_ACCEPTED', questId: 'ch9' },
+    if: { flag: 'ally_merchant' },
+    delay: 900,
+    pages: [
+      { text: 'นายเกล็ดยัดขวดยาสามขวดใส่มือคุณก่อนออกเดินทาง "ของแถมครั้งเดียวในชีวิตนะ อย่าบอกใครล่ะ"' }
+    ],
+    choices: [{ label: 'รับไว้', do: [{ giveItem: { id: 'elixir_vigor', qty: 3 } }] }]
+  },
+  {
+    id: 'ch9_arrival_trust',
+    once: true,
+    on: { type: 'PLAYER_ENTER_AREA', area: 'dragon_lair' },
+    if: { all: [{ quest: 'ch9', active: true }, { flag: 'trust_dragon' }] },
+    delay: 900,
+    pages: [
+      { text: 'เจ้ากลับมา อย่างที่ข้าหวังไว้' },
+      { text: 'ข้าแก่เกินกว่าจะสู้ทั้งกองทัพลำพัง แต่ถ้ามีเจ้าอยู่ ไฟของข้ายังพอจะเผาพวกมันได้' },
+      { text: 'เสียงกระดูกกระทบกันดังก้องมาจากปากถ้ำ กองทัพของมรกาฬมาถึงแล้ว' }
+    ],
+    choices: [{ label: 'ยืนหน้ามังกร เตรียมรับมือ', do: [{ narrate: 'เดินเข้าไปยืนหน้ามังกร กองทัพกระดูกจะบุกเข้ามาทีละระลอก' }] }]
+  },
+  {
+    id: 'ch9_arrival_plain',
+    once: true,
+    on: { type: 'PLAYER_ENTER_AREA', area: 'dragon_lair' },
+    if: { all: [{ quest: 'ch9', active: true }, { notFlag: 'trust_dragon' }] },
+    delay: 900,
+    pages: [
+      { text: 'เจ้ากลับมา อย่างที่ข้าบอกไว้' },
+      { text: 'ข้าแก่เกินกว่าจะสู้ทั้งกองทัพลำพัง แต่ถ้ามีเจ้าอยู่ ไฟของข้ายังพอจะเผาพวกมันได้' },
+      { text: 'เสียงกระดูกกระทบกันดังก้องมาจากปากถ้ำ กองทัพของมรกาฬมาถึงแล้ว' }
+    ],
+    choices: [{ label: 'ยืนหน้ามังกร เตรียมรับมือ', do: [{ narrate: 'เดินเข้าไปยืนหน้ามังกร กองทัพกระดูกจะบุกเข้ามาทีละระลอก' }] }]
+  },
+  {
+    id: 'ch9_wave1_down',
+    once: true,
+    on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'skeleton_horde' },
+    mode: 'banner',
+    delay: 400,
+    text: 'ระลอกแรกแตกพ่าย แต่โครงกระดูกที่เหลือกำลังปีนขึ้นหลังมังกร!'
+  },
+  {
+    id: 'ch9_wave2_down',
+    once: true,
+    on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'wolf_spirit' },
+    mode: 'banner',
+    delay: 400,
+    text: 'วิญญาณหมาป่าสลายไป แต่เงาที่หลงเหลือกำลังกัดปีกมังกร!'
+  },
+  {
+    id: 'ch9_wave3_down',
+    once: true,
+    on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'troll_shadow' },
+    mode: 'banner',
+    delay: 400,
+    text: 'เงาโทรลล์สลายไป แต่เศษเงาของมันยังทุบผนึกโบราณอยู่!'
+  },
+  {
+    id: 'ch9_end_alive',
+    once: true,
+    on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'protect_3' },
+    if: { all: [{ flag: 'protect3Done' }, { not: { all: [{ flag: 'dragon_hurt_1' }, { flag: 'dragon_hurt_2' }, { flag: 'dragon_hurt_3' }] } }] },
+    delay: 700,
+    pages: [
+      { text: 'เจ้าปกป้องผนึกสุดท้ายไว้ได้ ร้อยปีที่ข้ารอคนแบบเจ้า' },
+      { text: 'มรกาฬซ่อนตัวใต้อนุสาวรีย์เก่า นี่คือกุญแจ และเมื่อถึงเวลา จงเรียกชื่อข้า' }
+    ],
+    choices: [{ label: 'รับกุญแจ', do: [{ setFlag: 'dragon_alive' }, { giveItem: { id: 'monument_key', qty: 1 } }, { narrate: 'ได้รับกุญแจอนุสาวรีย์ กลับไปที่ค่ายในป่าเพื่อเตรียมตัว' }] }]
+  },
+  {
+    id: 'ch9_end_fallen',
+    once: true,
+    on: { type: 'PLAYER_EVENT_RESOLVED', eventId: 'protect_3' },
+    if: { all: [{ flag: 'protect3Done' }, { flag: 'dragon_hurt_1' }, { flag: 'dragon_hurt_2' }, { flag: 'dragon_hurt_3' }] },
+    delay: 700,
+    pages: [
+      { text: 'ข้า... พอแล้ว ผนึกสุดท้ายกำลังแตก' },
+      { text: 'มรกาฬจะแข็งแกร่งที่สุดในคืนนี้ แต่เกล็ดของข้ายังอยู่กับเจ้า' },
+      { text: 'อย่าให้ร้อยปีของพวกเราสูญเปล่า' },
+      { text: 'แสงในดวงตามังกรดับลง ไกลออกไปในหมู่บ้าน เสียงหัวเราะดังก้องทั่วหุบเขา' }
+    ],
+    choices: [{ label: 'เก็บกุญแจที่ตกอยู่ข้างร่างมังกร', do: [{ setFlag: 'dragon_fallen' }, { giveItem: { id: 'monument_key', qty: 1 } }, { narrate: 'ได้รับกุญแจอนุสาวรีย์ กลับไปที่ค่ายในป่าเพื่อเตรียมตัว' }] }]
   }
 ]

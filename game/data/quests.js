@@ -191,6 +191,31 @@ export const QUESTS = {
     },
     onAcceptFlags: ['ch8Started']
   },
+  ch9: {
+    id: 'ch9',
+    title: 'ผู้พิทักษ์คนสุดท้าย',
+    giver: 'villager',
+    chapter: 9,
+    requires: { quest: 'ch8', status: 'QUEST_COMPLETED' },
+    description: 'มรกาฬส่งกองทัพกระดูกไปฆ่ามังกรเฒ่าไฟกาฬ ผนึกสุดท้าย คุณต้องไปถึงถ้ำมังกรก่อนและปกป้องมันให้ได้',
+    location: 'ถ้ำมังกร',
+    objectives: [
+      { id: 'travel', text: 'ไปถึงถ้ำมังกรก่อนกองทัพ', hint: 'เปิดแผนที่โลกแล้วเลือกถ้ำมังกร', on: { type: 'PLAYER_ENTER_AREA', area: 'dragon_lair' } },
+      { id: 'wave1', text: 'ระลอกที่ 1: ต้านกองโครงกระดูกคืนชีพ', hint: 'เดินเข้าไปหน้ามังกร กองทัพกระดูกจะบุกเข้ามา', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'skeleton_horde' } },
+      { id: 'wave2', text: 'ระลอกที่ 2: ต้านวิญญาณหมาป่าเงา', hint: 'อยู่ใกล้มังกรไว้ ระลอกต่อไปจะตามมาหลังปกป้องมังกรเสร็จ', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'wolf_spirit' } },
+      { id: 'wave3', text: 'ระลอกที่ 3: ปราบเงาโทรลล์', hint: 'ระลอกสุดท้ายคือเงาของโทรลล์เขี้ยวเหล็ก', on: { type: 'PLAYER_ENEMY_DEFEATED', enemyId: 'troll_shadow' } },
+      { id: 'key', text: 'ฟังคำของมังกร', hint: 'ปกป้องผนึกสุดท้ายให้ได้ แล้วมังกรจะพูดกับคุณ', on: { type: 'PLAYER_ITEM_GAINED', id: 'monument_key' } },
+      { id: 'return', text: 'กลับไปที่ค่ายในป่า', hint: 'กลับไปค่ายผู้ลี้ภัยแล้วคุยกับชาวบ้านหัวฟักทอง', final: true }
+    ],
+    rewards: {
+      gold: 250,
+      exp: 420,
+      items: [],
+      flags: ['ch9Cleared'],
+      story: 'chapter10'
+    },
+    onAcceptFlags: ['ch9Started']
+  },
   lost_pup: {
     id: 'lost_pup',
     title: 'ลูกหมาป่าหลงทาง',

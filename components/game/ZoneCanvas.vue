@@ -100,6 +100,7 @@ export default {
     })
     this.game.registry.set('network', this.network)
     this.game.registry.set('classId', classId)
+    this.game.events.on('screenShake', () => this.shake())
 
     const dash = this.roomId.indexOf('-')
     const partyCode = dash >= 0 ? this.roomId.slice(dash + 1) : ''

@@ -436,6 +436,9 @@ export const NPCS = {
     name: VILLAGER,
     sprite: 'villager',
     rules: [
+      { when: { quest: 'ch9', ready: true }, start: 'report_ch9' },
+      { when: { quest: 'ch9', active: true }, start: 'ch9_waiting' },
+      { when: { quest: 'ch9', status: 'QUEST_COMPLETED' }, start: 'ch9_done' },
       { when: { quest: 'ch7', ready: true }, start: 'report_ch7' },
       { when: { quest: 'ch8', active: true }, start: 'camp_hub' },
       { when: { quest: 'ch8', status: 'QUEST_COMPLETED' }, start: 'camp_departed' },
@@ -464,17 +467,36 @@ export const NPCS = {
       camp_hub: {
         pages: ctx => [{ text: ctx.pick('camp_hub_talk') }],
         choices: [
-          { label: 'พร้อมออกเดินทางแล้ว', when: { any: [{ flag: 'ally_bandit' }, { flag: 'ally_orc' }, { flag: 'ally_merchant' }] }, do: [{ completeQuest: 'ch8' }], next: 'camp_departed_intro' }
+          { label: 'พร้อมออกเดินทางแล้ว', when: { any: [{ flag: 'ally_bandit' }, { flag: 'ally_orc' }, { flag: 'ally_merchant' }] }, do: [{ completeQuest: 'ch8' }, { startQuest: 'ch9' }], next: 'camp_departed_intro' }
         ]
       },
       camp_departed_intro: {
         pages: [
-          { mode: 'dm', text: 'คืนนั้นกองไฟในค่ายลุกโชนกว่าที่เคย ไกลออกไป แผ่นดินสั่นสะเทือน มรกาฬกำลังเดินทัพไปยังภูเขา' }
+          { mode: 'dm', text: 'คืนนั้นกองไฟในค่ายลุกโชนกว่าที่เคย ไกลออกไป แผ่นดินสั่นสะเทือน มรกาฬกำลังเดินทัพไปยังภูเขา' },
+          { text: 'มันกำลังจะไปฆ่ามังกร! ถ้าผนึกสุดท้ายแตก ไม่มีใครหยุดมันได้อีกแล้ว เจ้าต้องไปถึงถ้ำมังกรก่อนมัน' }
         ],
         choices: []
       },
       camp_departed: {
         pages: [{ text: 'ทุกคนพร้อมแล้ว เหลือเพียงเจ้าที่ต้องนำทาง ไปเถิด เวลาไม่คอยใคร' }],
+        choices: []
+      },
+      ch9_waiting: {
+        pages: ctx => [
+          { text: 'เจ้ายังอยู่ที่นี่อีกหรือ! กองทัพกระดูกกำลังมุ่งหน้าไปที่ถ้ำมังกรแล้ว' },
+          { text: ctx.hint('ch9') }
+        ],
+        choices: []
+      },
+      report_ch9: {
+        pages: ctx => [
+          { mode: 'dm', text: 'ผู้คนในค่ายลุกขึ้นยืนทันทีที่เห็นคุณเดินกลับเข้ามา ทุกสายตาจับจ้องที่กุญแจในมือคุณ' },
+          { text: ctx.pick('camp_ch9_report') }
+        ],
+        choices: [{ label: 'เล่าเรื่องที่เกิดขึ้นในถ้ำมังกร', do: [{ completeQuest: 'ch9' }, { startQuest: 'ch10' }], next: 'ch9_done' }]
+      },
+      ch9_done: {
+        pages: [{ text: 'มรกาฬซ่อนตัวอยู่ใต้อนุสาวรีย์เก่าในหมู่บ้านของเรา เมื่อเจ้าพร้อม จงใช้กุญแจนั่นเปิดทางลงไปจบเรื่องทั้งหมดนี้เสีย' }],
         choices: []
       }
     }
@@ -482,6 +504,10 @@ export const NPCS = {
 }
 
 export const NPC_LINES = {
+  camp_ch9_report: [
+    { when: { flag: 'dragon_alive' }, text: 'มังกรยังมีชีวิตอยู่! ผนึกสุดท้ายยังไม่แตก พวกเรายังมีหวัง' },
+    { text: 'มังกร... จากไปแล้วหรือ ถ้าอย่างนั้นคืนนี้มรกาฬจะแข็งแกร่งที่สุด แต่เจ้ายังมีเกล็ดของมันอยู่ใช่ไหม' }
+  ],
   camp_hub_talk: [
     { when: { flag: 'ally_merchant' }, text: 'นายเกล็ดตั้งแผงขายของอยู่มุมค่ายแล้วนะ เริ่มโก่งราคาตั้งแต่วันแรกเลย' },
     { when: { flag: 'ally_orc' }, text: 'ครากนั่งลับขวานอยู่มุมค่าย ไม่ค่อยพูดกับใคร แต่ดูจะรอเจ้าอยู่' },

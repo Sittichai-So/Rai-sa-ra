@@ -84,3 +84,9 @@ export const ENCOUNTER_MARKERS = [
   { id: 'adventurer_bones', ...BONES_MARKER, kind: 'clue', sprite: 'skull', label: 'กองกระดูกนักผจญภัย', verb: 'ตรวจสอบ' },
   { id: 'lava_crossing', ...LAVA_CROSSING_SPOT, kind: 'trap', label: 'ทางเดินลาวา', shadow: false }
 ]
+
+export const DEFENSE_ENCOUNTER_MARKERS = [
+  { id: 'wave_1', x: 152, y: 128, kind: 'creature', sprite: 'creature_skeleton', tint: 0x9FE89F, origin: [0.5, 0.85], label: 'กองโครงกระดูกคืนชีพ', discover: 'โครงกระดูกคืนชีพนับสิบทะลักเข้ามาจากปากถ้ำ มุ่งตรงไปที่มังกรเฒ่า' },
+  { id: 'wave_2', x: 128, y: 112, kind: 'creature', sprite: 'creature_wolf', anim: 'creature_wolf-run', tint: 0xAA66FF, alpha: 0.7, scale: 1.4, label: 'วิญญาณหมาป่าเงา' },
+  { id: 'wave_3', x: 176, y: 104, kind: 'creature', sprite: 'creature_troll', tint: 0x333344, alpha: 0.85, scale: 1.6, origin: [0.5, 0.85], label: 'เงาโทรลล์' }
+]

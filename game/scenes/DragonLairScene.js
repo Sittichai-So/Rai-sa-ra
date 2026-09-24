@@ -7,6 +7,7 @@ import {
   DRAGON_POS,
   LOCAL_INTERACTABLES,
   ENCOUNTER_MARKERS,
+  DEFENSE_ENCOUNTER_MARKERS,
   WALL_FRAMES,
   TILE_SIZE,
   MAP_COLS,
@@ -71,6 +72,14 @@ export default class DragonLairScene extends ZoneScene {
       setFlag('dm:dragon_lair_intro')
       this.time.delayedCall(500, () => this.playDragonIntro())
     }
+  }
+
+  applyZoneVariant (variant) {
+    if (variant === 'defense') {
+      this.markers.build(DEFENSE_ENCOUNTER_MARKERS)
+      this.markerDefList = this.markerDefList.concat(DEFENSE_ENCOUNTER_MARKERS)
+    }
+    if (getFlag('dragon_fallen')) { this.markers.complete('dragon_fight') }
   }
 
   playDragonIntro () {
