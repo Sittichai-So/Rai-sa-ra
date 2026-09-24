@@ -97,7 +97,7 @@ export const QUESTS = {
     ],
     rewards: {
       gold: 150,
-      exp: 200,
+      exp: 770,
       items: [],
       flags: ['ch4Cleared'],
       story: 'chapter5'
@@ -119,7 +119,7 @@ export const QUESTS = {
     ],
     rewards: {
       gold: 90,
-      exp: 160,
+      exp: 350,
       items: [],
       flags: ['ch5Cleared'],
       story: 'chapter6'
@@ -141,8 +141,8 @@ export const QUESTS = {
       { id: 'return', text: 'กลับไปรายงานผู้เฒ่าในหมู่บ้าน', hint: 'กลับไปที่หมู่บ้านแล้วคุยกับผู้เฒ่า', final: true }
     ],
     rewards: {
-      gold: 180,
-      exp: 240,
+      gold: 260,
+      exp: 710,
       items: [],
       flags: ['ch6Cleared'],
       story: 'chapter7'
@@ -163,8 +163,8 @@ export const QUESTS = {
       { id: 'return', text: 'หนีเข้าป่าไปรวมกับผู้รอดชีวิต', hint: 'เดินทางไปป่าทางเหนือแล้วคุยกับชาวบ้านหัวฟักทอง', final: true }
     ],
     rewards: {
-      gold: 200,
-      exp: 320,
+      gold: 300,
+      exp: 790,
       items: [],
       flags: ['ch7Cleared'],
       story: 'chapter8'
@@ -183,8 +183,8 @@ export const QUESTS = {
       { id: 'return', text: 'ชวนพันธมิตรอย่างน้อยหนึ่งฝ่าย แล้วกลับไปที่กองไฟ', hint: 'สำรวจป่าดูว่ามีใครที่จะร่วมมือกับคุณได้บ้าง แล้วกลับมาบอกที่กองไฟ', final: true }
     ],
     rewards: {
-      gold: 150,
-      exp: 260,
+      gold: 300,
+      exp: 1050,
       items: [],
       flags: ['ch8Cleared'],
       story: 'chapter9'
@@ -209,7 +209,7 @@ export const QUESTS = {
     ],
     rewards: {
       gold: 250,
-      exp: 420,
+      exp: 1080,
       items: [],
       flags: ['ch9Cleared'],
       story: 'chapter10'
@@ -233,7 +233,7 @@ export const QUESTS = {
     ],
     rewards: {
       gold: 500,
-      exp: 600,
+      exp: 820,
       items: [],
       flags: ['ch10Cleared', 'gameCleared'],
       story: 'epilogue'

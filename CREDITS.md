@@ -9,7 +9,7 @@
 
 ---
 
-## ระบบเดินสำรวจ (`/rpg`, `/rpg/forest`, `/rpg/valley`, `/rpg/dungeon`, `/rpg/cave`) — `assets/images/rpg-world/`
+## ระบบเดินสำรวจ (`/rpg`, `/rpg/forest`, `/rpg/valley`, `/rpg/dungeon`, `/rpg/cave`, `/rpg/dragon-lair`, `/rpg/tower`) — `assets/images/rpg-world/`
 
 ### หมู่บ้าน (Village) — พื้น/ต้นไม้/ของประดับ
 **Open RPG Fantasy Tilesets (OpenRTP Tiles)** โดย finalbossblues — https://finalbossblues.itch.io/openrtp-tiles
@@ -92,4 +92,16 @@
 
 ## โซนใหม่ (บท 4, 10)
 
-โซนใหม่ "ถ้ำมังกร" และ "หอคอยมรกาฬ" ตั้งใจใช้ tileset ถ้ำ/ดันเจี้ยนเดิมที่มีเครดิตอยู่แล้วด้านบน (0x72 DungeonTileset II / OpenRTP) ไม่ต้องเพิ่มรายการใหม่หากไม่มีการดาวน์โหลด asset เพิ่ม
+โซนใหม่ "ถ้ำมังกร" และ "หอคอยมรกาฬ" ใช้ asset เดิมทั้งหมด ไม่มีการดาวน์โหลดเพิ่ม:
+- พื้น/ผนัง: `dungeon-tileset-openrtp.png` (OpenRTP, CC0) — คบเพลิง `torch.png` (OpenRTP, CC0)
+- ของประดับ: `skull.png`, `floor_ladder.png`, `wall_banner_red.png`, `doors_leaf_closed.png` (0x72 DungeonTileset II, CC0)
+- ตู้หนังสือต้องสาปในหอคอยใช้ `props/crate.png` (ดูหัวข้อถัดไป)
+- ศัตรูสายพันธุ์ใหม่ทั้งหมด (โครงกระดูกคืนชีพ, อัศวินกระดูก, วิญญาณหมาป่าเงา, เงาโทรลล์, ผู้เฝ้าวงพิธี, คราก, มรกาฬบนบัลลังก์) ใช้สไปรต์เดิมจาก Ninja Adventure (CC0) ปรับด้วย tint/scale/alpha ในโค้ด ไม่ได้แก้ไฟล์ภาพ
+- ค่ายผู้ลี้ภัยในป่าใช้ `tent.png`/`campfire.png` จาก OpenRTP (CC0) ที่มีอยู่แล้ว
+
+## ของประกอบฉาก (`assets/images/rpg-world/props/`)
+
+โฟลเดอร์นี้ไม่เคยถูกบันทึกเครดิตไว้ตั้งแต่แรก ตรวจสอบย้อนหลังระหว่าง Phase 8:
+- `skull.png` เป็นไฟล์เดียวกันทุกไบต์กับ `dungeon/skull.png` จาก **16x16 DungeonTileset II** โดย 0x72 (**CC0**)
+- `crate.png` (16x24), `spikes.png` (แถบ 4 เฟรม 64x16), `coin.png` (6x7), `chest_closed/open.png` ขนาดตรงกับสไปรต์ในแพ็กเดียวกัน (0x72, **CC0**)
+- **ยังยืนยันที่มาไม่ได้**: `footprints.png`, `item_sword.png`, `item_armor.png`, `potion_red/blue.png` — เจ้าของโปรเจกต์ควรตรวจว่ามาจากแพ็กใด (ใช้อยู่ในเกมตั้งแต่ก่อนแผนบท 4-10)
