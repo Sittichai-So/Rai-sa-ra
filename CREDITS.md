@@ -76,9 +76,26 @@
 
 ---
 
-## เกม Zombie Strike — (อ้างอิงแยกต่างหาก ถ้ามี ให้เพิ่มที่นี่เมื่อพบไฟล์ CREDITS เดิม)
+## เกม Zombie Strike (`/game`)
 
-*ยังไม่ได้รวมไว้ที่นี่ — ถ้าพบไฟล์เครดิตของ Zombie Strike ให้เพิ่มหัวข้อนี้ตอนแก้ไขครั้งถัดไป*
+*ภาพตัวละครผู้เล่น (`hero_*.png`) ยังไม่ได้รวมไว้ที่นี่ — ถ้าพบไฟล์เครดิตเดิมให้เพิ่มตอนแก้ไขครั้งถัดไป*
+
+### เสียง (`assets/sounds/zombie/`) — เพิ่มใน v1.1.0
+ทุกไฟล์ตัด/ปรับระดับเสียงและแปลงเป็น MP3 (รองรับ Safari/iOS)
+
+| ไฟล์ | ที่มา | ผู้สร้าง | ใบอนุญาต |
+|---|---|---|---|
+| `shoot1.mp3`, `shoot2.mp3` | [Gunshots](https://opengameart.org/content/gunshots) (`22 Pistol.wav`) | kurt | CC0 1.0 |
+| `reload.mp3` | [Handgun Reload Sound Effect](https://opengameart.org/content/handgun-reload-sound-effect) | zer0_sol | CC0 1.0 |
+| `groan1-3.mp3`, `growl.mp3`, `roar.mp3` | [Zombie moans](https://opengameart.org/content/zombie-moans) | darsycho | CC0 1.0 |
+| `groan4.mp3`, `screech.mp3` | [Zombie noises and moans](https://opengameart.org/content/zombie-noises-and-moans) | ianzazz | CC0 1.0 |
+| `music-fight.mp3` | ["Last Fight" Dead Z. Pandemic](https://opengameart.org/content/last-fight-dead-z-pandemic) (loop) | TAD | CC0 1.0 |
+| `die1.mp3`, `die2.mp3`, `explode-big.mp3`, `explode-small.mp3` | [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds) | Kenney | CC0 1.0 |
+| `slam.mp3`, `hurt.mp3` | [Impact Sounds](https://kenney.nl/assets/impact-sounds) | Kenney | CC0 1.0 |
+| `down.mp3`, `revive.mp3`, `wave-clear.mp3`, `wave-start.mp3`, `fuse.mp3` | [Digital Audio](https://kenney.nl/assets/digital-audio) | Kenney | CC0 1.0 |
+| `pickup-health.mp3`, `select.mp3` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | Kenney | CC0 1.0 |
+| `pickup-ammo.mp3`, `dash.mp3` | [RPG Audio](https://kenney.nl/assets/rpg-audio) | Kenney | CC0 1.0 |
+| เสียงจบเกม | ใช้ `assets/sounds/rpg/gameover.mp3` ร่วมกับเกมผจญภัย (Ninja Adventure, CC0) | pixel-boy | CC0 1.0 |
 
 ---
 

@@ -335,6 +335,8 @@
 import GameRenderer from '~/utils/GameRenderer'
 import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
 import { createSnapshotDecoder } from '~/utils/zombieSnapshot'
+import AudioManager from '~/utils/AudioManager'
+import { ZOMBIE_SOUNDS, ZOMBIE_MUSIC } from '~/utils/zombieSounds'
 import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
 import heroMShoot from '~/assets/images/hero_m_shoot.png'
@@ -430,6 +432,9 @@ export default {
     }
   },
   computed: {
+    musicWanted () {
+      return this.joined && !this.inLobby && !this.gameOver && !this.fatalError
+    },
     myPlayer () {
       return this.players.find(p => p.id === this.myId) || null
     },
@@ -570,8 +575,19 @@ export default {
       return 'รอหัวห้องกดเริ่มเกม'
     }
   },
+  watch: {
+    musicWanted (on) {
+      if (on) { this.audio.playMusic('fight') } else { this.audio.stopMusic() }
+    },
+    myReloading (now, before) {
+      if (now && !before) { this.sfx('reload', { volume: 0.6, jitter: 0.02 }) }
+    }
+  },
   created () {
     this.decodeSnapshot = createSnapshotDecoder()
+    this.audio = new AudioManager({ sounds: ZOMBIE_SOUNDS, music: ZOMBIE_MUSIC })
+    this._armedSeen = new Set()
+    this._nextGroanAt = 0
   },
   mounted () {
     this.$refs.gamePage.focus()
@@ -598,6 +614,9 @@ export default {
 
     this.renderLoop()
 
+    window.addEventListener('pointerdown', this.unlockAudio)
+    window.addEventListener('keydown', this.unlockAudio)
+    window.addEventListener('touchstart', this.unlockAudio)
     window.addEventListener('resize', this.setupCanvas)
     window.addEventListener('orientationchange', this._onOrientationChange)
     window.addEventListener('keydown', this.onKeyDown)
@@ -622,6 +641,10 @@ export default {
     clearTimeout(this._comboT)
     clearTimeout(this._orientT)
     clearTimeout(this._lobbyErrT)
+    this.audio.destroy()
+    window.removeEventListener('pointerdown', this.unlockAudio)
+    window.removeEventListener('keydown', this.unlockAudio)
+    window.removeEventListener('touchstart', this.unlockAudio)
     window.removeEventListener('resize', this.setupCanvas)
     window.removeEventListener('orientationchange', this._onOrientationChange)
     window.removeEventListener('keydown', this.onKeyDown)
@@ -632,6 +655,40 @@ export default {
     window.removeEventListener('touchcancel', this.onStickEnd)
   },
   methods: {
+    unlockAudio () {
+      this.audio.unlock()
+    },
+
+    _ear () {
+      const me = this.myPlayer
+      if (me && (me.alive || me.downed)) { return { x: me.x, y: me.y } }
+      return { x: this.camX + this.canvasW / 2, y: this.camY + this.canvasH / 2 }
+    },
+
+    sfx (name, opts = {}) {
+      if (opts.x != null) { opts.listener = this._ear() }
+      this.audio.play(name, opts)
+    },
+
+    _stateSounds (now) {
+      const ear = this._ear()
+      const armed = new Set()
+      for (const z of this.zombies) {
+        if (z.state !== 'armed') { continue }
+        armed.add(z.id)
+        if (!this._armedSeen.has(z.id)) { this.sfx('fuse', { x: z.x, y: z.y, volume: 0.7, maxVoices: 3 }) }
+      }
+      this._armedSeen = armed
+
+      if (now < this._nextGroanAt || !this.zombies.length) { return }
+      const near = this.zombies.filter(z => Math.hypot(z.x - ear.x, z.y - ear.y) < 750)
+      this._nextGroanAt = now + Math.max(900, 4200 - this.zombies.length * 90) * (0.6 + Math.random() * 0.8)
+      if (!near.length) { return }
+      const z = near[(Math.random() * near.length) | 0]
+      const name = z.type === 'boss' ? 'roar' : z.type === 'runner' ? 'screech' : (z.type === 'tank' ? 'growl' : 'groan')
+      this.sfx(name, { x: z.x, y: z.y, volume: z.type === 'boss' ? 0.9 : 0.55, rate: z.type === 'tank' ? 0.8 : (z.type === 'boss' ? 0.7 : 1), jitter: 0.1, maxVoices: 3 })
+    },
+
     _onOrientationChange () {
       this.setupCanvas()
       clearTimeout(this._orientT)
@@ -770,6 +827,7 @@ export default {
     pickUpgrade (key) {
       if (this.upgradeBusy || this.forcedDead) { return }
       this.upgradeBusy = true
+      this.sfx('select', { volume: 0.6, jitter: 0 })
       this.$socket.emit('upgradePick', { key })
       this.clearKeys()
       this.$nextTick(() => {
@@ -982,8 +1040,13 @@ export default {
         this.players = state.players
         for (const p of this.players) {
           if (p.lastAttackTime && this.atkSeen[p.id] !== p.lastAttackTime) {
+            const heard = this.atkSeen[p.id] !== undefined
             this.atkSeen[p.id] = p.lastAttackTime
             this.$set(this.shootFx, p.id, now + 240)
+            if (heard) {
+              const mine = p.id === this.myId
+              this.sfx('shoot', { x: p.x, y: p.y, volume: mine ? 0.5 : 0.3, maxVoices: 8, jitter: 0.06 })
+            }
           }
         }
         this.zombies = state.zombies
@@ -998,6 +1061,7 @@ export default {
         if (state.scores && state.scores.length > 0) {
           this.leaderboard = state.scores
         }
+        this._stateSounds(now)
       })
 
       this.$socket.on('waveCountdown', ({ countdown }) => {
@@ -1017,6 +1081,8 @@ export default {
         this.waveAnnounce = true
         this.waveTimeLimit = timeLimit || 120
         this.waveTimer = this.waveTimeLimit
+        this.sfx('waveStart', { volume: 0.6 })
+        if (boss) { this.sfx('roar', { volume: 1, rate: 0.6, jitter: 0 }) }
         setTimeout(() => { this.waveAnnounce = false }, 2800)
         this._startCountdown()
       })
@@ -1025,6 +1091,11 @@ export default {
         const p = this.players.find(x => x.id === playerId)
         if (p && this.renderer) { this.renderer.bloodSplat(p.x, p.y, true) }
         this.$set(this.deathFx, playerId, Date.now())
+        if (playerId === this.myId) {
+          this.sfx('down', { volume: 0.8, rate: 0.8, jitter: 0 })
+        } else if (p) {
+          this.sfx('down', { x: p.x, y: p.y, volume: 0.5, rate: 0.8 })
+        }
         if (playerId === this.myId) {
           this.upgradeOffer = null
           this.upgradeBusy = false
@@ -1043,6 +1114,11 @@ export default {
           this.renderer.floatText(p.x, p.y - 24, 'DOWN!', '#ff4040')
         }
         if (playerId === this.myId) {
+          this.sfx('down', { volume: 0.8 })
+        } else if (p) {
+          this.sfx('down', { x: p.x, y: p.y, volume: 0.6 })
+        }
+        if (playerId === this.myId) {
           this.upgradeOffer = null
           this.upgradeBusy = false
           this.combo = 0
@@ -1058,23 +1134,31 @@ export default {
           this.renderer.spark(p.x, p.y, '#40ff78')
           this.renderer.floatText(p.x, p.y - 24, 'REVIVED', '#40ff78')
         }
+        if (p) { this.sfx('revive', { x: p.x, y: p.y, volume: playerId === this.myId ? 0.8 : 0.6 }) }
       })
 
       this.$socket.on('playerHit', ({ playerId, damage }) => {
         const p = this.players.find(x => x.id === playerId)
         if (!p || !this.renderer) { return }
         this.renderer.bloodSplat(p.x, p.y, false)
-        if (playerId === this.myId) { this.renderer.shake(Math.min(8, 2 + damage / 6)) }
+        if (playerId === this.myId) {
+          this.renderer.shake(Math.min(8, 2 + damage / 6))
+          this.sfx('hurt', { volume: 0.7, maxVoices: 2, minGap: 0.08 })
+        } else {
+          this.sfx('hurt', { x: p.x, y: p.y, volume: 0.35, maxVoices: 2, minGap: 0.08 })
+        }
       })
 
-      this.$socket.on('pickupCollected', ({ type, x, y }) => {
+      this.$socket.on('pickupCollected', ({ playerId, type, x, y }) => {
         if (this.renderer) {
           this.renderer.spark(x, y, type === 'ammo' ? '#ffcc40' : '#40ff78')
         }
+        this.sfx(type === 'ammo' ? 'pickupAmmo' : 'pickupHealth', { x, y, volume: playerId === this.myId ? 0.8 : 0.45 })
       })
 
       this.$socket.on('playerDash', ({ playerId, x, y, angle }) => {
         if (this.renderer) { this.renderer.dashPuff(x, y, angle) }
+        this.sfx('dash', { x, y, volume: playerId === this.myId ? 0.6 : 0.3 })
         if (playerId === this.myId) {
           this.dashReady = false
           clearTimeout(this._dashCdT)
@@ -1084,6 +1168,11 @@ export default {
       })
 
       this.$socket.on('zombieBlast', ({ kind, x, y, radius }) => {
+        if (kind === 'slam') {
+          this.sfx('slam', { x, y, volume: 1, rate: 0.7, maxVoices: 2 })
+        } else {
+          this.sfx(kind === 'barrel' ? 'explodeBig' : 'explodeSmall', { x, y, volume: kind === 'barrel' ? 1 : 0.85, maxVoices: 4 })
+        }
         if (!this.renderer) { return }
         this.renderer.explosion(x, y, radius, kind)
         const me = this.myPlayer
@@ -1093,6 +1182,12 @@ export default {
       })
 
       this.$socket.on('bossAbility', ({ ability, x, y }) => {
+        if (ability === 'spit') {
+          this.sfx('die', { x, y, volume: 0.8, rate: 1.3 })
+        } else {
+          const rate = { charge: 0.8, slam: 0.9, summon: 1, enrage: 0.6 }[ability] || 1
+          this.sfx('roar', { x, y, volume: 1, rate, jitter: 0.03, maxVoices: 2 })
+        }
         if (!this.renderer) { return }
         const label = BOSS_ABILITY_LABEL[ability]
         if (label) { this.renderer.floatText(x, y - 70, label.text, label.color) }
@@ -1111,6 +1206,13 @@ export default {
           this.renderer.bloodSplat(x, y, big)
           if (gained) { this.renderer.floatText(x, y, '+' + gained, boosted ? '#ff4fa0' : (big ? '#ffcc40' : '#00ff50')) }
           if (zombieType === 'boss') { this.renderer.shake(10) }
+        }
+        if (x != null) {
+          if (zombieType === 'boss') {
+            this.sfx('roar', { x, y, volume: 1, rate: 0.5, jitter: 0 })
+          } else if (zombieType !== 'bomber') {
+            this.sfx('die', { x, y, volume: zombieType === 'tank' ? 0.7 : 0.45, rate: zombieType === 'tank' ? 0.75 : 1, maxVoices: 4, minGap: 0.03 })
+          }
         }
         if (playerId && playerId === this.myId) {
           this.combo = comboCount || 1
@@ -1133,6 +1235,7 @@ export default {
         this.gameOver = true
         this._clearDeadFlag()
         clearInterval(this.countdownInterval)
+        this.sfx('gameover', { volume: 0.8, jitter: 0 })
       })
 
       this.$socket.on('gameRestarted', () => {
@@ -1162,11 +1265,13 @@ export default {
 
       this.$socket.on('waveReinforce', ({ count }) => {
         this.reinforceMsg = `หมดเวลา! กำลังเสริม ${count} ตัว`
+        this.sfx('roar', { volume: 0.8, rate: 0.85 })
         clearTimeout(this._reinforceT)
         this._reinforceT = setTimeout(() => { this.reinforceMsg = '' }, 3000)
       })
 
       this.$socket.on('upgradeOffer', ({ choices, picks }) => {
+        if (!this.upgradeOffer) { this.sfx('waveClear', { volume: 0.7, jitter: 0 }) }
         this.upgradeOffer = { choices, picks }
         this.upgradeBusy = false
       })
