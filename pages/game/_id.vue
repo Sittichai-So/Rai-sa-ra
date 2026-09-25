@@ -51,6 +51,7 @@
         <div v-if="combo > 1" class="combo-display" :class="comboClass">
           <span class="combo-label">COMBO</span>
           <span class="combo-num">x{{ combo }}</span>
+          <span v-if="comboBonusText" class="combo-bonus">{{ comboBonusText }}</span>
         </div>
         <button class="escape-btn" @click="confirmLeave">
           <i class="fas fa-door-open" />
@@ -349,6 +350,9 @@ const BOSS_ABILITY_LABEL = {
   enrage: { text: 'คลั่ง!!', color: '#ff3000' }
 }
 
+const COMBO_SCORE_AT = 10
+const COMBO_DROP_AT = 25
+
 const STICK_RADIUS = 46
 const STICK_DEADZONE = 0.18
 
@@ -533,10 +537,15 @@ export default {
       const secs = this.waveTimeLimit % 60
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     },
+    comboBonusText () {
+      if (this.combo >= COMBO_DROP_AT) { return 'คะแนน ×1.5 · ดรอป +50%' }
+      if (this.combo >= COMBO_SCORE_AT) { return 'คะแนน ×1.5' }
+      return ''
+    },
     comboClass () {
-      if (this.combo >= 10) { return 'combo-x2' }
-      if (this.combo >= 5) { return 'combo-x1.5' }
-      if (this.combo >= 3) { return 'combo-x1.2' }
+      if (this.combo >= COMBO_DROP_AT) { return 'combo-x2' }
+      if (this.combo >= COMBO_SCORE_AT) { return 'combo-x1.5' }
+      if (this.combo >= 5) { return 'combo-x1.2' }
       return ''
     },
     myReady () {
@@ -1014,6 +1023,8 @@ export default {
         if (playerId === this.myId) {
           this.upgradeOffer = null
           this.upgradeBusy = false
+          this.combo = 0
+          clearTimeout(this._comboT)
           if (this.renderer) { this.renderer.shake(10) }
         }
       })
@@ -1071,22 +1082,18 @@ export default {
         }
       })
 
-      this.$socket.on('zombieKilled', ({ playerId, score, kills, isCombo, zombieType, x, y, gained }) => {
+      this.$socket.on('zombieKilled', ({ playerId, score, kills, comboCount, comboMult, zombieType, x, y, gained }) => {
         if (this.renderer && x != null) {
           const big = zombieType === 'boss' || zombieType === 'tank'
+          const boosted = comboMult > 1
           this.renderer.bloodSplat(x, y, big)
-          if (gained) { this.renderer.floatText(x, y, '+' + gained, big ? '#ffcc40' : '#00ff50') }
+          if (gained) { this.renderer.floatText(x, y, '+' + gained, boosted ? '#ff4fa0' : (big ? '#ffcc40' : '#00ff50')) }
           if (zombieType === 'boss') { this.renderer.shake(10) }
         }
         if (playerId && playerId === this.myId) {
-          const now = Date.now()
-          if (isCombo || (now - this.lastKillTime < this.comboTimeWindow)) {
-            this.combo = (this.combo || 0) + 1
-            this.maxCombo = Math.max(this.maxCombo, this.combo)
-          } else {
-            this.combo = 1
-          }
-          this.lastKillTime = now
+          this.combo = comboCount || 1
+          this.maxCombo = Math.max(this.maxCombo, this.combo)
+          this.lastKillTime = Date.now()
           clearTimeout(this._comboT)
           this._comboT = setTimeout(() => { this.combo = 0 }, this.comboTimeWindow)
 
@@ -1400,6 +1407,16 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   color: #00ff50;
   text-shadow: 0 0 10px rgba(0,255,80,0.5);
 }
+.combo-bonus {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #ffcc40;
+}
+.combo-display:has(.combo-bonus) { padding-top: 3px; padding-bottom: 3px; }
+.combo-display:has(.combo-bonus) .combo-num { font-size: 20px; line-height: 1.05; }
+.combo-display.combo-x2 .combo-bonus { color: #ff4fa0; }
 .combo-display.combo-x1\.2 { border-color: rgba(0,200,255,0.5); }
 .combo-display.combo-x1\.2 .combo-num { color: #00c8ff; text-shadow: 0 0 10px rgba(0,200,255,0.6); }
 .combo-display.combo-x1\.5 { border-color: rgba(255,180,0,0.5); }
@@ -2040,6 +2057,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .score-num { font-size: 15px; }
   .combo-display { padding: 4px 10px; margin-left: 8px; }
   .combo-num { font-size: 18px; }
+  .combo-bonus { font-size: 9px; }
   .escape-btn { width: 32px; height: 32px; font-size: 12px; }
 
   .mini-scoreboard {
@@ -2080,6 +2098,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 
 @media (max-width: 480px) {
+  .combo-bonus { display: none; }
   .hud { min-height: 50px; padding: calc(5px + env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 5px max(8px, env(safe-area-inset-left)); gap: 6px; }
   .hud-label { font-size: 7.5px; }
   .wave-display { align-items: center; }
@@ -2115,6 +2134,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 
 @media (orientation: landscape) and (max-height: 460px) {
+  .combo-bonus { display: none; }
   .hud { min-height: 40px; }
   .hud-label { font-size: 8px; }
   .hp-bar { width: 72px; }
