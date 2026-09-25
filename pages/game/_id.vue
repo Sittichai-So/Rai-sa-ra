@@ -398,7 +398,6 @@ export default {
       rafId: null,
       inputInterval: null,
       countdownInterval: null,
-      timerInterval: null,
       user: null,
       isTouch: false,
       reconnecting: false,
@@ -579,8 +578,6 @@ export default {
 
     this.inputInterval = setInterval(() => this.sendInput(), 50)
 
-    this.timerInterval = setInterval(() => this.updateGameTimer(), 1000)
-
     this.renderLoop()
 
     window.addEventListener('resize', this.setupCanvas)
@@ -601,7 +598,6 @@ export default {
     cancelAnimationFrame(this.rafId)
     clearInterval(this.inputInterval)
     clearInterval(this.countdownInterval)
-    clearInterval(this.timerInterval)
     clearInterval(this._joinRetry)
     clearTimeout(this._reinforceT)
     clearTimeout(this._dashCdT)
@@ -961,6 +957,7 @@ export default {
         this.pickups = state.pickups || []
         this.wave = state.wave || 0
         this.waveActive = state.waveActive || false
+        if (typeof state.waveTimeLeft === 'number') { this.waveTimer = state.waveTimeLeft }
 
         if (state.scores && state.scores.length > 0) {
           this.leaderboard = state.scores
@@ -1179,18 +1176,6 @@ export default {
     _startCountdown () {
       clearInterval(this.countdownInterval)
       this.waveCountdown = 0
-    },
-
-    updateGameTimer () {
-      if (!this.waveActive || this.gameOver) { return }
-
-      if (this.waveTimer > 0) {
-        this.waveTimer--
-
-        if (this.waveTimer <= 0) {
-          this.$socket.emit('waveTimeUp', { roomId: this.roomId, wave: this.wave })
-        }
-      }
     },
 
     resetCombo () {
