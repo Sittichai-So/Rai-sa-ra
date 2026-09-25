@@ -186,6 +186,9 @@
         <div class="reconnect-box">
           <i class="fas fa-triangle-exclamation" />
           <p>{{ fatalError }}</p>
+          <button v-if="versionMismatch" class="go-btn version-reload-btn" @click="reloadPage">
+            <i class="fas fa-rotate" /> รีเฟรชหน้า
+          </button>
           <button class="go-btn go-leave" @click="leaveGame">
             <i class="fas fa-door-open" /> กลับไปที่ล็อบบี้
           </button>
@@ -363,6 +366,7 @@ export default {
     return {
       roomId: this.$route.params.id,
       gameVersion: ZOMBIE_GAME_VERSION,
+      versionMismatch: '',
       myId: null,
       players: [],
       zombies: [],
@@ -890,11 +894,22 @@ export default {
       return Math.atan2(this.mouseY - py, this.mouseX - px)
     },
 
+    _onVersionMismatch (serverVersion) {
+      clearInterval(this._joinRetry)
+      this.versionMismatch = serverVersion || '?'
+      this.fatalError = `เกมมีเวอร์ชันใหม่ (เซิร์ฟเวอร์ v${this.versionMismatch} แต่หน้านี้ v${ZOMBIE_GAME_VERSION}) — กรุณารีเฟรชหน้า ถ้ายังขึ้นอยู่ให้รอสักครู่แล้วลองใหม่`
+    },
+
+    reloadPage () {
+      window.location.reload()
+    },
+
     joinGame () {
       let skin = null
       try { skin = localStorage.getItem('gameSkin') } catch (e) {}
       this.$socket.emit('gameJoin', {
         roomId: this.roomId,
+        version: ZOMBIE_GAME_VERSION,
         user: { ...this.user, skin: skin === 'f' ? 'f' : (skin === 'm' ? 'm' : undefined) }
       })
     },
@@ -932,7 +947,11 @@ export default {
         this.inLobby = false
       })
 
-      this.$socket.on('gameError', ({ error }) => {
+      this.$socket.on('gameError', ({ error, serverVersion }) => {
+        if (error === 'version_mismatch') {
+          this._onVersionMismatch(serverVersion)
+          return
+        }
         if (['not_host', 'not_all_ready', 'empty_room', 'already_started'].includes(error)) {
           this.lobbyError = error === 'not_all_ready'
             ? 'ผู้เล่นยังไม่พร้อมครบทุกคน'

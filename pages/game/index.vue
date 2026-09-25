@@ -24,6 +24,14 @@
       </div>
     </header>
 
+    <div v-if="versionOutdated" class="version-banner">
+      <i class="fas fa-triangle-exclamation" />
+      <span>เกมมีเวอร์ชันใหม่ (เซิร์ฟเวอร์ v{{ serverVersion }} แต่หน้านี้ v{{ gameVersion }}) — กรุณารีเฟรชหน้าก่อนเล่น</span>
+      <button class="version-banner-btn" @click="reloadPage">
+        <i class="fas fa-rotate" /> รีเฟรช
+      </button>
+    </div>
+
     <main class="lobby-body">
       <section class="create-panel">
         <h2><i class="fas fa-plus-circle" /> สร้างห้องใหม่</h2>
@@ -214,10 +222,14 @@ export default {
       myStats: null,
       avatarBroken: false,
       maxPlayers: 8,
-      gameVersion: ZOMBIE_GAME_VERSION
+      gameVersion: ZOMBIE_GAME_VERSION,
+      serverVersion: ''
     }
   },
   computed: {
+    versionOutdated () {
+      return !!this.serverVersion && this.serverVersion !== this.gameVersion
+    },
     initials () {
       const name = this.user?.username || this.user?.fullname || 'G'
       return name.substring(0, 2).toUpperCase()
@@ -232,7 +244,8 @@ export default {
     this.loadRooms()
     this.loadLeaderboard()
     this.$socket.emit('gameRoomList')
-    this.$socket.on('gameRoomListResult', ({ rooms }) => {
+    this.$socket.on('gameRoomListResult', ({ rooms, version }) => {
+      this.serverVersion = version || ''
       this.rooms = rooms || []
       this.loading = false
       this.refreshing = false
@@ -246,6 +259,9 @@ export default {
     this.$socket.off('gameRoomListResult')
   },
   methods: {
+    reloadPage () {
+      window.location.reload()
+    },
     loadRooms () {
       this.loading = this.rooms.length === 0
       this.refreshing = true
@@ -437,6 +453,36 @@ export default {
   font-size: 12px;
   color: #00ff50;
   border: 1px solid rgba(0,255,80,0.3);
+}
+
+.version-banner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  margin: 16px auto 0;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 204, 0, 0.5);
+  background: rgba(255, 204, 0, 0.08);
+  color: #ffd84a;
+  font-size: 13px;
+}
+.version-banner span { flex: 1; min-width: 200px; }
+.version-banner-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border: 1px solid #ffcc00;
+  background: rgba(255, 204, 0, 0.15);
+  color: #ffd84a;
+  font-weight: 700;
+  cursor: pointer;
+}
+.version-banner-btn:hover { background: rgba(255, 204, 0, 0.3); }
+@media (max-width: 1180px) {
+  .version-banner { margin: 16px 16px 0; }
 }
 
 .lobby-body {
