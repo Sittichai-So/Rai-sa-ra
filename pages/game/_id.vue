@@ -369,6 +369,7 @@ export default {
       bullets: [],
       projectiles: [],
       pickups: [],
+      barrels: [],
       wave: 0,
       waveActive: false,
       waveAnnounce: false,
@@ -675,6 +676,7 @@ export default {
           bullets: this.bullets,
           projectiles: this.projectiles,
           pickups: this.pickups,
+          barrels: this.barrels,
           shootFx: this.shootFx,
           deathFx: this.deathFx,
           myId: this.myId,
@@ -969,6 +971,7 @@ export default {
         this.bullets = state.bullets
         this.projectiles = state.projectiles
         this.pickups = state.pickups
+        this.barrels = state.barrels
         this.wave = state.wave
         this.waveActive = state.waveActive
         if (typeof state.waveTimeLeft === 'number') { this.waveTimer = state.waveTimeLeft }
@@ -1124,6 +1127,7 @@ export default {
         this.zombies = []
         this.bullets = []
         this.pickups = []
+        this.barrels = []
         this.projectiles = []
         this.leaderboard = []
         this.myUpgrades = []

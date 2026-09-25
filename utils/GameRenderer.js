@@ -18,7 +18,8 @@ const BOSS_CHARGE_LEN = 290
 const BLAST_COLORS = {
   bomber: ['#ffec70', '#ff9a20', '#ff4a10', '#9be03c'],
   bomber_shot: ['#ffec70', '#ffb030', '#9be03c', '#d8ff90'],
-  slam: ['#c9a27a', '#8a6a4a', '#ff5030', '#e8d4b0']
+  slam: ['#c9a27a', '#8a6a4a', '#ff5030', '#e8d4b0'],
+  barrel: ['#fff2a0', '#ffb030', '#ff5a10', '#d02a0a']
 }
 
 function shade (hex, f) {
@@ -101,7 +102,9 @@ export default class GameRenderer {
     for (let y = 0; y < map.h; y += 64) { c.fillRect(map.w / 2 - 3, y + 14, 6, 30) }
     for (let x = 0; x < map.w; x += 64) { c.fillRect(x + 14, map.h / 2 - 3, 30, 6) }
 
-    for (const p of map.props || []) { this._drawProp(c, p) }
+    for (const p of map.props || []) {
+      if (p.type !== 'barrel') { this._drawProp(c, p) }
+    }
 
     this.mapCanvas = cv
   }
@@ -281,7 +284,7 @@ export default class GameRenderer {
     if (this.shakeAmt < 0.3) { this.shakeAmt = 0 }
   }
 
-  draw ({ players, zombies, bullets, projectiles, pickups, shootFx, deathFx, myId, camX, camY, mapW, mapH, showMinimap = true }) {
+  draw ({ players, zombies, bullets, projectiles, pickups, barrels, shootFx, deathFx, myId, camX, camY, mapW, mapH, showMinimap = true }) {
     const ctx = this.ctx
     const W = this.canvas.width
     const H = this.canvas.height
@@ -312,6 +315,7 @@ export default class GameRenderer {
     ctx.strokeRect(0, 0, mapW, mapH)
 
     this._drawDecals(ctx)
+    this._drawBarrels(ctx, barrels || [], now)
     this._drawPickups(ctx, pickups || [], now)
     this._drawBullets(ctx, bullets)
     this._drawTelegraphs(ctx, zombies, now)
@@ -325,7 +329,7 @@ export default class GameRenderer {
     ctx.restore()
 
     if (showMinimap) {
-      this._drawMinimap(ctx, players, zombies, myId, camX, camY, W, H, mapW, mapH)
+      this._drawMinimap(ctx, players, zombies, barrels || [], myId, camX, camY, W, H, mapW, mapH)
     }
   }
 
@@ -478,6 +482,47 @@ export default class GameRenderer {
     }
     ctx.shadowBlur = 0
     ctx.restore()
+  }
+
+  _drawBarrels (ctx, barrels, now) {
+    for (const b of barrels) {
+      const r = b.r || 20
+      const flash = b.hitFlash > 0
+      const pct = b.maxHp ? b.hp / b.maxHp : 1
+      ctx.save()
+      ctx.translate(b.x, b.y)
+      if (pct < 1) { ctx.translate(Math.sin(now / 30) * (1 - pct) * 1.5, 0) }
+
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.beginPath(); ctx.arc(4, 6, r, 0, Math.PI * 2); ctx.fill()
+
+      ctx.fillStyle = flash ? '#ffffff' : '#b0301c'
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill()
+      ctx.strokeStyle = flash ? '#dddddd' : '#5a160c'
+      ctx.lineWidth = 3
+      ctx.beginPath(); ctx.arc(0, 0, r - 3, 0, Math.PI * 2); ctx.stroke()
+      ctx.beginPath(); ctx.arc(0, 0, r - 9, 0, Math.PI * 2); ctx.stroke()
+
+      if (!flash) {
+        ctx.fillStyle = '#ffcc30'
+        ctx.beginPath()
+        ctx.moveTo(0, -8); ctx.lineTo(7.5, 5.5); ctx.lineTo(-7.5, 5.5)
+        ctx.closePath()
+        ctx.fill()
+        ctx.fillStyle = '#1a0a05'
+        ctx.fillRect(-1, -3.5, 2, 5)
+        ctx.fillRect(-1, 2.5, 2, 1.8)
+      }
+      ctx.restore()
+
+      if (pct < 1) {
+        const bw = r * 1.8
+        ctx.fillStyle = 'rgba(0,0,0,0.6)'
+        ctx.fillRect(b.x - bw / 2 - 1, b.y - r - 11, bw + 2, 5)
+        ctx.fillStyle = '#ff9a30'
+        ctx.fillRect(b.x - bw / 2, b.y - r - 10, bw * pct, 3)
+      }
+    }
   }
 
   _drawPickups (ctx, pickups, now) {
@@ -903,7 +948,7 @@ export default class GameRenderer {
     }
   }
 
-  _drawMinimap (ctx, players, zombies, myId, camX, camY, W, H, mapW, mapH) {
+  _drawMinimap (ctx, players, zombies, barrels, myId, camX, camY, W, H, mapW, mapH) {
     const mmW = 140
     const mmH = 105
     const mmX = 14
@@ -920,10 +965,16 @@ export default class GameRenderer {
     if (this.map && this.map.props) {
       ctx.fillStyle = 'rgba(140,150,165,0.35)'
       for (const pr of this.map.props) {
+        if (pr.type === 'barrel') { continue }
         const w = pr.w || (pr.r ? pr.r * 2 : 30)
         const h = pr.h || (pr.r ? pr.r * 2 : 30)
         ctx.fillRect(mmX + (pr.x - w / 2) * scX, mmY + (pr.y - h / 2) * scY, Math.max(1, w * scX), Math.max(1, h * scY))
       }
+    }
+
+    ctx.fillStyle = '#ff7a30'
+    for (const b of barrels) {
+      ctx.fillRect(mmX + b.x * scX - 1.5, mmY + b.y * scY - 1.5, 3, 3)
     }
 
     const cvW = Math.min(this.canvas.width, mapW)

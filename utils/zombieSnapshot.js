@@ -87,6 +87,7 @@ export function createSnapshotDecoder () {
       bullets: bullets(msg.b || []),
       projectiles: (msg.j || []).map(([x, y, radius, boss]) => ({ x, y, radius, boss: !!boss })),
       pickups: (msg.k || []).map(([id, type, x, y]) => ({ id, type: PICKUP_TYPE_CODES[type] || 'health', x, y })),
+      barrels: (msg.o || []).map(([id, x, y, r, hp, maxHp, hitFlash]) => ({ id, x, y, r, hp, maxHp, hitFlash })),
       wave: msg.w || 0,
       waveActive: !!msg.a,
       waveTimeLeft: msg.l,
