@@ -117,7 +117,7 @@ export default class AudioManager {
 
   _syncMusic () {
     if (!this.ctx || this.destroyed) { return }
-    const want = this.wantedMusic
+    const want = this.musicVolume > 0 ? this.wantedMusic : null
     if (this.musicEl && this.musicName !== want) {
       this._fadeOutMusic()
     }
@@ -167,8 +167,10 @@ export default class AudioManager {
   }
 
   setMusicVolume (v) {
+    const was = this.musicVolume
     this.musicVolume = Math.max(0, Math.min(1, v))
     if (this.musicGain) { this.musicGain.gain.value = this.musicVolume }
+    if ((was > 0) !== (this.musicVolume > 0)) { this._syncMusic() }
   }
 
   destroy () {

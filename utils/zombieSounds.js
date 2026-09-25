@@ -53,3 +53,31 @@ export const ZOMBIE_SOUNDS = {
 export const ZOMBIE_MUSIC = {
   fight: musicFight
 }
+
+const STORAGE_KEY = 'zombieAudio'
+const DEFAULT_SETTINGS = { musicVol: 35, sfxVol: 70, muted: false }
+
+const clampVol = (v, fallback) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : fallback
+}
+
+export function loadZombieAudioSettings () {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+    if (!raw || typeof raw !== 'object') { return { ...DEFAULT_SETTINGS } }
+    return {
+      musicVol: clampVol(raw.musicVol, DEFAULT_SETTINGS.musicVol),
+      sfxVol: clampVol(raw.sfxVol, DEFAULT_SETTINGS.sfxVol),
+      muted: !!raw.muted
+    }
+  } catch (e) {
+    return { ...DEFAULT_SETTINGS }
+  }
+}
+
+export function saveZombieAudioSettings ({ musicVol, sfxVol, muted }) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ musicVol, sfxVol, muted: !!muted }))
+  } catch (e) {}
+}

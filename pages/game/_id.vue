@@ -5,7 +5,7 @@
     tabindex="0"
     @pointerdown="refocusGame"
   >
-    <div class="hud">
+    <div class="hud" :class="{ raised: soundOpen }">
       <div class="hud-left">
         <div class="hp-bar-wrap">
           <span class="hud-label">HP</span>
@@ -52,6 +52,48 @@
           <span class="combo-label">COMBO</span>
           <span class="combo-num">x{{ combo }}</span>
           <span v-if="comboBonusText" class="combo-bonus">{{ comboBonusText }}</span>
+        </div>
+        <div class="sound-ctl" @pointerdown.stop>
+          <button class="sound-btn" :class="{ muted: audioMuted }" title="ตั้งค่าเสียง (M = ปิด/เปิดเสียง)" @click="soundOpen = !soundOpen">
+            <i :class="audioMuted ? 'fas fa-volume-xmark' : 'fas fa-volume-high'" />
+          </button>
+          <div v-if="soundOpen" class="sound-panel">
+            <div class="sp-title">
+              เสียง
+            </div>
+            <label class="sp-row">
+              <span>เพลง</span>
+              <input
+                v-model.number="musicVol"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                :disabled="audioMuted"
+              >
+              <b>{{ musicVol }}</b>
+            </label>
+            <label class="sp-row">
+              <span>เอฟเฟกต์</span>
+              <input
+                v-model.number="sfxVol"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                :disabled="audioMuted"
+                @change="previewSfx"
+              >
+              <b>{{ sfxVol }}</b>
+            </label>
+            <button class="sp-mute" :class="{ on: audioMuted }" @click="toggleMute">
+              <i :class="audioMuted ? 'fas fa-volume-high' : 'fas fa-volume-xmark'" />
+              {{ audioMuted ? 'เปิดเสียง' : 'ปิดเสียงทั้งหมด' }}
+            </button>
+            <div v-if="!isTouch" class="sp-hint">
+              กด M เพื่อปิด/เปิดเสียงเร็ว
+            </div>
+          </div>
         </div>
         <button class="escape-btn" @click="confirmLeave">
           <i class="fas fa-door-open" />
@@ -336,7 +378,7 @@ import GameRenderer from '~/utils/GameRenderer'
 import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
 import { createSnapshotDecoder } from '~/utils/zombieSnapshot'
 import AudioManager from '~/utils/AudioManager'
-import { ZOMBIE_SOUNDS, ZOMBIE_MUSIC } from '~/utils/zombieSounds'
+import { ZOMBIE_SOUNDS, ZOMBIE_MUSIC, loadZombieAudioSettings, saveZombieAudioSettings } from '~/utils/zombieSounds'
 import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
 import heroMShoot from '~/assets/images/hero_m_shoot.png'
@@ -365,10 +407,15 @@ export default {
   name: 'GameRoom',
   middleware: 'middlewareAuth',
   data () {
+    const audioSettings = loadZombieAudioSettings()
     return {
       roomId: this.$route.params.id,
       gameVersion: ZOMBIE_GAME_VERSION,
       versionMismatch: '',
+      soundOpen: false,
+      musicVol: audioSettings.musicVol,
+      sfxVol: audioSettings.sfxVol,
+      audioMuted: audioSettings.muted,
       myId: null,
       players: [],
       zombies: [],
@@ -581,11 +628,15 @@ export default {
     },
     myReloading (now, before) {
       if (now && !before) { this.sfx('reload', { volume: 0.6, jitter: 0.02 }) }
-    }
+    },
+    musicVol () { this.applyAudioSettings() },
+    sfxVol () { this.applyAudioSettings() },
+    audioMuted () { this.applyAudioSettings() }
   },
   created () {
     this.decodeSnapshot = createSnapshotDecoder()
     this.audio = new AudioManager({ sounds: ZOMBIE_SOUNDS, music: ZOMBIE_MUSIC })
+    this.applyAudioSettings(false)
     this._armedSeen = new Set()
     this._nextGroanAt = 0
   },
@@ -657,6 +708,20 @@ export default {
   methods: {
     unlockAudio () {
       this.audio.unlock()
+    },
+
+    applyAudioSettings (save = true) {
+      this.audio.setMusicVolume(this.audioMuted ? 0 : this.musicVol / 100)
+      this.audio.setSfxVolume(this.audioMuted ? 0 : this.sfxVol / 100)
+      if (save) { saveZombieAudioSettings({ musicVol: this.musicVol, sfxVol: this.sfxVol, muted: this.audioMuted }) }
+    },
+
+    toggleMute () {
+      this.audioMuted = !this.audioMuted
+    },
+
+    previewSfx () {
+      this.sfx('select', { volume: 0.8, jitter: 0 })
     },
 
     _ear () {
@@ -765,6 +830,10 @@ export default {
       const k = e.key.toLowerCase()
       const gameKeys = ['w', 'a', 's', 'd', 'r', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ']
       if (e.key === 'Escape') { this.confirmLeave(); return }
+      if (k === 'm' && !e.repeat && !/^(INPUT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) {
+        this.toggleMute()
+        return
+      }
       if (!gameKeys.includes(k)) { return }
       const wasDown = this.keys[k]
       this.keys[k] = true
@@ -798,6 +867,7 @@ export default {
       this.keys = {}
     },
     refocusGame () {
+      this.soundOpen = false
       if (this.$refs.gamePage) { this.$refs.gamePage.focus({ preventScroll: true }) }
     },
     onMouseMove (e) {
@@ -1572,6 +1642,66 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 }
 .escape-btn:hover { background: rgba(255,80,80,0.1); border-color: #ff5050; color: #ff5050; }
 
+.hud.raised { position: relative; z-index: 35; }
+.sound-ctl { position: relative; }
+.sound-btn {
+  background: transparent;
+  border: 1px solid rgba(0, 255, 80, 0.3);
+  color: rgba(0, 255, 80, 0.75);
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.sound-btn:hover { background: rgba(0, 255, 80, 0.1); border-color: #00ff50; color: #00ff50; }
+.sound-btn.muted { border-color: rgba(255, 204, 0, 0.5); color: #ffcc00; }
+.sound-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: 250px;
+  padding: 12px 14px;
+  background: rgba(6, 12, 8, 0.96);
+  border: 1px solid rgba(0, 255, 80, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sp-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #00ff50;
+}
+.sp-row {
+  display: grid;
+  grid-template-columns: 62px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #d8ecd8;
+}
+.sp-row input { width: 100%; accent-color: #00ff50; cursor: pointer; }
+.sp-row input:disabled { opacity: 0.35; cursor: not-allowed; }
+.sp-row b { text-align: right; font-family: 'Share Tech Mono', monospace; color: #00ff50; font-weight: 400; }
+.sp-mute {
+  padding: 8px;
+  border: 1px solid rgba(255, 204, 0, 0.45);
+  background: rgba(255, 204, 0, 0.08);
+  color: #ffd84a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sp-mute.on { border-color: rgba(0, 255, 80, 0.5); background: rgba(0, 255, 80, 0.1); color: #00ff50; }
+.sp-hint { font-size: 10px; color: rgba(216, 236, 216, 0.45); text-align: center; }
+
 .mini-scoreboard {
   position: absolute;
   top: 70px;
@@ -2186,7 +2316,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .combo-display { padding: 4px 10px; margin-left: 8px; }
   .combo-num { font-size: 18px; }
   .combo-bonus { font-size: 9px; }
-  .escape-btn { width: 32px; height: 32px; font-size: 12px; }
+  .escape-btn, .sound-btn { width: 32px; height: 32px; font-size: 12px; }
 
   .mini-scoreboard {
     top: 64px;
@@ -2227,6 +2357,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
 
 @media (max-width: 480px) {
   .combo-bonus { display: none; }
+  .score-display { display: none; }
   .hud { min-height: 50px; padding: calc(5px + env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 5px max(8px, env(safe-area-inset-left)); gap: 6px; }
   .hud-label { font-size: 7.5px; }
   .wave-display { align-items: center; }
@@ -2238,7 +2369,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .score-num { font-size: 12px; }
   .combo-display { padding: 3px 8px; margin-left: 4px; }
   .combo-num { font-size: 14px; }
-  .escape-btn { width: 28px; height: 28px; }
+  .escape-btn, .sound-btn { width: 28px; height: 28px; }
 
   .mini-scoreboard { min-width: 120px; top: 58px; }
   .sb-row { font-size: 9.5px; gap: 4px; padding: 3px 6px; }
@@ -2274,7 +2405,7 @@ if (typeof module !== 'undefined' && module.hot) { module.hot.decline() }
   .score-num { font-size: 12px; }
   .combo-display { padding: 2px 8px; }
   .combo-num { font-size: 14px; }
-  .escape-btn { width: 26px; height: 26px; }
+  .escape-btn, .sound-btn { width: 26px; height: 26px; }
 
   .joystick-pad { width: 112px; height: 112px; bottom: 12px; }
   .joystick-knob { width: 46px; height: 46px; }
