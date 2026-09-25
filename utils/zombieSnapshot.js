@@ -82,6 +82,7 @@ export function createSnapshotDecoder () {
     }
     if (msg.s) { scores = msg.s }
     return {
+      serverTime: typeof msg.t === 'number' ? msg.t : null,
       players: (msg.p || []).map(row => player(row, now)),
       zombies: (msg.z || []).map(zombie),
       bullets: bullets(msg.b || []),

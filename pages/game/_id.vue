@@ -378,6 +378,7 @@ import GameRenderer from '~/utils/GameRenderer'
 import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
 import { createSnapshotDecoder } from '~/utils/zombieSnapshot'
 import AudioManager from '~/utils/AudioManager'
+import Interpolator from '~/utils/Interpolator'
 import { ZOMBIE_SOUNDS, ZOMBIE_MUSIC, loadZombieAudioSettings, saveZombieAudioSettings } from '~/utils/zombieSounds'
 import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
@@ -635,6 +636,7 @@ export default {
   },
   created () {
     this.decodeSnapshot = createSnapshotDecoder()
+    this.interp = new Interpolator()
     this.audio = new AudioManager({ sounds: ZOMBIE_SOUNDS, music: ZOMBIE_MUSIC })
     this.applyAudioSettings(false)
     this._armedSeen = new Set()
@@ -794,12 +796,14 @@ export default {
 
     renderLoop () {
       this.rafId = requestAnimationFrame(() => this.renderLoop())
-      this.updateCamera()
+      const view = this.interp.sample(Date.now())
+      const players = view ? view.players : this.players
+      this.updateCamera(players.find(p => p.id === this.myId))
       if (this.renderer) {
         this.renderer.draw({
-          players: this.players,
-          zombies: this.zombies,
-          bullets: this.bullets,
+          players,
+          zombies: view ? view.zombies : this.zombies,
+          bullets: view ? view.bullets : this.bullets,
           projectiles: this.projectiles,
           pickups: this.pickups,
           barrels: this.barrels,
@@ -815,8 +819,8 @@ export default {
       }
     },
 
-    updateCamera () {
-      const p = this.myPlayer
+    updateCamera (viewMe) {
+      const p = viewMe || this.myPlayer
       if (!p) { return }
       const targetX = p.x - this.canvasW / 2
       const targetY = p.y - this.canvasH / 2
@@ -1048,6 +1052,7 @@ export default {
 
       this.$socket.on('gameJoined', ({ playerId, mapSize, map, gameOver, leaderboard, started, lobby }) => {
         this.myId = playerId
+        this.interp.reset()
         this.joined = true
         this.reconnecting = false
         this.fatalError = ''
@@ -1107,6 +1112,7 @@ export default {
       this.$socket.on('gameState', (msg) => {
         const now = Date.now()
         const state = this.decodeSnapshot(msg, now)
+        this.interp.push(state.serverTime, state, now)
         this.players = state.players
         for (const p of this.players) {
           if (p.lastAttackTime && this.atkSeen[p.id] !== p.lastAttackTime) {
@@ -1327,6 +1333,7 @@ export default {
         this.deathFx = {}
         this.shootFx = {}
         this.atkSeen = {}
+        this.interp.reset()
         if (this.renderer) {
           this.renderer.decals = []
           this.renderer.particles = []
