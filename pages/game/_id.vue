@@ -330,6 +330,7 @@
 <script>
 import GameRenderer from '~/utils/GameRenderer'
 import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
+import { createSnapshotDecoder } from '~/utils/zombieSnapshot'
 import heroMWalk from '~/assets/images/hero_m_walk.png'
 import heroFWalk from '~/assets/images/hero_f_walk.png'
 import heroMShoot from '~/assets/images/hero_m_shoot.png'
@@ -554,6 +555,9 @@ export default {
       }
       return 'รอหัวห้องกดเริ่มเกม'
     }
+  },
+  created () {
+    this.decodeSnapshot = createSnapshotDecoder()
   },
   mounted () {
     this.$refs.gamePage.focus()
@@ -942,21 +946,22 @@ export default {
         }
       })
 
-      this.$socket.on('gameState', (state) => {
-        this.players = state.players || []
+      this.$socket.on('gameState', (msg) => {
         const now = Date.now()
+        const state = this.decodeSnapshot(msg, now)
+        this.players = state.players
         for (const p of this.players) {
           if (p.lastAttackTime && this.atkSeen[p.id] !== p.lastAttackTime) {
             this.atkSeen[p.id] = p.lastAttackTime
             this.$set(this.shootFx, p.id, now + 240)
           }
         }
-        this.zombies = state.zombies || []
-        this.bullets = state.bullets || []
-        this.projectiles = state.projectiles || []
-        this.pickups = state.pickups || []
-        this.wave = state.wave || 0
-        this.waveActive = state.waveActive || false
+        this.zombies = state.zombies
+        this.bullets = state.bullets
+        this.projectiles = state.projectiles
+        this.pickups = state.pickups
+        this.wave = state.wave
+        this.waveActive = state.waveActive
         if (typeof state.waveTimeLeft === 'number') { this.waveTimer = state.waveTimeLeft }
 
         if (state.scores && state.scores.length > 0) {
