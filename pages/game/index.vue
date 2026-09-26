@@ -153,7 +153,22 @@
             </div>
             <span>มือถือ: จอยซ้ายเดิน จอยขวาเล็ง+ยิง</span>
           </div>
+          <div class="ctrl-item">
+            <div class="ctrl-key">
+              Space
+            </div>
+            <span>สไลด์หลบ</span>
+          </div>
+          <div class="ctrl-item">
+            <div class="ctrl-key">
+              M
+            </div>
+            <span>ปิด/เปิดเสียง</span>
+          </div>
         </div>
+        <button class="credits-btn" @click="openCredits">
+          <i class="fas fa-music" /> เครดิตภาพและเสียง
+        </button>
       </section>
 
       <section class="leaderboard-panel">
@@ -196,11 +211,53 @@
         </ol>
       </section>
     </main>
+
+    <div v-if="creditsOpen" class="credits-overlay" @click.self="creditsOpen = false">
+      <div class="credits-box">
+        <div class="credits-head">
+          <h2><i class="fas fa-music" /> เครดิตภาพและเสียง</h2>
+          <button class="credits-close" @click="creditsOpen = false">
+            <i class="fas fa-xmark" />
+          </button>
+        </div>
+        <p class="credits-intro">
+          ขอบคุณผู้สร้างผลงานที่เปิดให้ใช้ฟรี — ทุกชิ้นใช้ตามเงื่อนไขของสัญญาอนุญาตที่ระบุไว้
+        </p>
+        <div v-if="creditsLoading" class="credits-empty">
+          กำลังโหลด...
+        </div>
+        <div v-else-if="creditsError" class="credits-empty">
+          {{ creditsError }}
+        </div>
+        <template v-else>
+          <section v-for="group in creditGroups" :key="group.title" class="credits-group">
+            <h3>{{ group.title }}</h3>
+            <div v-for="(row, i) in group.rows" :key="i" class="credit-row">
+              <div class="credit-source">
+                <a v-if="row.source.url" :href="row.source.url" target="_blank" rel="noopener noreferrer">{{ row.source.text }}</a>
+                <span v-else>{{ row.source.text }}</span>
+                <small v-if="row.source.extra">{{ row.source.extra }}</small>
+              </div>
+              <div class="credit-meta">
+                <span class="credit-author"><i class="fas fa-user" /> {{ row.author }}</span>
+                <span class="credit-license">{{ row.license }}</span>
+              </div>
+              <div class="credit-files">
+                {{ row.files }}
+              </div>
+            </div>
+          </section>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { ZOMBIE_GAME_VERSION } from '~/utils/zombieGameVersion'
+import { parseCreditsSection } from '~/utils/parseCredits'
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import creditsFileUrl from '!!file-loader!~/CREDITS.md'
 
 export default {
   name: 'GameLobby',
@@ -223,7 +280,11 @@ export default {
       avatarBroken: false,
       maxPlayers: 8,
       gameVersion: ZOMBIE_GAME_VERSION,
-      serverVersion: ''
+      serverVersion: '',
+      creditsOpen: false,
+      creditsLoading: false,
+      creditsError: '',
+      creditGroups: []
     }
   },
   computed: {
@@ -259,6 +320,22 @@ export default {
     this.$socket.off('gameRoomListResult')
   },
   methods: {
+    async openCredits () {
+      this.creditsOpen = true
+      if (this.creditGroups.length || this.creditsLoading) { return }
+      this.creditsLoading = true
+      this.creditsError = ''
+      try {
+        const res = await fetch(creditsFileUrl)
+        if (!res.ok) { throw new Error(String(res.status)) }
+        this.creditGroups = parseCreditsSection(await res.text(), 'เกม Zombie Strike')
+        if (!this.creditGroups.length) { this.creditsError = 'ยังไม่มีรายการเครดิต' }
+      } catch (e) {
+        this.creditsError = 'โหลดรายการเครดิตไม่สำเร็จ ลองใหม่อีกครั้ง'
+      } finally {
+        this.creditsLoading = false
+      }
+    },
     reloadPage () {
       window.location.reload()
     },
@@ -696,6 +773,62 @@ section h2 {
 }
 .join-btn:hover { background: rgba(0,255,80,0.1); border-color: #00ff50; }
 .ended-label { text-align: center; font-size: 12px; color: rgba(224,240,224,0.3); }
+
+.credits-btn {
+  margin-top: 18px;
+  padding: 8px 14px;
+  border: 1px solid rgba(0, 255, 80, 0.3);
+  background: transparent;
+  color: rgba(0, 255, 80, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+}
+.credits-btn:hover { background: rgba(0, 255, 80, 0.08); color: #00ff50; }
+.credits-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.credits-box {
+  width: min(640px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #07100a;
+  border: 1px solid rgba(0, 255, 80, 0.35);
+  padding: 20px 22px;
+}
+.credits-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.credits-head h2 { margin: 0; font-size: 16px; color: #00ff50; }
+.credits-close {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  background: transparent;
+  color: rgba(255, 80, 80, 0.8);
+  cursor: pointer;
+}
+.credits-intro { font-size: 12px; color: rgba(224, 240, 224, 0.55); margin: 8px 0 14px; }
+.credits-empty { padding: 24px 0; text-align: center; color: rgba(224, 240, 224, 0.6); font-size: 13px; }
+.credits-group h3 { font-size: 13px; color: #ffd84a; margin: 12px 0 8px; }
+.credit-row {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0, 255, 80, 0.12);
+  background: rgba(0, 255, 80, 0.03);
+}
+.credit-source { font-size: 13px; font-weight: 700; color: #e0f0e0; }
+.credit-source a { color: #7cffa4; text-decoration: none; }
+.credit-source a:hover { text-decoration: underline; }
+.credit-source small { margin-left: 6px; font-weight: 400; color: rgba(224, 240, 224, 0.5); }
+.credit-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; font-size: 12px; color: rgba(224, 240, 224, 0.75); }
+.credit-license { color: #00ff50; font-family: 'Share Tech Mono', monospace; }
+.credit-files { margin-top: 4px; font-size: 11px; color: rgba(224, 240, 224, 0.4); word-break: break-word; }
 
 .howto-panel {
   background: rgba(0,255,80,0.03);
