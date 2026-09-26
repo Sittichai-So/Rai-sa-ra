@@ -187,6 +187,10 @@ export default {
     icons: true
   },
 
+  server: {
+    port: 3004
+  },
+
   axios: {
     baseURL: '/'
   },
